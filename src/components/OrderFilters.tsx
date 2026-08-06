@@ -34,12 +34,12 @@ export function OrderFilters() {
 
   return (
     <div className="space-y-3">
-      <div className="relative">
-        <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+      <div className="input-wrap">
+        <Search size={18} className="input-icon input-icon-left" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="input pl-11"
+          className="input with-icon-left"
           placeholder="Pretraži po kupcu, proizvodu, gradu…"
         />
       </div>

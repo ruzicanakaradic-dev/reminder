@@ -141,6 +141,22 @@ h1, h2, h3, h4, h5, .display {
 .label { display: block; font-size: 12px; font-weight: 800; color: var(--neutral-700); margin-bottom: .3rem;
   letter-spacing: .01em; }
 
+/* dosledna visina + normalizacija datum/vreme/select (iOS) */
+.input, .select { min-height: 46px; }
+input.input[type="date"], input.input[type="time"] {
+  -webkit-appearance: none; appearance: none; min-width: 0;
+}
+
+/* PRAVILO: input sa ikonicom — ikonica uvek ispred/iza teksta, nikad preko.
+   Dodaj klasu na <input>, a ikonicu apsolutno pozicioniraj u .input-wrap */
+.input-wrap { position: relative; }
+.input-wrap .input-icon { position: absolute; top: 50%; transform: translateY(-50%);
+  color: var(--neutral-600); pointer-events: none; }
+.input-wrap .input-icon-left { left: 14px; }
+.input-wrap .input-icon-right { right: 12px; }
+.input.with-icon-left  { padding-left: 2.75rem; }
+.input.with-icon-right { padding-right: 2.9rem; }
+
 /* ── Status čipovi (4 statusa) ─────────────────────────────── */
 .chip { display: inline-flex; align-items: center; gap: .4rem; font-size: 11px; font-weight: 800;
   padding: .18rem .5rem; border-radius: var(--radius-sm); white-space: nowrap; letter-spacing: .02em; }

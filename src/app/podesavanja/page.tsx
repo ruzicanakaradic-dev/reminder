@@ -38,13 +38,60 @@ export default function PodesavanjaPage() {
     }
   }
 
+  function beep() {
+    try {
+      const Ctx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new Ctx();
+      const now = ctx.currentTime;
+      [880, 1174.7].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        const t = now + i * 0.18;
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.4);
+      });
+      if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
+    } catch {
+      /* ignore */
+    }
+  }
+
   async function testPush() {
     setBusy(true);
     setMsg(null);
+    // Zvučni signal odmah (klik je korisnička radnja — dozvoljeno je puštanje zvuka)
+    beep();
     try {
+      // Lokalna notifikacija preko service worker-a (pouzdanije od servera)
+      if ("Notification" in window && Notification.permission === "granted" && "serviceWorker" in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification("🌹 Test podsetnik", {
+          body: "Ovako izgleda podsetnik za isporuku.",
+          icon: "/icons/icon-192.png",
+          badge: "/icons/badge-72.png",
+          tag: "test",
+          requireInteraction: true,
+          ...( { vibrate: [200, 100, 200, 100, 200] } as NotificationOptions ),
+        });
+      }
+      // I preko servera (za slučaj kad je app zatvorena)
       const res = await fetch("/api/push/test", { method: "POST" });
-      const d = await res.json();
-      setMsg(res.ok ? `✓ Poslato na ${d.sent} uređaj(a).` : d.error || "Greška.");
+      const d = await res.json().catch(() => ({}));
+      setMsg(
+        res.ok
+          ? `✓ Test poslat. Ako ne čuješ zvuk na iPhone-u, vidi napomenu ispod.`
+          : d.error || "Notifikacija prikazana lokalno."
+      );
+    } catch {
+      setMsg("Zvuk odsviran. Za notifikaciju uključi dozvolu iznad.");
     } finally {
       setBusy(false);
     }
@@ -85,7 +132,24 @@ export default function PodesavanjaPage() {
           <b>Android (Chrome):</b> meni ⋮ → „Dodaj na početni ekran".
           <br />
           <b>iPhone (Safari):</b> Podeli (kvadrat sa strelicom) → „Add to Home Screen".
-          Notifikacije na iPhone-u rade tek kad se aplikacija doda na početni ekran.
+        </p>
+      </div>
+
+      <div className="card p-5 space-y-2" style={{ borderLeft: "4px solid var(--accent)" }}>
+        <div className="text-ink font-semibold">📣 Zvuk na iPhone-u — važno</div>
+        <p className="text-sm text-muted">
+          iPhone <b>ne pušta zvuk notifikacije dok je aplikacija otvorena u prvom planu</b> — to je
+          Apple pravilo. Da čuješ zvuk:
+        </p>
+        <ul className="text-sm text-muted list-disc pl-5 space-y-1">
+          <li>Aplikacija mora biti <b>dodata na početni ekran</b> i otvorena odatle (ne iz Safari-ja).</li>
+          <li>Telefon <b>ne sme biti na „Ne uznemiravaj"/Fokus</b> ni na tihom (proveri bočni prekidač).</li>
+          <li>Za test: pritisni „Pošalji test", pa <b>zaključaj telefon</b> ili izađi na početni ekran —
+            zvuk stiže kad app nije u prvom planu.</li>
+          <li>U <b>Podešavanja → Obaveštenja → Ružini kolači</b> uključi „Zvukove".</li>
+        </ul>
+        <p className="text-sm text-muted">
+          Dugme „Pošalji test" ovde <b>odsvira i kratak zvučni signal u aplikaciji</b> (ako telefon nije na tihom).
         </p>
       </div>
 
