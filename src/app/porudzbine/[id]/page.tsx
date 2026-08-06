@@ -38,8 +38,7 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
           {kupac ? ` · ${customerCode(kupac.redni_broj)}` : ""}
         </div>
         <h2 className="text-2xl mt-1">{order.kupac_ime}</h2>
-        <div className="text-[15px] mt-2 font-bold">{order.proizvod}</div>
-        {order.opis && <p className="text-sm text-muted mt-1 whitespace-pre-wrap">{order.opis}</p>}
+        {order.opis && <p className="text-sm text-muted mt-2 whitespace-pre-wrap">{order.opis}</p>}
 
         <div className="mt-4">
           <div className="label">Status</div>
@@ -57,6 +56,28 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
         </div>
       )}
 
+      {/* Stavke (proizvodi) */}
+      <div className="card p-5">
+        <div className="kicker mb-3">Proizvodi</div>
+        <div className="divide-y" style={{ borderColor: "var(--divider)" }}>
+          {(order.items && order.items.length ? order.items : []).map((it) => (
+            <div key={it.id} className="flex items-start justify-between gap-3 py-2.5 first:pt-0">
+              <div className="min-w-0">
+                <div className="font-bold leading-tight">{it.naziv}</div>
+                <div className="text-[12px] text-muted mt-0.5">
+                  {it.tezina_kg != null ? formatKg(it.tezina_kg) : "—"}
+                  {it.cena_po_kg != null ? ` · ${formatRSD(it.cena_po_kg)}/kg` : ""}
+                </div>
+              </div>
+              <div className="font-extrabold shrink-0">{formatRSD(it.total)}</div>
+            </div>
+          ))}
+          {(!order.items || order.items.length === 0) && (
+            <div className="py-2 text-sm text-muted">{order.proizvod}</div>
+          )}
+        </div>
+      </div>
+
       <div className="card p-5 grid sm:grid-cols-2 gap-x-6 gap-y-3">
         <Info label="Kontakt (mobilni)" value={
           order.kupac_telefon ? (
@@ -69,12 +90,11 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
         <Info label="Adresa isporuke" value={order.adresa || "—"} />
         <Info label="Datum porudžbine" value={formatDatum(order.datum_porudzbine)} />
         <Info label="Datum isporuke" value={`${formatDatum(order.datum_isporuke)}${order.vreme_isporuke ? " · " + order.vreme_isporuke : ""}`} />
-        <Info label="Težina" value={formatKg(order.tezina_kg)} />
-        <Info label="Cena po kg" value={formatRSD(order.cena_po_kg)} />
+        <Info label="Ukupna težina" value={formatKg(order.tezina_kg)} />
       </div>
 
       <div className="card p-5 flex items-center justify-between" style={{ background: "var(--accent-100)", borderColor: "var(--accent-300)" }}>
-        <span className="kicker" style={{ color: "var(--accent-800)" }}>Ukupno</span>
+        <span className="kicker" style={{ color: "var(--accent-800)" }}>Ukupno cela porudžbina</span>
         <span className="text-2xl font-extrabold" style={{ color: "var(--accent-800)" }}>{formatRSD(order.total)}</span>
       </div>
 

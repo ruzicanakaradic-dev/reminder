@@ -51,6 +51,19 @@ create index if not exists orders_status_idx          on public.orders (status);
 create index if not exists orders_customer_idx        on public.orders (customer_id);
 create index if not exists orders_grad_idx            on public.orders (grad);
 
+-- Stavke porudžbine (više vrsta kolača/torti po jednoj porudžbini) --------
+create table if not exists public.order_items (
+  id          uuid primary key default gen_random_uuid(),
+  order_id    uuid not null references public.orders(id) on delete cascade,
+  redosled    int  not null default 0,
+  naziv       text not null,
+  tezina_kg   numeric(10,2),
+  cena_po_kg  numeric(10,2),
+  total       numeric(12,2),
+  created_at  timestamptz not null default now()
+);
+create index if not exists order_items_order_idx on public.order_items (order_id);
+
 -- auto-update updated_at ----------------------------------------------
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
@@ -79,6 +92,7 @@ create table if not exists public.push_subscriptions (
 -- tako da tabele nisu javno dostupne preko anon ključa.
 alter table public.customers          enable row level security;
 alter table public.orders             enable row level security;
+alter table public.order_items        enable row level security;
 alter table public.push_subscriptions enable row level security;
 
 -- (namerno bez policy-ja za anon — sav pristup ide kroz server)
