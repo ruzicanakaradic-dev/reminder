@@ -2,13 +2,14 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Lock } from "lucide-react";
+import { Loader2, Lock, Eye, EyeOff } from "lucide-react";
 
 function PrijavaForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/";
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -50,16 +51,25 @@ function PrijavaForm() {
           </div>
           <div>
             <label className="label">Lozinka</label>
-            <div className="relative">
-              <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-600)]" />
+            <div className="input-wrap">
+              <Lock size={18} className="input-icon input-icon-left" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input pl-10"
+                className="input with-icon-left with-icon-right"
                 placeholder="Unesi lozinku"
                 autoFocus
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 grid place-items-center w-8 h-8 rounded-[8px] text-[var(--neutral-600)] hover:text-[var(--accent)]"
+                aria-label={showPassword ? "Sakrij lozinku" : "Prikaži lozinku"}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 
