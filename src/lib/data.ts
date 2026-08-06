@@ -1,6 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import type { Customer, Order, OrderInput, Status } from "@/lib/types";
+import type { Customer, Order, OrderInput, OrderItem, Status } from "@/lib/types";
 
 // ── Kupci ──────────────────────────────────────────────────────────
 
@@ -95,7 +95,41 @@ export async function getOrder(id: string): Promise<Order | null> {
   const sb = supabaseAdmin();
   const { data, error } = await sb.from("orders").select("*").eq("id", id).maybeSingle();
   if (error) throw error;
-  return data as Order | null;
+  if (!data) return null;
+
+  const { data: items, error: itemsErr } = await sb
+    .from("order_items")
+    .select("*")
+    .eq("order_id", id)
+    .order("redosled", { ascending: true });
+  if (itemsErr) throw itemsErr;
+
+  return { ...(data as Order), items: (items ?? []) as OrderItem[] };
+}
+
+// Normalizuje stavke iz forme: računa total svake stavke i odbacuje prazne
+type NormItem = { naziv: string; tezina_kg: number | null; cena_po_kg: number | null; total: number | null };
+
+function normalizeItems(input: OrderInput): NormItem[] {
+  const raw =
+    input.items && input.items.length
+      ? input.items
+      : // fallback: stara jedno-proizvodna porudžbina
+        [{ naziv: input.proizvod, tezina_kg: input.tezina_kg, cena_po_kg: input.cena_po_kg, total: input.total }];
+
+  return raw
+    .filter((i) => (i.naziv ?? "").trim())
+    .map((i) => {
+      const tezina = i.tezina_kg ?? null;
+      const cena = i.cena_po_kg ?? null;
+      const total =
+        i.total != null
+          ? i.total
+          : tezina != null && cena != null
+            ? Number((tezina * cena).toFixed(2))
+            : null;
+      return { naziv: i.naziv.trim(), tezina_kg: tezina, cena_po_kg: cena, total };
+    });
 }
 
 export async function saveOrder(input: OrderInput): Promise<Order> {
@@ -107,12 +141,13 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     input.adresa ?? null
   );
 
-  const total =
-    input.total != null
-      ? input.total
-      : input.tezina_kg != null && input.cena_po_kg != null
-        ? Number((input.tezina_kg * input.cena_po_kg).toFixed(2))
-        : null;
+  const items = normalizeItems(input);
+  if (items.length === 0) throw new Error("Bar jedan proizvod je obavezan.");
+
+  // Zbirni podaci na nivou porudžbine (za listu, kalendar, statistiku)
+  const grandTotal = items.reduce((s, i) => s + (i.total ?? 0), 0) || null;
+  const zbirTezina = items.reduce((s, i) => s + (i.tezina_kg ?? 0), 0) || null;
+  const proizvodSummary = items.map((i) => i.naziv).join(", ");
 
   const row = {
     customer_id: customerId,
@@ -121,32 +156,41 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     datum_porudzbine: input.datum_porudzbine,
     datum_isporuke: input.datum_isporuke,
     vreme_isporuke: input.vreme_isporuke ?? null,
-    proizvod: input.proizvod.trim(),
+    proizvod: proizvodSummary,
     opis: input.opis ?? null,
     napomena: input.napomena ?? null,
     slika: input.slika ?? null,
-    tezina_kg: input.tezina_kg ?? null,
-    cena_po_kg: input.cena_po_kg ?? null,
-    total,
+    tezina_kg: zbirTezina,
+    cena_po_kg: items.length === 1 ? items[0].cena_po_kg : null,
+    total: grandTotal,
     adresa: input.adresa ?? null,
     grad: input.grad ?? null,
     status: input.status,
   };
 
+  let orderId: string;
+  let saved: Order;
   if (input.id) {
-    const { data, error } = await sb
-      .from("orders")
-      .update(row)
-      .eq("id", input.id)
-      .select("*")
-      .single();
+    const { data, error } = await sb.from("orders").update(row).eq("id", input.id).select("*").single();
     if (error) throw error;
-    return data as Order;
+    saved = data as Order;
+    orderId = input.id;
+  } else {
+    const { data, error } = await sb.from("orders").insert(row).select("*").single();
+    if (error) throw error;
+    saved = data as Order;
+    orderId = saved.id;
   }
 
-  const { data, error } = await sb.from("orders").insert(row).select("*").single();
-  if (error) throw error;
-  return data as Order;
+  // Zameni stavke: obriši postojeće pa upiši nove (jednostavno i pouzdano)
+  const { error: delErr } = await sb.from("order_items").delete().eq("order_id", orderId);
+  if (delErr) throw delErr;
+  const { error: insErr } = await sb.from("order_items").insert(
+    items.map((i, idx) => ({ order_id: orderId, redosled: idx, ...i }))
+  );
+  if (insErr) throw insErr;
+
+  return saved;
 }
 
 export async function updateStatus(id: string, status: Status): Promise<void> {

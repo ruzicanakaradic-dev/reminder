@@ -2,12 +2,25 @@
 
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Save, ImagePlus, X } from "lucide-react";
+import { Loader2, Save, ImagePlus, X, Plus, Trash2 } from "lucide-react";
 import { saveOrderAction } from "@/app/actions";
 import { STATUS_LABEL, STATUS_ORDER, type Order, type Status } from "@/lib/types";
 import { formatRSD, toISODate } from "@/lib/format";
 
 type CustomerLite = { ime: string; telefon: string | null; grad: string | null; adresa: string | null };
+
+type ItemRow = { naziv: string; tezina: string; cena: string };
+
+const num = (s: string) => {
+  const n = parseFloat(s.replace(",", "."));
+  return isNaN(n) ? null : n;
+};
+const itemTotal = (r: ItemRow) => {
+  const t = num(r.tezina);
+  const c = num(r.cena);
+  return t != null && c != null ? Number((t * c).toFixed(2)) : null;
+};
+const emptyRow = (): ItemRow => ({ naziv: "", tezina: "", cena: "" });
 
 export function OrderForm({ order, customers }: { order?: Order; customers: CustomerLite[] }) {
   const router = useRouter();
@@ -20,15 +33,36 @@ export function OrderForm({ order, customers }: { order?: Order; customers: Cust
   const [telefon, setTelefon] = useState(order?.kupac_telefon ?? "");
   const [grad, setGrad] = useState(order?.grad ?? "");
   const [adresa, setAdresa] = useState(order?.adresa ?? "");
-  const [tezina, setTezina] = useState<string>(order?.tezina_kg?.toString() ?? "");
-  const [cena, setCena] = useState<string>(order?.cena_po_kg?.toString() ?? "");
   const [slika, setSlika] = useState<string | null>(order?.slika ?? null);
 
-  const autoTotal = useMemo(() => {
-    const t = parseFloat(tezina.replace(",", "."));
-    const c = parseFloat(cena.replace(",", "."));
-    return !isNaN(t) && !isNaN(c) ? Number((t * c).toFixed(2)) : null;
-  }, [tezina, cena]);
+  const [items, setItems] = useState<ItemRow[]>(() => {
+    if (order?.items && order.items.length) {
+      return order.items.map((i) => ({
+        naziv: i.naziv,
+        tezina: i.tezina_kg?.toString() ?? "",
+        cena: i.cena_po_kg?.toString() ?? "",
+      }));
+    }
+    if (order) {
+      return [{ naziv: order.proizvod ?? "", tezina: order.tezina_kg?.toString() ?? "", cena: order.cena_po_kg?.toString() ?? "" }];
+    }
+    return [emptyRow()];
+  });
+
+  const grandTotal = useMemo(
+    () => items.reduce((s, r) => s + (itemTotal(r) ?? 0), 0),
+    [items]
+  );
+
+  function updateItem(idx: number, patch: Partial<ItemRow>) {
+    setItems((prev) => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+  }
+  function addItem() {
+    setItems((prev) => [...prev, emptyRow()]);
+  }
+  function removeItem(idx: number) {
+    setItems((prev) => (prev.length === 1 ? prev : prev.filter((_, i) => i !== idx)));
+  }
 
   function onNameChange(v: string) {
     setIme(v);
@@ -70,8 +104,20 @@ export function OrderForm({ order, customers }: { order?: Order; customers: Cust
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    const cleanItems = items
+      .filter((r) => r.naziv.trim())
+      .map((r) => ({
+        naziv: r.naziv.trim(),
+        tezina_kg: num(r.tezina),
+        cena_po_kg: num(r.cena),
+        total: itemTotal(r),
+      }));
+    if (cleanItems.length === 0) {
+      setError("Dodaj bar jedan proizvod (kolač).");
+      return;
+    }
     const fd = new FormData(e.currentTarget);
-    fd.set("total", autoTotal != null ? String(autoTotal) : "");
+    fd.set("items", JSON.stringify(cleanItems));
     fd.set("slika", slika ?? "");
     start(async () => {
       try {
@@ -135,34 +181,71 @@ export function OrderForm({ order, customers }: { order?: Order; customers: Cust
         </div>
       </div>
 
-      {/* Porudžbina */}
+      {/* Porudžbina — više vrsta kolača */}
       <div className="card p-5 space-y-4">
-        <div>
-          <label className="label">Šta je porudžbina *</label>
-          <input name="proizvod" required defaultValue={order?.proizvod ?? ""} className="input"
-            placeholder="npr. Torta Ferrero 2kg, 100 kom sitnih kolača…" />
+        <div className="flex items-center justify-between gap-2">
+          <label className="label !mb-0">Proizvodi (kolači / torte) *</label>
+          <span className="text-xs text-muted">{items.length} {items.length === 1 ? "stavka" : "stavke"}</span>
         </div>
+
+        <div className="space-y-3">
+          {items.map((row, idx) => {
+            const rowTotal = itemTotal(row);
+            return (
+              <div key={idx} className="rounded-[12px] p-3 space-y-3"
+                style={{ border: "1px solid var(--divider)", background: "var(--surface)" }}>
+                <div className="flex items-center gap-2">
+                  <span className="grid place-items-center w-6 h-6 rounded-full text-xs font-extrabold shrink-0"
+                    style={{ background: "var(--accent-100)", color: "var(--accent-800)" }}>{idx + 1}</span>
+                  <input
+                    value={row.naziv}
+                    onChange={(e) => updateItem(idx, { naziv: e.target.value })}
+                    className="input flex-1"
+                    placeholder="npr. Torta Ferrero, Vanil kifle…"
+                  />
+                  <button type="button" onClick={() => removeItem(idx)} disabled={items.length === 1}
+                    className="btn btn-icon btn-ghost shrink-0 disabled:opacity-30" aria-label="Ukloni proizvod">
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-3 items-end">
+                  <div>
+                    <label className="label">Težina (kg)</label>
+                    <input value={row.tezina} onChange={(e) => updateItem(idx, { tezina: e.target.value })}
+                      className="input" inputMode="decimal" placeholder="2" />
+                  </div>
+                  <div>
+                    <label className="label">Cena / kg</label>
+                    <input value={row.cena} onChange={(e) => updateItem(idx, { cena: e.target.value })}
+                      className="input" inputMode="decimal" placeholder="2800" />
+                  </div>
+                  <div className="min-w-0">
+                    <label className="label">Cena stavke</label>
+                    <div className="rounded-[10px] px-2.5 py-2.5 font-extrabold text-[13px] leading-tight tabular-nums"
+                      style={{ background: "var(--accent-100)", border: "1px solid var(--accent-300)", color: "var(--accent-800)" }}>
+                      {formatRSD(rowTotal ?? 0)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <button type="button" onClick={addItem} className="btn btn-secondary btn-block">
+          <Plus size={18} /> Dodaj još jedan proizvod
+        </button>
+
+        <div className="flex items-center justify-between rounded-[12px] px-4 py-3"
+          style={{ background: "var(--accent-100)", border: "1px solid var(--accent-300)" }}>
+          <span className="kicker" style={{ color: "var(--accent-800)" }}>Ukupno cela porudžbina</span>
+          <span className="text-xl font-extrabold" style={{ color: "var(--accent-800)" }}>{formatRSD(grandTotal)}</span>
+        </div>
+
         <div>
           <label className="label">Opis / dodatak</label>
           <textarea name="opis" defaultValue={order?.opis ?? ""} className="textarea" rows={2}
             placeholder="Ukusi, dekoracija, natpis…" />
-        </div>
-        <div className="grid sm:grid-cols-3 gap-4 items-end">
-          <div>
-            <label className="label">Težina (kg)</label>
-            <input name="tezina_kg" value={tezina} onChange={(e) => setTezina(e.target.value)} className="input" inputMode="decimal" placeholder="2" />
-          </div>
-          <div>
-            <label className="label">Cena po kg (RSD)</label>
-            <input name="cena_po_kg" value={cena} onChange={(e) => setCena(e.target.value)} className="input" inputMode="decimal" placeholder="2800" />
-          </div>
-          <div>
-            <label className="label">Ukupno</label>
-            <div className="rounded-[10px] px-3 py-2.5 font-extrabold text-lg"
-              style={{ background: "var(--accent-100)", border: "1px solid var(--accent-300)", color: "var(--accent-800)" }}>
-              {formatRSD(autoTotal ?? 0)}
-            </div>
-          </div>
         </div>
       </div>
 

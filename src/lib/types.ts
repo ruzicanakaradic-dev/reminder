@@ -25,6 +25,24 @@ export type Customer = {
   created_at: string;
 };
 
+export type OrderItem = {
+  id: string;
+  order_id: string;
+  redosled: number;
+  naziv: string;
+  tezina_kg: number | null;
+  cena_po_kg: number | null;
+  total: number | null;
+};
+
+// Ono što stiže iz forme (bez id/order_id) za svaku stavku
+export type OrderItemInput = {
+  naziv: string;
+  tezina_kg?: number | null;
+  cena_po_kg?: number | null;
+  total?: number | null;
+};
+
 export type Order = {
   id: string;
   redni_broj: number;
@@ -48,6 +66,7 @@ export type Order = {
   reminded_1d: boolean;
   created_at: string;
   updated_at: string;
+  items?: OrderItem[]; // stavke (vrste kolača) — popunjeno u getOrder
 };
 
 export type OrderInput = {
@@ -67,4 +86,5 @@ export type OrderInput = {
   adresa?: string | null;
   grad?: string | null;
   status: Status;
+  items?: OrderItemInput[]; // više vrsta kolača u jednoj porudžbini
 };
