@@ -1,66 +1,41 @@
 import Link from "next/link";
-import { CalendarClock, MapPin, Scale, User } from "lucide-react";
-import type { Order } from "@/lib/types";
-import { StatusControl } from "@/components/StatusControl";
-import { formatRSD, formatKg, formatDatum, danaDo, relativnoDana } from "@/lib/format";
+import type { Order, Status } from "@/lib/types";
+import { StatusBadge } from "@/components/StatusBadge";
+import { formatRSD, formatKg, danaDo, relativnoDana } from "@/lib/format";
+
+export const STATUS_DOT: Record<Status, string> = {
+  primljena: "#9a8fa0",
+  u_radu: "#7a3785",
+  zavrseno: "#977128",
+  isporuceno: "#34233b",
+};
 
 export function OrderCard({ order }: { order: Order }) {
   const dana = danaDo(order.datum_isporuke);
   const hitno = order.status !== "isporuceno" && dana <= 2;
-  const kasni = order.status !== "isporuceno" && dana < 0;
 
   return (
-    <div className="card p-4 animate-in">
-      <div className="flex items-start justify-between gap-3">
-        <Link href={`/porudzbine/${order.id}`} className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-rose-400">#{order.redni_broj}</span>
-            {hitno && (
-              <span
-                className="text-[11px] font-bold px-2 py-0.5 rounded-full"
-                style={{
-                  background: kasni ? "#ffe0ea" : "#fef1e0",
-                  color: kasni ? "#cf3468" : "#9a5a10",
-                }}
-              >
-                {kasni ? "⚠ Kasni" : "Uskoro"}
-              </span>
-            )}
-          </div>
-          <div className="display text-lg font-semibold text-ink truncate mt-0.5">
-            {order.proizvod}
-          </div>
-          <div className="mt-1.5 space-y-1 text-sm text-muted">
-            <div className="flex items-center gap-1.5">
-              <User size={14} /> <span className="truncate">{order.kupac_ime}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <CalendarClock size={14} />
-              <span className={hitno ? "font-semibold" : ""} style={{ color: hitno ? "var(--rose-600)" : undefined }}>
-                Isporuka {relativnoDana(dana)} · {formatDatum(order.datum_isporuke)}
-              </span>
-            </div>
-            {order.grad && (
-              <div className="flex items-center gap-1.5">
-                <MapPin size={14} /> <span className="truncate">{order.grad}</span>
-              </div>
-            )}
-            {order.tezina_kg != null && (
-              <div className="flex items-center gap-1.5">
-                <Scale size={14} /> {formatKg(order.tezina_kg)}
-              </div>
-            )}
-          </div>
-        </Link>
-
-        <div className="text-right shrink-0">
-          <div className="display text-lg font-semibold text-rose-600">{formatRSD(order.total)}</div>
-        </div>
+    <Link
+      href={`/porudzbine/${order.id}`}
+      className="card animate-in flex flex-col gap-1.5 p-3.5"
+      style={{ borderLeft: `4px solid ${STATUS_DOT[order.status]}` }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-[16px] font-extrabold leading-tight">{order.kupac_ime}</span>
+        <StatusBadge status={order.status} />
       </div>
-
-      <div className="mt-3 pt-3 border-t border-line">
-        <StatusControl id={order.id} status={order.status} size="sm" />
+      <div className="text-[14px]">{order.proizvod}</div>
+      <div className="text-[12px] text-muted flex flex-wrap gap-x-3 gap-y-0.5">
+        {order.tezina_kg != null && <span>{formatKg(order.tezina_kg)}</span>}
+        <span className="font-bold" style={{ color: "var(--ink)" }}>
+          {formatRSD(order.total)}
+        </span>
+        {order.grad && <span>{order.grad}</span>}
       </div>
-    </div>
+      <div className="text-[12px]" style={{ color: hitno ? "var(--accent)" : "var(--neutral-600)" }}>
+        Isporuka {relativnoDana(dana)}
+        {order.vreme_isporuke ? ` · ${order.vreme_isporuke}` : ""} · #{order.redni_broj}
+      </div>
+    </Link>
   );
 }

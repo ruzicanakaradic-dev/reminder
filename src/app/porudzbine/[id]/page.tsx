@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Pencil, Phone, MapPin, Calendar, CalendarClock, Scale, Coins, User } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { supabaseConfigured } from "@/lib/supabase/admin";
-import { getOrder } from "@/lib/data";
+import { getOrder, getCustomer } from "@/lib/data";
 import { SetupNotice } from "@/components/SetupNotice";
 import { StatusControl } from "@/components/StatusControl";
 import { DeleteOrderButton } from "@/components/DeleteOrderButton";
+import { customerCode } from "@/lib/types";
 import { formatRSD, formatKg, formatDatum, danaDo, relativnoDana } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -16,86 +17,81 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
   const order = await getOrder(id);
   if (!order) notFound();
 
+  const kupac = order.customer_id ? await getCustomer(order.customer_id) : null;
   const dana = danaDo(order.datum_isporuke);
   const hitno = order.status !== "isporuceno" && dana <= 2;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 animate-in max-w-2xl">
       <div className="flex items-center justify-between">
-        <Link href="/porudzbine" className="btn btn-ghost text-sm">
+        <Link href="/porudzbine" className="btn btn-ghost text-sm !px-2">
           <ArrowLeft size={16} /> Porudžbine
         </Link>
-        <Link href={`/porudzbine/${order.id}/izmena`} className="btn btn-soft text-sm">
+        <Link href={`/porudzbine/${order.id}/izmena`} className="btn btn-secondary text-sm">
           <Pencil size={16} /> Izmeni
         </Link>
       </div>
 
-      <div className="card p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-xs font-bold text-rose-400">Porudžbina #{order.redni_broj}</div>
-            <h1 className="display text-2xl font-semibold text-ink mt-1">{order.proizvod}</h1>
-          </div>
-          <div className="text-right">
-            <div className="display text-2xl font-semibold text-rose-600">{formatRSD(order.total)}</div>
-          </div>
+      <div className="card p-5" style={{ borderLeft: `4px solid ${STATUS_DOTS[order.status]}` }}>
+        <div className="kicker">
+          Porudžbina #{order.redni_broj}
+          {kupac ? ` · ${customerCode(kupac.redni_broj)}` : ""}
         </div>
+        <h2 className="text-2xl mt-1">{order.kupac_ime}</h2>
+        <div className="text-[15px] mt-2 font-bold">{order.proizvod}</div>
+        {order.opis && <p className="text-sm text-muted mt-1 whitespace-pre-wrap">{order.opis}</p>}
 
-        {order.opis && (
-          <p className="mt-3 text-ink/80 bg-sand rounded-xl p-3 text-sm whitespace-pre-wrap">
-            {order.opis}
-          </p>
-        )}
-
-        <div className="mt-5">
-          <div className="label">Status porudžbine</div>
+        <div className="mt-4">
+          <div className="label">Status</div>
           <StatusControl id={order.id} status={order.status} />
         </div>
       </div>
 
       {hitno && (
-        <div
-          className="card p-4 flex items-center gap-3"
-          style={{ background: "#fff1f5", borderColor: "var(--rose-200)" }}
-        >
+        <div className="card p-4 flex items-center gap-3" style={{ borderColor: "var(--accent)", borderWidth: 2 }}>
           <span className="text-2xl">⏰</span>
           <div className="text-sm">
-            <b className="text-rose-700">Isporuka {relativnoDana(dana)}!</b>{" "}
+            <b style={{ color: "var(--accent)" }}>Isporuka {relativnoDana(dana)}!</b>{" "}
             <span className="text-muted">Vreme je za pripremu.</span>
           </div>
         </div>
       )}
 
-      <div className="card p-5 grid sm:grid-cols-2 gap-x-6 gap-y-4">
-        <Info icon={<User size={16} />} label="Kupac" value={order.kupac_ime} />
-        <Info
-          icon={<Phone size={16} />}
-          label="Kontakt"
-          value={
-            order.kupac_telefon ? (
-              <a href={`tel:${order.kupac_telefon}`} className="text-rose-600 font-semibold">
-                {order.kupac_telefon}
-              </a>
-            ) : (
-              "—"
-            )
-          }
-        />
-        <Info icon={<Calendar size={16} />} label="Datum porudžbine" value={formatDatum(order.datum_porudzbine)} />
-        <Info
-          icon={<CalendarClock size={16} />}
-          label="Datum isporuke"
-          value={`${formatDatum(order.datum_isporuke)} · ${relativnoDana(dana)}`}
-        />
-        <Info icon={<Scale size={16} />} label="Težina" value={formatKg(order.tezina_kg)} />
-        <Info icon={<Coins size={16} />} label="Cena po kg" value={formatRSD(order.cena_po_kg)} />
-        <Info
-          icon={<MapPin size={16} />}
-          label="Adresa isporuke"
-          value={order.adresa || "—"}
-        />
-        <Info icon={<MapPin size={16} />} label="Grad" value={order.grad || "—"} />
+      <div className="card p-5 grid sm:grid-cols-2 gap-x-6 gap-y-3">
+        <Info label="Kontakt (mobilni)" value={
+          order.kupac_telefon ? (
+            <a href={`tel:${order.kupac_telefon}`} className="font-bold" style={{ color: "var(--accent)" }}>
+              {order.kupac_telefon}
+            </a>
+          ) : "—"
+        } />
+        <Info label="Grad" value={order.grad || "—"} />
+        <Info label="Adresa isporuke" value={order.adresa || "—"} />
+        <Info label="Datum porudžbine" value={formatDatum(order.datum_porudzbine)} />
+        <Info label="Datum isporuke" value={`${formatDatum(order.datum_isporuke)}${order.vreme_isporuke ? " · " + order.vreme_isporuke : ""}`} />
+        <Info label="Težina" value={formatKg(order.tezina_kg)} />
+        <Info label="Cena po kg" value={formatRSD(order.cena_po_kg)} />
       </div>
+
+      <div className="card p-5 flex items-center justify-between" style={{ background: "var(--accent-100)", borderColor: "var(--accent-300)" }}>
+        <span className="kicker" style={{ color: "var(--accent-800)" }}>Ukupno</span>
+        <span className="text-2xl font-extrabold" style={{ color: "var(--accent-800)" }}>{formatRSD(order.total)}</span>
+      </div>
+
+      {order.napomena && (
+        <div className="card p-4" style={{ borderLeft: "4px solid var(--accent)" }}>
+          <div className="kicker mb-1">Posebna želja / napomena</div>
+          <p className="text-sm whitespace-pre-wrap">{order.napomena}</p>
+        </div>
+      )}
+
+      {order.slika && (
+        <div className="card p-3">
+          <div className="kicker mb-2">Slika primera</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={order.slika} alt="Primer" className="w-full rounded-[10px] grayscale" />
+        </div>
+      )}
 
       <div className="flex justify-between items-center pt-2">
         <span className="text-xs text-muted">Sačuvano: {formatDatum(order.created_at.slice(0, 10))}</span>
@@ -105,21 +101,18 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
   );
 }
 
-function Info({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: React.ReactNode;
-}) {
+const STATUS_DOTS: Record<string, string> = {
+  primljena: "#9a8fa0",
+  u_radu: "#7a3785",
+  zavrseno: "#977128",
+  isporuceno: "#34233b",
+};
+
+function Info({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <div className="flex items-center gap-1.5 text-xs font-semibold text-muted uppercase tracking-wide">
-        {icon} {label}
-      </div>
-      <div className="text-ink mt-0.5 font-medium">{value}</div>
+      <div className="kicker" style={{ fontSize: 11 }}>{label}</div>
+      <div className="mt-0.5 font-semibold">{value}</div>
     </div>
   );
 }

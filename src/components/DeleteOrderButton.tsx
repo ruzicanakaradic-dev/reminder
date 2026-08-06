@@ -19,7 +19,7 @@ export function DeleteOrderButton({ id }: { id: string }) {
   };
 
   return (
-    <button onClick={onClick} disabled={pending} className="btn btn-ghost text-rose-600">
+    <button onClick={onClick} disabled={pending} className="btn btn-ghost text-[var(--accent)]">
       {pending ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
       Obriši
     </button>

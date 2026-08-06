@@ -21,25 +21,38 @@ export async function getCustomer(id: string): Promise<Customer | null> {
   return data as Customer | null;
 }
 
-// Pronađi ili napravi kupca po imenu (+ telefonu)
-async function ensureCustomer(ime: string, telefon: string | null): Promise<string> {
+// Pronađi ili napravi kupca po imenu; osveži kontakt/grad/adresu
+async function ensureCustomer(
+  ime: string,
+  telefon: string | null,
+  grad: string | null,
+  adresa: string | null
+): Promise<string> {
   const sb = supabaseAdmin();
   const cleanIme = ime.trim();
 
-  let q = sb.from("customers").select("id").ilike("ime", cleanIme).limit(1);
-  const { data: found, error: findErr } = await q;
+  const { data: found, error: findErr } = await sb
+    .from("customers")
+    .select("id")
+    .ilike("ime", cleanIme)
+    .limit(1);
   if (findErr) throw findErr;
+
+  const patch: Record<string, string> = {};
+  if (telefon) patch.telefon = telefon;
+  if (grad) patch.grad = grad;
+  if (adresa) patch.adresa = adresa;
+
   if (found && found.length > 0) {
-    // osveži telefon ako je prazan
-    if (telefon) {
-      await sb.from("customers").update({ telefon }).eq("id", found[0].id).is("telefon", null);
+    if (Object.keys(patch).length) {
+      await sb.from("customers").update(patch).eq("id", found[0].id);
     }
     return found[0].id as string;
   }
 
   const { data: created, error: createErr } = await sb
     .from("customers")
-    .insert({ ime: cleanIme, telefon })
+    .insert({ ime: cleanIme, ...patch })
     .select("id")
     .single();
   if (createErr) throw createErr;
@@ -87,7 +100,12 @@ export async function getOrder(id: string): Promise<Order | null> {
 
 export async function saveOrder(input: OrderInput): Promise<Order> {
   const sb = supabaseAdmin();
-  const customerId = await ensureCustomer(input.kupac_ime, input.kupac_telefon ?? null);
+  const customerId = await ensureCustomer(
+    input.kupac_ime,
+    input.kupac_telefon ?? null,
+    input.grad ?? null,
+    input.adresa ?? null
+  );
 
   const total =
     input.total != null
@@ -102,8 +120,11 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     kupac_telefon: input.kupac_telefon ?? null,
     datum_porudzbine: input.datum_porudzbine,
     datum_isporuke: input.datum_isporuke,
+    vreme_isporuke: input.vreme_isporuke ?? null,
     proizvod: input.proizvod.trim(),
     opis: input.opis ?? null,
+    napomena: input.napomena ?? null,
+    slika: input.slika ?? null,
     tezina_kg: input.tezina_kg ?? null,
     cena_po_kg: input.cena_po_kg ?? null,
     total,
@@ -156,7 +177,7 @@ export type Stats = {
 export async function getStats(): Promise<Stats> {
   const orders = await getOrders();
 
-  const poStatusu: Record<Status, number> = { u_radu: 0, zavrseno: 0, isporuceno: 0 };
+  const poStatusu: Record<Status, number> = { primljena: 0, u_radu: 0, zavrseno: 0, isporuceno: 0 };
   const kupci = new Map<string, StatBucket>();
   const gradovi = new Map<string, StatBucket>();
   const proizvodi = new Map<string, StatBucket>();

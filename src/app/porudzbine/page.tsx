@@ -1,13 +1,15 @@
 import { Suspense } from "react";
 import { supabaseConfigured } from "@/lib/supabase/admin";
 import { getOrders } from "@/lib/data";
-import { OrderCard } from "@/components/OrderCard";
+import { OrdersTable } from "@/components/OrdersTable";
 import { OrderFilters } from "@/components/OrderFilters";
 import { SetupNotice } from "@/components/SetupNotice";
-import { EmptyState, PageHeader } from "@/components/ui";
-import type { Status } from "@/lib/types";
+import { EmptyState } from "@/components/ui";
+import type { Order, Status } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+const VALID: Status[] = ["primljena", "u_radu", "zavrseno", "isporuceno"];
 
 export default async function PorudzbinePage({
   searchParams,
@@ -17,21 +19,23 @@ export default async function PorudzbinePage({
   if (!supabaseConfigured()) return <SetupNotice />;
   const sp = await searchParams;
   const status = sp.status as Status | undefined;
-  const q = sp.q;
 
   const orders = await getOrders({
-    status: status && ["u_radu", "zavrseno", "isporuceno"].includes(status) ? status : undefined,
-    search: q,
+    status: status && VALID.includes(status) ? status : undefined,
+    search: sp.q,
   });
+  // najnovija isporuka prvo
+  const sorted = [...orders].sort((a: Order, b: Order) =>
+    b.datum_isporuke.localeCompare(a.datum_isporuke)
+  );
 
   return (
-    <div className="space-y-5">
-      <PageHeader title="Porudžbine" subtitle={`${orders.length} rezultata`} />
+    <div className="space-y-4 animate-in">
       <Suspense fallback={null}>
         <OrderFilters />
       </Suspense>
 
-      {orders.length === 0 ? (
+      {sorted.length === 0 ? (
         <EmptyState
           emoji="📝"
           title="Nema porudžbina"
@@ -39,11 +43,7 @@ export default async function PorudzbinePage({
           cta={{ href: "/porudzbine/nova", label: "Nova porudžbina" }}
         />
       ) : (
-        <div className="space-y-3">
-          {orders.map((o) => (
-            <OrderCard key={o.id} order={o} />
-          ))}
-        </div>
+        <OrdersTable orders={sorted} />
       )}
     </div>
   );

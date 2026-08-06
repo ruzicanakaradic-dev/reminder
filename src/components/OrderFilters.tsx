@@ -50,12 +50,7 @@ export function OrderFilters() {
             <button
               key={t.key}
               onClick={() => setStatus(t.key)}
-              className="btn text-sm shrink-0"
-              style={{
-                background: active ? "var(--rose-500)" : "#fff",
-                color: active ? "#fff" : "var(--muted)",
-                border: active ? "none" : "1px solid var(--line)",
-              }}
+              className={`tag shrink-0 ${active ? "tag-active" : ""}`}
             >
               {t.label}
             </button>

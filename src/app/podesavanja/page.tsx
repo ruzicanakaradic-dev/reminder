@@ -62,7 +62,7 @@ export default function PodesavanjaPage() {
 
       <div className="card p-5 space-y-3">
         <div className="flex items-center gap-2 text-ink font-semibold">
-          <Bell size={18} className="text-rose-500" /> Notifikacije
+          <Bell size={18} className="text-[var(--accent)]" /> Notifikacije
         </div>
         <p className="text-sm text-muted">
           Uključi zvučne podsetnike na ovom uređaju (2 dana i dan pre isporuke).
@@ -76,7 +76,7 @@ export default function PodesavanjaPage() {
             Pošalji test
           </button>
         </div>
-        {msg && <div className="text-sm font-medium text-rose-600">{msg}</div>}
+        {msg && <div className="text-sm font-medium text-[var(--accent)]">{msg}</div>}
       </div>
 
       <div className="card p-5 space-y-3">
@@ -89,7 +89,7 @@ export default function PodesavanjaPage() {
         </p>
       </div>
 
-      <button onClick={logout} className="btn btn-ghost text-rose-600 w-full">
+      <button onClick={logout} className="btn btn-ghost text-[var(--accent)] w-full">
         <LogOut size={18} /> Odjavi se
       </button>
     </div>

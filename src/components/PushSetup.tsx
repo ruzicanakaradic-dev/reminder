@@ -74,7 +74,7 @@ export function PushSetup() {
   return (
     <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-sm animate-in">
       <div className="card p-3.5 flex items-center gap-3">
-        <span className="grid place-items-center w-10 h-10 rounded-xl bg-rose-100 text-rose-600 shrink-0">
+        <span className="grid place-items-center w-10 h-10 rounded-xl bg-[var(--accent-100)] text-[var(--accent)] shrink-0">
           <Bell size={20} />
         </span>
         <div className="text-sm leading-snug flex-1">

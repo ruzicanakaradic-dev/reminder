@@ -13,7 +13,7 @@ export default async function NovaPorudzbinaPage() {
   return (
     <div className="space-y-5">
       <PageHeader title="Nova porudžbina" subtitle="Unesi detalje nove porudžbine" />
-      <OrderForm customers={customers.map((c) => ({ ime: c.ime, telefon: c.telefon }))} />
+      <OrderForm customers={customers.map((c) => ({ ime: c.ime, telefon: c.telefon, grad: c.grad, adresa: c.adresa }))} />
     </div>
   );
 }

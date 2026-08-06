@@ -4,6 +4,13 @@ import { useState, useTransition } from "react";
 import { STATUS_LABEL, STATUS_ORDER, type Status } from "@/lib/types";
 import { setStatusAction } from "@/app/actions";
 
+const ACTIVE: Record<Status, { bg: string; fg: string }> = {
+  primljena: { bg: "#9a8fa0", fg: "#fff" },
+  u_radu: { bg: "#7a3785", fg: "#f7ecd4" },
+  zavrseno: { bg: "#977128", fg: "#f7ecd4" },
+  isporuceno: { bg: "#34233b", fg: "#f7ecd4" },
+};
+
 export function StatusControl({
   id,
   status,
@@ -31,7 +38,7 @@ export function StatusControl({
 
   return (
     <div
-      className="inline-flex rounded-full bg-sand p-1 gap-1"
+      className="inline-flex flex-wrap gap-1 rounded-[10px] border border-[var(--divider)] bg-[var(--bg)] p-1"
       style={{ opacity: pending ? 0.7 : 1 }}
     >
       {STATUS_ORDER.map((s) => {
@@ -40,13 +47,12 @@ export function StatusControl({
           <button
             key={s}
             onClick={() => change(s)}
-            className={`rounded-full font-semibold transition-all ${
-              size === "sm" ? "text-xs px-2.5 py-1" : "text-sm px-3.5 py-1.5"
+            className={`rounded-[6px] font-extrabold transition-all ${
+              size === "sm" ? "text-[11px] px-2 py-1" : "text-[13px] px-3 py-1.5"
             }`}
             style={{
-              background: active ? "#fff" : "transparent",
-              color: active ? `var(--${s.replace("_", "-")})` : "var(--muted)",
-              boxShadow: active ? "0 1px 4px rgba(61,43,52,.12)" : "none",
+              background: active ? ACTIVE[s].bg : "transparent",
+              color: active ? ACTIVE[s].fg : "var(--neutral-700)",
             }}
           >
             {STATUS_LABEL[s]}

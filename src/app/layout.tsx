@@ -1,23 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import { Archivo } from "next/font/google";
 import "./globals.css";
 import { AppChrome } from "@/components/AppChrome";
 
-const sans = Plus_Jakarta_Sans({
+const archivo = Archivo({
   subsets: ["latin", "latin-ext"],
-  variable: "--font-sans",
-  display: "swap",
-});
-const display = Fraunces({
-  subsets: ["latin", "latin-ext"],
-  variable: "--font-display",
-  weight: ["400", "500", "600", "700"],
+  variable: "--font-archivo",
+  weight: ["400", "600", "800"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Ružini domaći kolači — Dnevnik porudžbina",
-  description: "Porudžbine, kupci, kalendar i podsetnici za domaće kolače.",
+  title: "Ružini domaći kolači — Knjiga porudžbina",
+  description: "Evidencija porudžbina, kalendar, kupci, statistika i podsetnici.",
   manifest: "/manifest.webmanifest",
   applicationName: "Ružini kolači",
   appleWebApp: {
@@ -27,12 +22,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/icons/icon-192.png",
-    apple: "/icons/icon-192.png",
+    apple: "/apple-touch-icon.png",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#e84a7f",
+  themeColor: "#7a3785",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -42,7 +37,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="sr">
-      <body className={`${sans.variable} ${display.variable}`}>
+      <body className={archivo.variable}>
         <AppChrome>{children}</AppChrome>
       </body>
     </html>

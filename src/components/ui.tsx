@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+// Naslov strane je već u topbaru; ovde prikazujemo opcioni podnaslov + akciju.
 export function PageHeader({
   title,
   subtitle,
@@ -13,16 +14,24 @@ export function PageHeader({
   return (
     <div className="flex items-end justify-between gap-3 mb-5">
       <div>
-        <h1 className="display text-2xl sm:text-3xl font-semibold text-ink leading-tight">{title}</h1>
-        {subtitle && <p className="text-muted text-sm mt-0.5">{subtitle}</p>}
+        <h1 className="sr-only">{title}</h1>
+        {subtitle && <p className="text-muted text-sm">{subtitle}</p>}
       </div>
       {action}
     </div>
   );
 }
 
+export function SectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="kicker mb-3" style={{ letterSpacing: ".08em", fontSize: 13 }}>
+      {children}
+    </h2>
+  );
+}
+
 export function EmptyState({
-  emoji = "🌸",
+  emoji = "🍰",
   title,
   hint,
   cta,
@@ -35,7 +44,7 @@ export function EmptyState({
   return (
     <div className="card p-10 text-center animate-in">
       <div className="text-5xl mb-3">{emoji}</div>
-      <div className="display text-xl font-semibold text-ink">{title}</div>
+      <div className="text-xl font-extrabold">{title}</div>
       {hint && <p className="text-muted text-sm mt-1 max-w-sm mx-auto">{hint}</p>}
       {cta && (
         <Link href={cta.href} className="btn btn-primary mt-5 inline-flex">
@@ -46,13 +55,11 @@ export function EmptyState({
   );
 }
 
-export function Stat({ label, value, accent }: { label: string; value: string; accent?: string }) {
+export function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="card p-4">
-      <div className="text-xs font-semibold text-muted uppercase tracking-wide">{label}</div>
-      <div className="display text-2xl font-semibold mt-1" style={{ color: accent ?? "var(--ink)" }}>
-        {value}
-      </div>
+    <div className="kpi">
+      <div className="kpi-label">{label}</div>
+      <div className="kpi-value">{value}</div>
     </div>
   );
 }

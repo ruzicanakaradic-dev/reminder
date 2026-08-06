@@ -8,90 +8,101 @@ import { PushSetup } from "@/components/PushSetup";
 
 const NAV = [
   { href: "/", label: "Danas", icon: Home },
-  { href: "/porudzbine", label: "Porudžbine", icon: ClipboardList },
   { href: "/kalendar", label: "Kalendar", icon: CalendarDays },
+  { href: "/porudzbine", label: "Porudžbine", icon: ClipboardList },
   { href: "/kupci", label: "Kupci", icon: Users },
   { href: "/statistika", label: "Statistika", icon: BarChart3 },
 ];
 
+function titleFor(pathname: string): string {
+  if (pathname === "/") return "Danas";
+  if (pathname === "/porudzbine/nova") return "Nova porudžbina";
+  if (pathname.startsWith("/porudzbine/") && pathname.endsWith("/izmena")) return "Izmena porudžbine";
+  if (pathname.startsWith("/porudzbine/")) return "Porudžbina";
+  if (pathname.startsWith("/porudzbine")) return "Porudžbine";
+  if (pathname.startsWith("/kalendar")) return "Kalendar";
+  if (pathname.startsWith("/kupci")) return "Kupci";
+  if (pathname.startsWith("/statistika")) return "Statistika";
+  if (pathname.startsWith("/podesavanja")) return "Podešavanja";
+  return "Ružini kolači";
+}
+
 export function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAuthPage = pathname === "/prijava";
-
-  if (isAuthPage) return <>{children}</>;
+  if (pathname === "/prijava") return <>{children}</>;
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
-    <div className="min-h-dvh flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-30 backdrop-blur-md bg-cream/80 border-b border-line">
-        <div className="mx-auto max-w-4xl px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="grid place-items-center w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-400 to-rose-600 text-white text-xl shadow-sm">
-              🌹
-            </span>
-            <span className="leading-tight">
-              <span className="block display text-[15px] font-semibold text-ink">
-                Ružini domaći kolači
-              </span>
-              <span className="block text-[11px] text-muted -mt-0.5">Dnevnik porudžbina</span>
-            </span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link href="/porudzbine/nova" className="btn btn-primary text-sm hidden sm:inline-flex">
-              <Plus size={18} /> Nova porudžbina
-            </Link>
-            <Link
-              href="/podesavanja"
-              className="grid place-items-center w-10 h-10 rounded-full btn-ghost !p-0"
-              aria-label="Podešavanja"
-            >
-              <Settings size={19} />
-            </Link>
-          </div>
+    <div className="flex min-h-dvh">
+      {/* ── Sidebar (desktop) ── */}
+      <aside className="hidden min-[861px]:flex w-[230px] flex-none flex-col gap-2 border-r-2 border-[var(--divider)] p-4 sticky top-0 h-dvh overflow-auto">
+        <Link href="/" className="block pb-1.5">
+          <img src="/logo.png" alt="Ružini domaći kolači" className="w-full max-w-[180px] rounded-[16px]" />
+        </Link>
+        <div className="kicker mb-2" style={{ color: "var(--accent)" }}>
+          Knjiga porudžbina
         </div>
-      </header>
+        {NAV.map(({ href, label, icon: Icon }) => (
+          <Link key={href} href={href} className={`navitem ${isActive(href) ? "active" : ""}`}>
+            <Icon size={20} />
+            <span>{label}</span>
+          </Link>
+        ))}
+        <div className="flex-1" />
+        <Link href="/podesavanja" className={`navitem ${isActive("/podesavanja") ? "active" : ""}`}>
+          <Settings size={20} />
+          <span>Podešavanja</span>
+        </Link>
+        <Link href="/porudzbine/nova" className="btn btn-primary btn-block justify-start mt-1">
+          <Plus size={18} /> Nova porudžbina
+        </Link>
+      </aside>
 
-      {/* Sadržaj */}
-      <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-5 pb-28">{children}</main>
+      {/* ── Glavni deo ── */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        {/* Topbar */}
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b-2 border-[var(--divider)] bg-[var(--bg)] px-4 min-[861px]:px-6 h-16">
+          <img
+            src="/icons/icon-192.png"
+            alt="RDK"
+            className="min-[861px]:hidden w-9 h-9 rounded-[10px] object-cover"
+          />
+          <h4 className="flex-1 text-[22px] m-0 truncate">{titleFor(pathname)}</h4>
+          <Link
+            href="/podesavanja"
+            className="min-[861px]:hidden btn btn-secondary btn-icon"
+            aria-label="Podešavanja"
+          >
+            <Settings size={18} />
+          </Link>
+        </header>
 
-      {/* Floating dugme (mobile) */}
+        <main className="flex-1 w-full max-w-[1120px] px-4 min-[861px]:px-6 py-5 pb-28 min-[861px]:pb-10">
+          {children}
+        </main>
+      </div>
+
+      {/* ── Floating "+" (mobile) ── */}
       <Link
         href="/porudzbine/nova"
-        className="sm:hidden fixed bottom-24 right-5 z-40 grid place-items-center w-14 h-14 rounded-full btn-primary shadow-lg pulse-ring"
+        className="min-[861px]:hidden fixed bottom-24 right-5 z-40 grid place-items-center w-14 h-14 rounded-full btn-primary shadow-lg pulse-ring"
         aria-label="Nova porudžbina"
       >
         <Plus size={26} />
       </Link>
 
-      {/* Donja navigacija */}
-      <nav className="fixed bottom-0 inset-x-0 z-30 border-t border-line bg-cream/90 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto max-w-4xl px-2 grid grid-cols-5">
-          {NAV.map(({ href, label, icon: Icon }) => {
-            const active = isActive(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className="flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold transition-colors"
-                style={{ color: active ? "var(--rose-600)" : "var(--muted)" }}
-              >
-                <span
-                  className="grid place-items-center w-10 h-8 rounded-xl transition-colors"
-                  style={{ background: active ? "var(--rose-100)" : "transparent" }}
-                >
-                  <Icon size={20} />
-                </span>
-                {label}
-              </Link>
-            );
-          })}
-        </div>
+      {/* ── Bottom nav (mobile) ── */}
+      <nav className="min-[861px]:hidden fixed bottom-0 inset-x-0 z-30 flex border-t-2 border-[var(--divider)] bg-[var(--bg)] pb-[env(safe-area-inset-bottom)]">
+        {NAV.map(({ href, label, icon: Icon }) => (
+          <Link key={href} href={href} className={`bnav ${isActive(href) ? "active" : ""}`}>
+            <Icon size={22} />
+            {label}
+          </Link>
+        ))}
       </nav>
 
-      {/* Pozadinski servisi */}
       <ReminderWatcher />
       <PushSetup />
     </div>

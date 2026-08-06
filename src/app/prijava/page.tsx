@@ -37,33 +37,35 @@ function PrijavaForm() {
   }
 
   return (
-    <div className="min-h-dvh grid place-items-center px-5">
+    <div className="min-h-dvh grid place-items-center px-5 py-10">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
-          <div className="text-5xl mb-2">🌹</div>
-          <h1 className="display text-2xl font-semibold text-ink">Ružini domaći kolači</h1>
-          <p className="text-muted text-sm">Dnevnik porudžbina</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Ružini domaći kolači" className="mx-auto w-44 rounded-[16px]" />
         </div>
 
         <form onSubmit={onSubmit} className="card p-6 space-y-4">
+          <div className="kicker text-center" style={{ color: "var(--accent)" }}>
+            Knjiga porudžbina
+          </div>
           <div>
             <label className="label">Lozinka</label>
             <div className="relative">
-              <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+              <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-600)]" />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input pl-11"
+                className="input pl-10"
                 placeholder="Unesi lozinku"
                 autoFocus
               />
             </div>
           </div>
 
-          {error && <div className="text-sm text-rose-600 font-medium">{error}</div>}
+          {error && <div className="text-sm font-bold" style={{ color: "var(--accent)" }}>{error}</div>}
 
-          <button type="submit" disabled={loading} className="btn btn-primary w-full">
+          <button type="submit" disabled={loading} className="btn btn-primary btn-block">
             {loading ? <Loader2 size={18} className="animate-spin" /> : null}
             Uđi
           </button>

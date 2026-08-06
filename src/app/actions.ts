@@ -26,14 +26,17 @@ export async function saveOrderAction(formData: FormData): Promise<{ id: string 
     kupac_telefon: str(formData.get("kupac_telefon")) || null,
     datum_porudzbine: str(formData.get("datum_porudzbine")),
     datum_isporuke: str(formData.get("datum_isporuke")),
+    vreme_isporuke: str(formData.get("vreme_isporuke")) || null,
     proizvod: str(formData.get("proizvod")),
     opis: str(formData.get("opis")) || null,
+    napomena: str(formData.get("napomena")) || null,
+    slika: str(formData.get("slika")) || null,
     tezina_kg: tezina,
     cena_po_kg: cena,
     total: totalRaw ?? (tezina != null && cena != null ? Number((tezina * cena).toFixed(2)) : null),
     adresa: str(formData.get("adresa")) || null,
     grad: str(formData.get("grad")) || null,
-    status: (str(formData.get("status")) || "u_radu") as Status,
+    status: (str(formData.get("status")) || "primljena") as Status,
   };
 
   if (!input.kupac_ime) throw new Error("Ime kupca je obavezno.");

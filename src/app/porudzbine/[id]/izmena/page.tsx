@@ -16,7 +16,7 @@ export default async function IzmenaPage({ params }: { params: Promise<{ id: str
   return (
     <div className="space-y-5">
       <PageHeader title={`Izmena #${order.redni_broj}`} subtitle={order.proizvod} />
-      <OrderForm order={order} customers={customers.map((c) => ({ ime: c.ime, telefon: c.telefon }))} />
+      <OrderForm order={order} customers={customers.map((c) => ({ ime: c.ime, telefon: c.telefon, grad: c.grad, adresa: c.adresa }))} />
     </div>
   );
 }

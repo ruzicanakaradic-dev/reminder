@@ -137,8 +137,8 @@ export function ReminderWatcher() {
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-3 sm:p-6 bg-ink/40 backdrop-blur-sm animate-in">
       <div className="card w-full max-w-md overflow-hidden">
-        <div className="bg-gradient-to-br from-rose-500 to-rose-600 text-white px-5 py-4 flex items-center gap-3">
-          <span className="grid place-items-center w-11 h-11 rounded-2xl bg-white/20 pulse-ring">
+        <div className="text-white px-5 py-4 flex items-center gap-3" style={{ background: "var(--accent)" }}>
+          <span className="grid place-items-center w-11 h-11 rounded-[12px] bg-white/20 pulse-ring">
             <BellRing size={22} />
           </span>
           <div>
@@ -149,7 +149,7 @@ export function ReminderWatcher() {
           </div>
         </div>
 
-        <div className="max-h-[52vh] overflow-y-auto divide-y divide-line no-scrollbar">
+        <div className="max-h-[52vh] overflow-y-auto divide-y divide-[var(--divider)] no-scrollbar">
           {due.map((it) => (
             <div key={it.id} className="p-4">
               <div className="flex items-start justify-between gap-3">
@@ -159,7 +159,7 @@ export function ReminderWatcher() {
                   <div className="mt-1 text-sm">
                     <span
                       className="font-bold"
-                      style={{ color: it.dana < 0 ? "#cf3468" : "var(--rose-600)" }}
+                      style={{ color: "var(--accent)" }}
                     >
                       Isporuka {relativnoDana(it.dana)}
                     </span>{" "}
@@ -173,17 +173,18 @@ export function ReminderWatcher() {
                 </div>
                 <button
                   onClick={() => potvrdi(it)}
-                  className="btn btn-soft text-sm shrink-0"
+                  className="btn btn-secondary text-sm shrink-0"
                   aria-label="Potvrdi"
                 >
-                  <Check size={16} /> Potvrdi
+                  <Check size={16} /> Viđeno
                 </button>
               </div>
               <div className="mt-2">
                 <Link
                   href={`/porudzbine/${it.id}`}
                   onClick={() => potvrdi(it)}
-                  className="text-sm font-semibold text-rose-600 underline underline-offset-2"
+                  className="text-sm font-bold underline underline-offset-2"
+                  style={{ color: "var(--accent)" }}
                 >
                   Otvori porudžbinu →
                 </Link>
@@ -192,9 +193,9 @@ export function ReminderWatcher() {
           ))}
         </div>
 
-        <div className="p-4 border-t border-line">
+        <div className="p-4 border-t border-[var(--divider)]">
           <button onClick={potvrdiSve} className="btn btn-primary w-full">
-            <Check size={18} /> Potvrđujem sve
+            <Check size={18} /> Sve viđeno
           </button>
         </div>
       </div>
