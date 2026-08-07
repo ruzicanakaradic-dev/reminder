@@ -223,3 +223,17 @@ input.input[type="date"], input.input[type="time"] {
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Skeleton (loading placeholderi) */
+@keyframes rk-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.skeleton {
+  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--ink) 8%, transparent) 25%,
+    color-mix(in srgb, var(--ink) 14%, transparent) 37%,
+    color-mix(in srgb, var(--ink) 8%, transparent) 63%
+  );
+  background-size: 200% 100%;
+  animation: rk-shimmer 1.4s ease-in-out infinite;
+}
