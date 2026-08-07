@@ -2,7 +2,7 @@ import { supabaseConfigured } from "@/lib/supabase/admin";
 import { getOrders, getCustomers } from "@/lib/data";
 import { SetupNotice } from "@/components/SetupNotice";
 import { EmptyState, Kpi } from "@/components/ui";
-import { formatRSD, formatKg, MESECI } from "@/lib/format";
+import { formatRSD, MESECI } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -47,8 +47,23 @@ export default async function StatistikaPage() {
 
   const kupci = grp((o) => o.kupac_ime, (o) => o.total ?? 0).sort((a, b) => b.value - a.value).slice(0, 5);
   const gradovi = grp((o) => o.grad ?? "—", (o) => o.total ?? 0).sort((a, b) => b.value - a.value).slice(0, 6);
-  const proizvodi = grp((o) => o.proizvod, () => 1).sort((a, b) => b.value - a.value).slice(0, 6)
-    .map((r) => ({ ...r, sub: undefined }));
+  // Najprodavaniji proizvod — grupiši po GLAVNOM proizvodu (prva reč naziva).
+  // Npr. „strudla mak", „strudla orasi" i „strudla" spadaju pod „strudla";
+  // brojimo svaku stavku (kolač), a ne porudžbinu.
+  const glavniProizvod = (naziv: string) => naziv.trim().split(/\s+/)[0] ?? "";
+  const prodMap = new Map<string, Row>();
+  for (const o of orders) {
+    for (const deo of (o.proizvod ?? "").split(",")) {
+      const naziv = deo.trim();
+      if (!naziv) continue;
+      const baza = glavniProizvod(naziv);
+      const kljuc = baza.toLowerCase();
+      const cur = prodMap.get(kljuc) ?? { label: baza, value: 0 };
+      cur.value += 1;
+      prodMap.set(kljuc, cur);
+    }
+  }
+  const proizvodi = [...prodMap.values()].sort((a, b) => b.value - a.value).slice(0, 6);
 
   return (
     <div className="space-y-6 animate-in">

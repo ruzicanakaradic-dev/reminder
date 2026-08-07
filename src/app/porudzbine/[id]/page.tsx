@@ -38,7 +38,6 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
           {kupac ? ` · ${customerCode(kupac.redni_broj)}` : ""}
         </div>
         <h2 className="text-2xl mt-1">{order.kupac_ime}</h2>
-        {order.opis && <p className="text-sm text-muted mt-2 whitespace-pre-wrap">{order.opis}</p>}
 
         <div className="mt-4">
           <div className="label">Status</div>
@@ -77,6 +76,13 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
           )}
         </div>
       </div>
+
+      {order.opis && (
+        <div className="card p-5">
+          <div className="kicker mb-2">Opis / dodatak</div>
+          <p className="text-sm whitespace-pre-wrap">{order.opis}</p>
+        </div>
+      )}
 
       <div className="card p-5 grid sm:grid-cols-2 gap-x-6 gap-y-3">
         <Info label="Kontakt (mobilni)" value={
