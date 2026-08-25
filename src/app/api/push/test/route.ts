@@ -18,7 +18,7 @@ export async function POST() {
         ok: false,
         configured: false,
         reason:
-          "Server nema VAPID ključeve (NEXT_PUBLIC_VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY). Push se ne može poslati sa servera.",
+          "Server nema VAPID_PRIVATE_KEY u env-u. Push se ne može poslati sa servera.",
       },
       { status: 200 }
     );

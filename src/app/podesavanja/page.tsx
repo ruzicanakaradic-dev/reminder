@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, LogOut, Loader2, BellRing, Check, Lock, Volume2, AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/components/ui";
+import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
 
 type Status = "loading" | "unsupported" | "denied" | "off" | "on";
 
@@ -61,12 +62,7 @@ export default function PodesavanjaPage() {
         return;
       }
       const reg = await navigator.serviceWorker.ready;
-      const key = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").replace(/\s/g, "");
-      if (!key) {
-        say("Nedostaje VAPID javni ključ u aplikaciji (nije u produkcionom build-u).", "warn");
-        return;
-      }
-      const appServerKey = urlBase64ToUint8Array(key);
+      const appServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       if (appServerKey.length !== 65) {
         say(
           `VAPID javni ključ je neispravan (dekodira se u ${appServerKey.length} umesto 65 bajtova). Proveri vrednost u Vercel produkciji.`,

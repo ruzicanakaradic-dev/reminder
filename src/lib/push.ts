@@ -1,21 +1,22 @@
 import "server-only";
 import webpush from "web-push";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
 
 let configured = false;
 function ensureConfigured() {
   if (configured) return;
-  const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const pub = VAPID_PUBLIC_KEY;
   const priv = process.env.VAPID_PRIVATE_KEY;
   const subject = process.env.VAPID_SUBJECT || "mailto:admin@example.com";
-  if (!pub || !priv) throw new Error("Nedostaju VAPID ključevi.");
+  if (!priv) throw new Error("Nedostaje VAPID_PRIVATE_KEY u env-u.");
   webpush.setVapidDetails(subject, pub, priv);
   configured = true;
 }
 
-// Da li su VAPID ključevi uopšte postavljeni na serveru (npr. u Vercel produkciji)?
+// Javni ključ je uvek prisutan (konstanta). Za slanje treba samo privatni ključ iz env-a.
 export function isPushConfigured(): boolean {
-  return Boolean(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+  return Boolean(process.env.VAPID_PRIVATE_KEY);
 }
 
 export type PushPayload = {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bell, X } from "lucide-react";
+import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const cleaned = base64String.replace(/\s/g, "");
@@ -37,14 +38,12 @@ export function PushSetup() {
 
   async function subscribe(reg: ServiceWorkerRegistration) {
     try {
-      const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!key) return;
       const existing = await reg.pushManager.getSubscription();
       const sub =
         existing ??
         (await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(key),
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
         }));
       await fetch("/api/push/subscribe", {
         method: "POST",
