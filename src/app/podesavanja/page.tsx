@@ -61,13 +61,25 @@ export default function PodesavanjaPage() {
         return;
       }
       const reg = await navigator.serviceWorker.ready;
-      const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
+      const key = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").replace(/\s/g, "");
+      if (!key) {
+        say("Nedostaje VAPID javni ključ u aplikaciji (nije u produkcionom build-u).", "warn");
+        return;
+      }
+      const appServerKey = urlBase64ToUint8Array(key);
+      if (appServerKey.length !== 65) {
+        say(
+          `VAPID javni ključ je neispravan (dekodira se u ${appServerKey.length} umesto 65 bajtova). Proveri vrednost u Vercel produkciji.`,
+          "warn"
+        );
+        return;
+      }
       const existing = await reg.pushManager.getSubscription();
       const sub =
         existing ??
         (await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(key),
+          applicationServerKey: appServerKey,
         }));
       const res = await fetch("/api/push/subscribe", {
         method: "POST",
@@ -80,8 +92,8 @@ export default function PodesavanjaPage() {
         say("✓ Notifikacije su uključene na ovom uređaju.");
       }
       await refreshStatus();
-    } catch {
-      say("Greška pri uključivanju notifikacija. Pokušaj ponovo.", "warn");
+    } catch (err) {
+      say(err instanceof Error ? err.message : "Greška pri uključivanju notifikacija. Pokušaj ponovo.", "warn");
     } finally {
       setBusy(null);
     }
@@ -270,8 +282,9 @@ function beep() {
 }
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const cleaned = base64String.replace(/\s/g, "");
+  const padding = "=".repeat((4 - (cleaned.length % 4)) % 4);
+  const base64 = (cleaned + padding).replace(/-/g, "+").replace(/_/g, "/");
   const raw = atob(base64);
   const buffer = new ArrayBuffer(raw.length);
   const arr = new Uint8Array(buffer);
