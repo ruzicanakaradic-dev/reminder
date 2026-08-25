@@ -9,6 +9,7 @@ import {
 import type { Order, Status } from "@/lib/types";
 import { OrderCard } from "@/components/OrderCard";
 import { DANI_KRATKO, MESECI, parseDate, toISODate, formatDatum, danUNedelji, formatRSD } from "@/lib/format";
+import { proizvodnaCena, zarada } from "@/lib/costs";
 
 type View = "mesec" | "nedelja" | "dan";
 
@@ -47,6 +48,26 @@ export function CalendarView({ orders }: { orders: Order[] }) {
     : view === "nedelja" ? nedeljaLabel(cursor)
     : formatDatum(cursor);
 
+  // Zbir za prikazani period (mesec/nedelja): promet, proizvodna cena i zarada
+  const period = useMemo(() => {
+    let from: Date, to: Date;
+    if (view === "nedelja") {
+      from = startOfWeek(cursor, { weekStartsOn: 1 });
+      to = endOfWeek(cursor, { weekStartsOn: 1 });
+    } else {
+      from = startOfMonth(cursor);
+      to = endOfMonth(cursor);
+    }
+    const fi = toISODate(from), ti = toISODate(to);
+    const list = orders.filter((o) => o.datum_isporuke >= fi && o.datum_isporuke <= ti);
+    return {
+      broj: list.length,
+      promet: list.reduce((s, o) => s + (o.total ?? 0), 0),
+      trosak: list.reduce((s, o) => s + (proizvodnaCena(o.total) ?? 0), 0),
+      zarada: list.reduce((s, o) => s + (zarada(o.total) ?? 0), 0),
+    };
+  }, [orders, view, cursor]);
+
   const pomeri = (smer: 1 | -1) => {
     if (view === "mesec") setCursor((c) => addMonths(c, smer));
     else if (view === "nedelja") setCursor((c) => addWeeks(c, smer));
@@ -81,6 +102,15 @@ export function CalendarView({ orders }: { orders: Order[] }) {
           <button onClick={danas} className="btn btn-ghost text-sm">Danas</button>
         </div>
       </div>
+
+      {/* Zbir za prikazani period */}
+      {view !== "dan" && (
+        <div className="card p-3 grid grid-cols-3 gap-2 text-center">
+          <PeriodStat label="Promet" value={period.promet} strong sub={`${period.broj} porudžbina`} />
+          <PeriodStat label="Proizvodna" value={period.trosak} />
+          <PeriodStat label="Zarada" value={period.zarada} accent />
+        </div>
+      )}
 
       {view === "mesec" && <MonthGrid cursor={cursor} byDay={byDay} selected={selected} onPick={pickDay} onSelect={setSelected} />}
       {view === "nedelja" && <WeekGrid cursor={cursor} byDay={byDay} onPick={pickDay} />}
@@ -224,6 +254,23 @@ function DayList({ datum, orders }: { datum: string; orders: Order[] }) {
           {orders.map((o) => <OrderCard key={o.id} order={o} />)}
         </div>
       )}
+    </div>
+  );
+}
+
+function PeriodStat({ label, value, strong, accent, sub }: {
+  label: string; value: number; strong?: boolean; accent?: boolean; sub?: string;
+}) {
+  return (
+    <div>
+      <div className="kicker" style={{ fontSize: 10 }}>{label}</div>
+      <div
+        className={`mt-0.5 tabular-nums ${strong || accent ? "font-extrabold" : "font-bold"}`}
+        style={{ fontSize: 15, color: accent ? "var(--accent)" : "var(--ink)" }}
+      >
+        {formatRSD(value)}
+      </div>
+      {sub && <div className="text-[10px] text-muted mt-0.5">{sub}</div>}
     </div>
   );
 }
