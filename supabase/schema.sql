@@ -41,6 +41,8 @@ create table if not exists public.orders (
   -- kontrola slanja podsetnika (da se ne šalje dva puta)
   reminded_2d       boolean not null default false,
   reminded_1d       boolean not null default false,
+  reminded_0d       boolean not null default false,
+  reminded_2h       boolean not null default false,
 
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now()

@@ -1,0 +1,19 @@
+name: Podsetnici (push notifikacije)
+
+# Poziva endpoint za podsetnike na svakih 30 minuta.
+# Potrebno za podsetnik "2 sata pre isporuke" (Vercel Hobby cron radi samo 1x dnevno).
+# Endpoint je idempotentan — šalje svaki podsetnik samo jednom (reminded_* polja).
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # svakih 30 min (UTC)
+  workflow_dispatch: {} # omogućava i ručno pokretanje iz GitHub-a
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pozovi /api/cron/reminders
+        run: |
+          curl -fsS -X GET "https://reminder-neon-one.vercel.app/api/cron/reminders" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

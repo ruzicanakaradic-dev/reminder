@@ -64,6 +64,8 @@ export type Order = {
   status: Status;
   reminded_2d: boolean;
   reminded_1d: boolean;
+  reminded_0d: boolean;
+  reminded_2h: boolean;
   created_at: string;
   updated_at: string;
   items?: OrderItem[]; // stavke (vrste kolača) — popunjeno u getOrder
