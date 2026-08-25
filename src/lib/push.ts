@@ -13,6 +13,11 @@ function ensureConfigured() {
   configured = true;
 }
 
+// Da li su VAPID ključevi uopšte postavljeni na serveru (npr. u Vercel produkciji)?
+export function isPushConfigured(): boolean {
+  return Boolean(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+}
+
 export type PushPayload = {
   title: string;
   body: string;
@@ -21,12 +26,13 @@ export type PushPayload = {
 };
 
 // Pošalji notifikaciju svim pretplaćenim uređajima
-export async function sendPushToAll(payload: PushPayload): Promise<{ sent: number; removed: number }> {
+export async function sendPushToAll(payload: PushPayload): Promise<{ sent: number; removed: number; total: number }> {
   ensureConfigured();
   const sb = supabaseAdmin();
   const { data: subs, error } = await sb.from("push_subscriptions").select("*");
   if (error) throw error;
 
+  const total = subs?.length ?? 0;
   let sent = 0;
   let removed = 0;
 
@@ -50,5 +56,5 @@ export async function sendPushToAll(payload: PushPayload): Promise<{ sent: numbe
     })
   );
 
-  return { sent, removed };
+  return { sent, removed, total };
 }

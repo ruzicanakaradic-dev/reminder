@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE, isValidToken } from "@/lib/auth";
-import { sendPushToAll } from "@/lib/push";
+import { sendPushToAll, isPushConfigured } from "@/lib/push";
 
 export const dynamic = "force-dynamic";
 
@@ -10,11 +10,36 @@ export async function POST() {
   if (!(await isValidToken(token))) {
     return NextResponse.json({ error: "Neautorizovano" }, { status: 401 });
   }
-  const res = await sendPushToAll({
-    title: "🌹 Test podsetnik",
-    body: "Ovako će izgledati podsetnik za isporuku. Zvuk + vibracija rade!",
-    url: "/",
-    tag: "test",
-  });
-  return NextResponse.json({ ok: true, ...res });
+
+  // VAPID ključevi ne postoje na serveru (npr. nisu dodati u Vercel produkciju)
+  if (!isPushConfigured()) {
+    return NextResponse.json(
+      {
+        ok: false,
+        configured: false,
+        reason:
+          "Server nema VAPID ključeve (NEXT_PUBLIC_VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY). Push se ne može poslati sa servera.",
+      },
+      { status: 200 }
+    );
+  }
+
+  try {
+    const res = await sendPushToAll({
+      title: "🌹 Test podsetnik",
+      body: "Ako ovo vidiš na zaključanom ekranu — push radi! 🎉",
+      url: "/",
+      tag: "test",
+    });
+    return NextResponse.json({ ok: true, configured: true, ...res });
+  } catch (err) {
+    return NextResponse.json(
+      {
+        ok: false,
+        configured: true,
+        reason: err instanceof Error ? err.message : "Greška pri slanju push notifikacije.",
+      },
+      { status: 200 }
+    );
+  }
 }
