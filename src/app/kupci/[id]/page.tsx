@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Phone, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
 import { supabaseConfigured } from "@/lib/supabase/admin";
 import { getCustomer, getOrders } from "@/lib/data";
 import { SetupNotice } from "@/components/SetupNotice";
 import { OrderCard } from "@/components/OrderCard";
 import { Kpi, SectionLabel } from "@/components/ui";
+import { PhoneActions } from "@/components/PhoneActions";
 import { customerCode } from "@/lib/types";
 import { formatRSD, formatKg } from "@/lib/format";
 
@@ -34,11 +35,7 @@ export default async function KupacDetalj({ params }: { params: Promise<{ id: st
         </div>
         <h2 className="text-2xl mt-1">{kupac.ime}</h2>
         <div className="text-sm text-muted flex flex-wrap gap-x-4 gap-y-1 mt-2">
-          {kupac.telefon && (
-            <a href={`tel:${kupac.telefon}`} className="flex items-center gap-1 font-bold" style={{ color: "var(--accent)" }}>
-              <Phone size={14} /> {kupac.telefon}
-            </a>
-          )}
+          {kupac.telefon && <PhoneActions telefon={kupac.telefon} variant="inline" />}
           {(kupac.grad || kupac.adresa) && (
             <span className="flex items-center gap-1">
               <MapPin size={14} /> {[kupac.adresa, kupac.grad].filter(Boolean).join(", ")}

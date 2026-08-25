@@ -3,6 +3,7 @@ import { getOrders, getCustomers } from "@/lib/data";
 import { SetupNotice } from "@/components/SetupNotice";
 import { EmptyState, Kpi } from "@/components/ui";
 import { formatRSD, MESECI } from "@/lib/format";
+import { proizvodnaCena, zarada } from "@/lib/costs";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,8 @@ export default async function StatistikaPage() {
 
   const promet = orders.reduce((s, o) => s + (o.total ?? 0), 0);
   const prosek = Math.round(promet / orders.length);
+  const trosak = orders.reduce((s, o) => s + (proizvodnaCena(o.total) ?? 0), 0);
+  const zaradaUk = orders.reduce((s, o) => s + (zarada(o.total) ?? 0), 0);
 
   // Promet po mesecu (poslednjih 6)
   const now = new Date();
@@ -31,6 +34,20 @@ export default async function StatistikaPage() {
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const v = orders.filter((o) => o.datum_isporuke.slice(0, 7) === key).reduce((s, o) => s + (o.total ?? 0), 0);
     mesecni.push({ label: MESECI[d.getMonth()].slice(0, 3), value: v });
+  }
+
+  // Rezervisano — naredni meseci (tekući + 3 unapred): porudžbine već zakazane za budućnost
+  const naredni: Row[] = [];
+  for (let i = 0; i <= 3; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const meseca = orders.filter((o) => o.datum_isporuke.slice(0, 7) === key);
+    const v = meseca.reduce((s, o) => s + (o.total ?? 0), 0);
+    naredni.push({
+      label: `${MESECI[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`,
+      value: v,
+      sub: `${meseca.length} porudžbina`,
+    });
   }
 
   const grp = (keyFn: (o: (typeof orders)[number]) => string, valFn: (o: (typeof orders)[number]) => number) => {
@@ -72,8 +89,11 @@ export default async function StatistikaPage() {
         <Kpi label="Broj porudžbina" value={String(orders.length)} />
         <Kpi label="Broj kupaca" value={String(customers.length)} />
         <Kpi label="Prosečna porudžbina" value={formatRSD(prosek)} />
+        <Kpi label="Proizvodni trošak (~30%)" value={formatRSD(trosak)} />
+        <Kpi label="Ukupna zarada" value={formatRSD(zaradaUk)} />
       </div>
 
+      <BarList title="Rezervisano — naredni meseci" rows={naredni} color="var(--accent)" money />
       <BarList title="Promet po mesecu" rows={mesecni} color="var(--accent)" money />
       <BarList title="Najbolji kupci" rows={kupci} color="var(--ink)" money />
       <BarList title="Po gradu / mestu" rows={gradovi} color="var(--neutral-600)" money />
