@@ -8,6 +8,9 @@ import { StatusControl } from "@/components/StatusControl";
 import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { customerCode } from "@/lib/types";
 import { formatRSD, formatKg, formatDatum, danaDo, relativnoDana } from "@/lib/format";
+import { proizvodnaCena, zarada, COST_RATE } from "@/lib/costs";
+import { PhoneActions } from "@/components/PhoneActions";
+import { AddressActions } from "@/components/AddressActions";
 
 export const dynamic = "force-dynamic";
 
@@ -85,23 +88,41 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
       )}
 
       <div className="card p-5 grid sm:grid-cols-2 gap-x-6 gap-y-3">
-        <Info label="Kontakt (mobilni)" value={
-          order.kupac_telefon ? (
-            <a href={`tel:${order.kupac_telefon}`} className="font-bold" style={{ color: "var(--accent)" }}>
-              {order.kupac_telefon}
-            </a>
-          ) : "—"
-        } />
+        <Info label="Kontakt (mobilni)" value={<PhoneActions telefon={order.kupac_telefon} variant="inline" />} />
         <Info label="Grad" value={order.grad || "—"} />
-        <Info label="Adresa isporuke" value={order.adresa || "—"} />
+        <div className="sm:col-span-2">
+          <div className="kicker" style={{ fontSize: 11 }}>Adresa isporuke</div>
+          <div className="mt-0.5">
+            <AddressActions adresa={order.adresa} grad={order.grad} />
+          </div>
+        </div>
         <Info label="Datum porudžbine" value={formatDatum(order.datum_porudzbine)} />
         <Info label="Datum isporuke" value={`${formatDatum(order.datum_isporuke)}${order.vreme_isporuke ? " · " + order.vreme_isporuke : ""}`} />
         <Info label="Ukupna težina" value={formatKg(order.tezina_kg)} />
       </div>
 
-      <div className="card p-5 flex items-center justify-between" style={{ background: "var(--accent-100)", borderColor: "var(--accent-300)" }}>
-        <span className="kicker" style={{ color: "var(--accent-800)" }}>Ukupno cela porudžbina</span>
-        <span className="text-2xl font-extrabold" style={{ color: "var(--accent-800)" }}>{formatRSD(order.total)}</span>
+      <div className="card p-5" style={{ background: "var(--accent-100)", borderColor: "var(--accent-300)" }}>
+        <div className="flex items-center justify-between">
+          <span className="kicker" style={{ color: "var(--accent-800)" }}>Prodajna cena (ukupno)</span>
+          <span className="text-2xl font-extrabold" style={{ color: "var(--accent-800)" }}>{formatRSD(order.total)}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <div className="kicker" style={{ fontSize: 11 }}>
+              Proizvodna cena (~{Math.round(COST_RATE * 100)}%)
+            </div>
+            <div className="mt-0.5 text-lg font-extrabold">{formatRSD(proizvodnaCena(order.total))}</div>
+          </div>
+          <div>
+            <div className="kicker" style={{ fontSize: 11 }}>Zarada</div>
+            <div className="mt-0.5 text-lg font-extrabold" style={{ color: "var(--accent-800)" }}>
+              {formatRSD(zarada(order.total))}
+            </div>
+          </div>
+        </div>
+        <div className="text-[11px] text-muted mt-3">
+          Proizvodna cena je gruba procena (materijal + izrada ≈ {Math.round(COST_RATE * 100)}% prodajne cene).
+        </div>
       </div>
 
       {order.napomena && (
