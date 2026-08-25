@@ -8,6 +8,7 @@ import { proizvodnaCena, zarada } from "@/lib/costs";
 export const dynamic = "force-dynamic";
 
 type Row = { label: string; value: number; sub?: string };
+type MonthFin = { label: string; broj: number; promet: number; trosak: number; zarada: number; tekuci: boolean };
 
 export default async function StatistikaPage() {
   if (!supabaseConfigured()) return <SetupNotice />;
@@ -36,17 +37,20 @@ export default async function StatistikaPage() {
     mesecni.push({ label: MESECI[d.getMonth()].slice(0, 3), value: v });
   }
 
-  // Rezervisano — naredni meseci (tekući + 3 unapred): porudžbine već zakazane za budućnost
-  const naredni: Row[] = [];
+  // Pregled po mesecu (tekući + 3 unapred): promet, proizvodna cena i zarada za
+  // porudžbine već zakazane za budućnost.
+  const mesecniFin: MonthFin[] = [];
   for (let i = 0; i <= 3; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const meseca = orders.filter((o) => o.datum_isporuke.slice(0, 7) === key);
-    const v = meseca.reduce((s, o) => s + (o.total ?? 0), 0);
-    naredni.push({
-      label: `${MESECI[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`,
-      value: v,
-      sub: `${meseca.length} porudžbina`,
+    mesecniFin.push({
+      label: `${MESECI[d.getMonth()]} ${d.getFullYear()}`,
+      broj: meseca.length,
+      promet: meseca.reduce((s, o) => s + (o.total ?? 0), 0),
+      trosak: meseca.reduce((s, o) => s + (proizvodnaCena(o.total) ?? 0), 0),
+      zarada: meseca.reduce((s, o) => s + (zarada(o.total) ?? 0), 0),
+      tekuci: i === 0,
     });
   }
 
@@ -93,11 +97,59 @@ export default async function StatistikaPage() {
         <Kpi label="Ukupna zarada" value={formatRSD(zaradaUk)} />
       </div>
 
-      <BarList title="Rezervisano — naredni meseci" rows={naredni} color="var(--accent)" money />
-      <BarList title="Promet po mesecu" rows={mesecni} color="var(--accent)" money />
+      <MonthFinanceList title="Po mesecu — promet, trošak i zarada" rows={mesecniFin} />
+      <BarList title="Promet po mesecu (poslednjih 6)" rows={mesecni} color="var(--accent)" money />
       <BarList title="Najbolji kupci" rows={kupci} color="var(--ink)" money />
       <BarList title="Po gradu / mestu" rows={gradovi} color="var(--neutral-600)" money />
       <BarList title="Najprodavaniji proizvod" rows={proizvodi} color="var(--gold)" suffix=" kom" />
+    </div>
+  );
+}
+
+function MonthFinanceList({ title, rows }: { title: string; rows: MonthFin[] }) {
+  return (
+    <div className="card p-5">
+      <h2 className="text-lg mb-4">{title}</h2>
+      <div className="space-y-3">
+        {rows.map((r) => (
+          <div
+            key={r.label}
+            className="rounded-[14px] p-3.5"
+            style={{
+              background: r.tekuci ? "var(--accent-100)" : "var(--surface)",
+              border: `1px solid ${r.tekuci ? "var(--accent-300)" : "var(--divider)"}`,
+            }}
+          >
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="font-extrabold capitalize">{r.label}</span>
+              <span className="text-[11px] text-muted">
+                {r.tekuci ? "tekući · " : ""}{r.broj} porudžbina
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <FinCell label="Promet" value={r.promet} strong />
+              <FinCell label="Proizvodna" value={r.trosak} />
+              <FinCell label="Zarada" value={r.zarada} accent />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FinCell({ label, value, strong, accent }: {
+  label: string; value: number; strong?: boolean; accent?: boolean;
+}) {
+  return (
+    <div className="rounded-[10px] py-2 px-1" style={{ background: "var(--bg)" }}>
+      <div className="kicker" style={{ fontSize: 10 }}>{label}</div>
+      <div
+        className={`mt-0.5 tabular-nums ${strong || accent ? "font-extrabold" : "font-bold"}`}
+        style={{ fontSize: 14, color: accent ? "var(--accent)" : "var(--ink)" }}
+      >
+        {formatRSD(value)}
+      </div>
     </div>
   );
 }

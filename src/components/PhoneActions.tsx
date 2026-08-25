@@ -2,9 +2,9 @@
 
 import { Phone, MessageSquare } from "lucide-react";
 
-// Prikazuje broj telefona sa dve akcije: pozovi (tel:) i pošalji SMS (sms:).
-// `variant="inline"` — kompaktan red (za zaglavlje kupca);
-// `variant="stacked"` — broj + dva dugmeta ispod (za detalj porudžbine).
+// Prikazuje broj telefona sa dve jasne akcije: Pozovi (tel:) i SMS (sms:).
+// `variant="inline"` — broj + dva kompaktna dugmeta u redu (zaglavlje kupca);
+// `variant="stacked"` — broj iznad, dva puna dugmeta ispod (detalj porudžbine).
 export function PhoneActions({
   telefon,
   variant = "stacked",
@@ -17,31 +17,27 @@ export function PhoneActions({
 
   if (variant === "inline") {
     return (
-      <span className="flex items-center gap-2">
-        <a href={`tel:${tel}`} className="flex items-center gap-1 font-bold" style={{ color: "var(--accent)" }}>
-          <Phone size={14} /> {telefon}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-extrabold text-[15px]">{telefon}</span>
+        <a href={`tel:${tel}`} className="btn btn-secondary text-sm !py-1.5">
+          <Phone size={15} /> Pozovi
         </a>
-        <a
-          href={`sms:${tel}`}
-          className="flex items-center gap-1 text-xs font-semibold"
-          style={{ color: "var(--accent)" }}
-          aria-label="Pošalji SMS"
-        >
-          <MessageSquare size={13} /> SMS
+        <a href={`sms:${tel}`} className="btn btn-secondary text-sm !py-1.5">
+          <MessageSquare size={15} /> SMS
         </a>
-      </span>
+      </div>
     );
   }
 
   return (
     <div className="space-y-2">
-      <div className="font-bold" style={{ color: "var(--accent)" }}>{telefon}</div>
+      <div className="font-extrabold text-[17px]">{telefon}</div>
       <div className="flex gap-2">
-        <a href={`tel:${tel}`} className="btn btn-secondary text-sm !py-1.5 flex-1 justify-center">
-          <Phone size={15} /> Pozovi
+        <a href={`tel:${tel}`} className="btn btn-primary flex-1 justify-center">
+          <Phone size={16} /> Pozovi
         </a>
-        <a href={`sms:${tel}`} className="btn btn-secondary text-sm !py-1.5 flex-1 justify-center">
-          <MessageSquare size={15} /> SMS
+        <a href={`sms:${tel}`} className="btn btn-secondary flex-1 justify-center">
+          <MessageSquare size={16} /> SMS
         </a>
       </div>
     </div>

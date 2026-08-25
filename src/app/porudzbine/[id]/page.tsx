@@ -88,7 +88,12 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
       )}
 
       <div className="card p-5 grid sm:grid-cols-2 gap-x-6 gap-y-3">
-        <Info label="Kontakt (mobilni)" value={<PhoneActions telefon={order.kupac_telefon} variant="inline" />} />
+        <div className="sm:col-span-2">
+          <div className="kicker" style={{ fontSize: 11 }}>Kontakt (mobilni)</div>
+          <div className="mt-1">
+            <PhoneActions telefon={order.kupac_telefon} variant="inline" />
+          </div>
+        </div>
         <Info label="Grad" value={order.grad || "—"} />
         <div className="sm:col-span-2">
           <div className="kicker" style={{ fontSize: 11 }}>Adresa isporuke</div>
@@ -101,26 +106,31 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
         <Info label="Ukupna težina" value={formatKg(order.tezina_kg)} />
       </div>
 
-      <div className="card p-5" style={{ background: "var(--accent-100)", borderColor: "var(--accent-300)" }}>
-        <div className="flex items-center justify-between">
-          <span className="kicker" style={{ color: "var(--accent-800)" }}>Prodajna cena (ukupno)</span>
-          <span className="text-2xl font-extrabold" style={{ color: "var(--accent-800)" }}>{formatRSD(order.total)}</span>
+      <div className="card p-0 overflow-hidden" style={{ background: "var(--accent-100)", borderColor: "var(--accent-300)" }}>
+        {/* Prodajna cena — najbitniji red */}
+        <div className="flex items-center justify-between px-5 py-4">
+          <span className="kicker" style={{ color: "var(--accent-800)" }}>Prodajna cena</span>
+          <span className="text-[28px] leading-none font-extrabold" style={{ color: "var(--accent-800)" }}>
+            {formatRSD(order.total)}
+          </span>
         </div>
-        <div className="grid grid-cols-2 gap-3 mt-4">
-          <div>
-            <div className="kicker" style={{ fontSize: 11 }}>
-              Proizvodna cena (~{Math.round(COST_RATE * 100)}%)
-            </div>
-            <div className="mt-0.5 text-lg font-extrabold">{formatRSD(proizvodnaCena(order.total))}</div>
-          </div>
-          <div>
-            <div className="kicker" style={{ fontSize: 11 }}>Zarada</div>
-            <div className="mt-0.5 text-lg font-extrabold" style={{ color: "var(--accent-800)" }}>
-              {formatRSD(zarada(order.total))}
-            </div>
-          </div>
+        {/* Proizvodna cena */}
+        <div className="flex items-center justify-between px-5 py-3 border-t" style={{ borderColor: "var(--accent-300)" }}>
+          <span className="text-sm font-semibold" style={{ color: "var(--accent-800)" }}>
+            Proizvodna cena <span className="text-muted font-normal">(~{Math.round(COST_RATE * 100)}%)</span>
+          </span>
+          <span className="text-xl font-extrabold" style={{ color: "var(--accent-800)" }}>
+            {formatRSD(proizvodnaCena(order.total))}
+          </span>
         </div>
-        <div className="text-[11px] text-muted mt-3">
+        {/* Zarada */}
+        <div className="flex items-center justify-between px-5 py-3 border-t" style={{ borderColor: "var(--accent-300)" }}>
+          <span className="text-sm font-semibold" style={{ color: "var(--accent-800)" }}>Zarada</span>
+          <span className="text-xl font-extrabold" style={{ color: "var(--accent-800)" }}>
+            {formatRSD(zarada(order.total))}
+          </span>
+        </div>
+        <div className="px-5 py-2.5 text-[11px] text-muted border-t" style={{ borderColor: "var(--accent-300)" }}>
           Proizvodna cena je gruba procena (materijal + izrada ≈ {Math.round(COST_RATE * 100)}% prodajne cene).
         </div>
       </div>
