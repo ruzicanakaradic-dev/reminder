@@ -59,6 +59,33 @@ async function ensureCustomer(
   return created!.id as string;
 }
 
+// Jedinstveni nazivi proizvoda koje je Ružica do sada pravila,
+// poređani po učestalosti (najčešći prvi) — za autocomplete u formi.
+export async function getProductNames(): Promise<string[]> {
+  const sb = supabaseAdmin();
+  const counts = new Map<string, number>();
+  const bump = (raw: string | null) => {
+    const name = (raw ?? "").trim();
+    if (name) counts.set(name, (counts.get(name) ?? 0) + 1);
+  };
+
+  // Primarni izvor: pojedinačne stavke porudžbina
+  const { data: items, error: itemsErr } = await sb.from("order_items").select("naziv");
+  if (itemsErr) throw itemsErr;
+  for (const r of (items ?? []) as { naziv: string | null }[]) bump(r.naziv);
+
+  // Dopuna: stare porudžbine bez stavki (proizvod = zbir naziva razdvojen zarezom)
+  const { data: orders, error: ordersErr } = await sb.from("orders").select("proizvod");
+  if (ordersErr) throw ordersErr;
+  for (const r of (orders ?? []) as { proizvod: string | null }[]) {
+    for (const part of (r.proizvod ?? "").split(",")) bump(part);
+  }
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "sr"))
+    .map(([name]) => name);
+}
+
 // ── Porudžbine ─────────────────────────────────────────────────────
 
 export type OrderFilter = {

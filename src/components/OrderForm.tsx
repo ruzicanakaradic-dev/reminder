@@ -22,7 +22,15 @@ const itemTotal = (r: ItemRow) => {
 };
 const emptyRow = (): ItemRow => ({ naziv: "", tezina: "", cena: "" });
 
-export function OrderForm({ order, customers }: { order?: Order; customers: CustomerLite[] }) {
+export function OrderForm({
+  order,
+  customers,
+  products = [],
+}: {
+  order?: Order;
+  customers: CustomerLite[];
+  products?: string[];
+}) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +61,19 @@ export function OrderForm({ order, customers }: { order?: Order; customers: Cust
     () => items.reduce((s, r) => s + (itemTotal(r) ?? 0), 0),
     [items]
   );
+
+  // Jedinstveni kupci (bez duplikata po imenu) za padajuću listu / "imenik"
+  const uniqueCustomers = useMemo(() => {
+    const seen = new Set<string>();
+    const out: CustomerLite[] = [];
+    for (const c of customers) {
+      const key = c.ime.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(c);
+    }
+    return out;
+  }, [customers]);
 
   function updateItem(idx: number, patch: Partial<ItemRow>) {
     setItems((prev) => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
@@ -141,7 +162,12 @@ export function OrderForm({ order, customers }: { order?: Order; customers: Cust
             <label className="label">Ime kupca *</label>
             <input name="kupac_ime" required list="cust" value={ime}
               onChange={(e) => onNameChange(e.target.value)} className="input" placeholder="npr. Marija Jovanović" />
-            <datalist id="cust">{customers.map((c) => <option key={c.ime} value={c.ime} />)}</datalist>
+            <datalist id="cust">
+              {uniqueCustomers.map((c) => (
+                <option key={c.ime} value={c.ime} label={[c.telefon, c.grad].filter(Boolean).join(" · ") || undefined} />
+              ))}
+            </datalist>
+            <p className="text-xs text-muted mt-1">Izborom poznatog kupca automatski se popune telefon, grad i adresa.</p>
           </div>
           <div>
             <label className="label">Kontakt (mobilni)</label>
@@ -188,6 +214,11 @@ export function OrderForm({ order, customers }: { order?: Order; customers: Cust
           <span className="text-xs text-muted">{items.length} {items.length === 1 ? "stavka" : "stavke"}</span>
         </div>
 
+        {/* Autocomplete iz ranije pravljenih proizvoda (najčešći prvi) */}
+        <datalist id="proizvodi">
+          {products.map((p) => <option key={p} value={p} />)}
+        </datalist>
+
         <div className="space-y-3">
           {items.map((row, idx) => {
             const rowTotal = itemTotal(row);
@@ -200,6 +231,7 @@ export function OrderForm({ order, customers }: { order?: Order; customers: Cust
                   <input
                     value={row.naziv}
                     onChange={(e) => updateItem(idx, { naziv: e.target.value })}
+                    list="proizvodi"
                     className="input flex-1"
                     placeholder="npr. Torta Ferrero, Vanil kifle…"
                   />
