@@ -1,6 +1,8 @@
 -- Migracija 5: normalizacija POSTOJEĆIH unosa (jednokratno)
 -- Usklađuje stare redove sa normalizacijom koju aplikacija sada radi pri upisu:
---   - ime/prezime, grad, adresa  ->  pravilna velika slova (initcap)
+--   - ime/prezime, grad          ->  pravilna velika slova (initcap)
+--   - adresa                     ->  samo prvo slovo veliko (ostatak ostaje kako je);
+--                                    srpski pravopis ne diže svaku reč u nazivu ulice
 --   - telefon                    ->  +381 format bez razmaka i znakova
 -- Nazivi proizvoda (proizvod / order_items.naziv) se NAMERNO NE diraju.
 --
@@ -41,16 +43,16 @@ $$ language plpgsql immutable;
 -- KUPCI
 update public.customers set
   ime     = initcap(btrim(ime)),
-  grad    = case when btrim(coalesce(grad,   '')) = '' then grad   else initcap(btrim(grad))   end,
-  adresa  = case when btrim(coalesce(adresa, '')) = '' then adresa else initcap(btrim(adresa)) end,
+  grad    = case when btrim(coalesce(grad,   '')) = '' then grad   else initcap(btrim(grad)) end,
+  adresa  = case when btrim(coalesce(adresa, '')) = '' then adresa else upper(left(btrim(adresa), 1)) || substr(btrim(adresa), 2) end,
   telefon = pg_temp.norm_phone(telefon)
 where ime is not null;
 
 -- PORUDŽBINE
 update public.orders set
   kupac_ime     = initcap(btrim(kupac_ime)),
-  grad          = case when btrim(coalesce(grad,   '')) = '' then grad   else initcap(btrim(grad))   end,
-  adresa        = case when btrim(coalesce(adresa, '')) = '' then adresa else initcap(btrim(adresa)) end,
+  grad          = case when btrim(coalesce(grad,   '')) = '' then grad   else initcap(btrim(grad)) end,
+  adresa        = case when btrim(coalesce(adresa, '')) = '' then adresa else upper(left(btrim(adresa), 1)) || substr(btrim(adresa), 2) end,
   kupac_telefon = pg_temp.norm_phone(kupac_telefon)
 where kupac_ime is not null;
 
@@ -68,10 +70,14 @@ commit;
 -- union all
 -- select 'customers.grad', id::text, grad,     initcap(btrim(grad))          from public.customers where grad is not null and grad is distinct from initcap(btrim(grad))
 -- union all
+-- select 'customers.adresa', id::text, adresa, upper(left(btrim(adresa),1))||substr(btrim(adresa),2) from public.customers where adresa is not null and adresa is distinct from upper(left(btrim(adresa),1))||substr(btrim(adresa),2)
+-- union all
 -- select 'customers.tel',  id::text, telefon,  pg_temp.norm_phone(telefon)   from public.customers where telefon is distinct from pg_temp.norm_phone(telefon)
 -- union all
 -- select 'orders.ime',     id::text, kupac_ime, initcap(btrim(kupac_ime))    from public.orders where kupac_ime is distinct from initcap(btrim(kupac_ime))
 -- union all
 -- select 'orders.grad',    id::text, grad,      initcap(btrim(grad))         from public.orders where grad is not null and grad is distinct from initcap(btrim(grad))
+-- union all
+-- select 'orders.adresa',  id::text, adresa,    upper(left(btrim(adresa),1))||substr(btrim(adresa),2) from public.orders where adresa is not null and adresa is distinct from upper(left(btrim(adresa),1))||substr(btrim(adresa),2)
 -- union all
 -- select 'orders.tel',     id::text, kupac_telefon, pg_temp.norm_phone(kupac_telefon) from public.orders where kupac_telefon is distinct from pg_temp.norm_phone(kupac_telefon);

@@ -21,6 +21,16 @@ function toTitleCaseOrNull(raw: string | null | undefined): string | null {
   return v ? toTitleCase(v) : null;
 }
 
+// Samo prvo slovo veliko; ostatak ostaje TAČNO kako je ukucano.
+// Koristi se za adresu: srpska gramatika ne diže svaku reč u nazivu ulice
+// ("Ulica neznanog junaka"), pa ne preterujemo — a ako korisnik sam napiše
+// lično ime kao ulicu ("Jug Bogdana"), to se poštuje jer ostatak ne diramo.
+function toSentenceCaseOrNull(raw: string | null | undefined): string | null {
+  const v = (raw ?? "").trim();
+  if (!v) return null;
+  return v.charAt(0).toUpperCase() + v.slice(1);
+}
+
 // Dovodi broj telefona na +381 format, bez razmaka i drugih znakova
 // (razmak može da pravi problem pri pozivanju).
 // Ako je već upisan sa "+" (međunarodni) — čuva se pozivni, samo se očisti.
@@ -206,7 +216,7 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
   // Pravilna velika slova da se u statistici ne cepaju isti kupci/gradovi
   const kupacIme = toTitleCase(input.kupac_ime);
   const grad = toTitleCaseOrNull(input.grad);
-  const adresa = toTitleCaseOrNull(input.adresa);
+  const adresa = toSentenceCaseOrNull(input.adresa); // samo prvo slovo (nazivi ulica)
   const telefon = normalizePhone(input.kupac_telefon);
 
   const customerId = await ensureCustomer(kupacIme, telefon, grad, adresa);
