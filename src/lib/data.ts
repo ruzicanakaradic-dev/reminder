@@ -21,6 +21,20 @@ function toTitleCaseOrNull(raw: string | null | undefined): string | null {
   return v ? toTitleCase(v) : null;
 }
 
+// Sentence-case: veliko prvo slovo + veliko posle svake tačke/uzvika/upitnika
+// i posle novog reda. Ostatak teksta ostaje TAČNO kako je ukucan (ne diramo
+// vlastite imenice/skraćenice usred rečenice). Za napomenu, opis, naziv proizvoda.
+export function toSentenceCase(raw: string): string {
+  return raw
+    .trim()
+    .replace(/(^|[.!?]\s+|\n\s*)(\p{L})/gu, (_m, sep: string, ch: string) => sep + ch.toUpperCase());
+}
+
+function toSentenceCaseOrNull(raw: string | null | undefined): string | null {
+  const v = (raw ?? "").trim();
+  return v ? toSentenceCase(v) : null;
+}
+
 // Dovodi broj telefona na +381 format, bez razmaka i drugih znakova
 // (razmak može da pravi problem pri pozivanju).
 // Ako je već upisan sa "+" (međunarodni) — čuva se pozivni, samo se očisti.
@@ -196,7 +210,7 @@ function normalizeItems(input: OrderInput): NormItem[] {
           : tezina != null && cena != null
             ? Number((tezina * cena).toFixed(2))
             : null;
-      return { naziv: i.naziv.trim(), tezina_kg: tezina, cena_po_kg: cena, total };
+      return { naziv: toSentenceCase(i.naziv), tezina_kg: tezina, cena_po_kg: cena, total };
     });
 }
 
@@ -227,8 +241,8 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     datum_isporuke: input.datum_isporuke,
     vreme_isporuke: input.vreme_isporuke ?? null,
     proizvod: proizvodSummary,
-    opis: input.opis ?? null,
-    napomena: input.napomena ?? null,
+    opis: toSentenceCaseOrNull(input.opis),
+    napomena: toSentenceCaseOrNull(input.napomena),
     slika: input.slika ?? null,
     tezina_kg: zbirTezina,
     cena_po_kg: items.length === 1 ? items[0].cena_po_kg : null,
