@@ -2,6 +2,47 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { Customer, Order, OrderInput, OrderItem, Status } from "@/lib/types";
 
+// ── Pomoćne funkcije ───────────────────────────────────────────────
+
+// Pravilna velika početna slova (srpska latinica).
+// "beograd" → "Beograd", "kralja PETRA 12a" → "Kralja Petra 12a".
+// Sve prvo spusti na mala pa podigne prvo slovo svake reči (posle razmaka,
+// crtice, apostrofa, tačke, kose crte). Brojevi ("12a", "bb") ostaju kako jesu.
+export function toTitleCase(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/(^|[\s\-'’./])(\p{L})/gu, (_m, sep: string, ch: string) => sep + ch.toUpperCase());
+}
+
+// Isto, ali za opciona polja: prazna vrednost ostaje null.
+function toTitleCaseOrNull(raw: string | null | undefined): string | null {
+  const v = (raw ?? "").trim();
+  return v ? toTitleCase(v) : null;
+}
+
+// Dovodi broj telefona na +381 format, bez razmaka i drugih znakova
+// (razmak može da pravi problem pri pozivanju).
+// Ako je već upisan sa "+" (međunarodni) — čuva se pozivni, samo se očisti.
+// Inače: "064 123 4567" → "+381641234567", "381..." → "+381...",
+// "00381..." → "+381...", "641234567" → "+381641234567".
+export function normalizePhone(raw: string | null | undefined): string | null {
+  const v = (raw ?? "").trim();
+  if (!v) return null;
+
+  const digits = v.replace(/\D/g, "");
+  if (!digits) return v; // nema cifara — vrati original
+
+  // Već upisala + (npr. +381...) — poštuj pozivni, ukloni razmake i znakove.
+  if (v.startsWith("+")) return "+" + digits;
+
+  let d = digits;
+  if (d.startsWith("00")) d = d.slice(2); // 00381 → 381
+  if (d.startsWith("381")) return "+" + d;
+  if (d.startsWith("0")) return "+381" + d.slice(1); // 064... → +38164...
+  return "+381" + d; // 64... → +38164...
+}
+
 // ── Kupci ──────────────────────────────────────────────────────────
 
 export async function getCustomers(): Promise<Customer[]> {
@@ -161,12 +202,14 @@ function normalizeItems(input: OrderInput): NormItem[] {
 
 export async function saveOrder(input: OrderInput): Promise<Order> {
   const sb = supabaseAdmin();
-  const customerId = await ensureCustomer(
-    input.kupac_ime,
-    input.kupac_telefon ?? null,
-    input.grad ?? null,
-    input.adresa ?? null
-  );
+
+  // Pravilna velika slova da se u statistici ne cepaju isti kupci/gradovi
+  const kupacIme = toTitleCase(input.kupac_ime);
+  const grad = toTitleCaseOrNull(input.grad);
+  const adresa = toTitleCaseOrNull(input.adresa);
+  const telefon = normalizePhone(input.kupac_telefon);
+
+  const customerId = await ensureCustomer(kupacIme, telefon, grad, adresa);
 
   const items = normalizeItems(input);
   if (items.length === 0) throw new Error("Bar jedan proizvod je obavezan.");
@@ -178,8 +221,8 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
 
   const row = {
     customer_id: customerId,
-    kupac_ime: input.kupac_ime.trim(),
-    kupac_telefon: input.kupac_telefon ?? null,
+    kupac_ime: kupacIme,
+    kupac_telefon: telefon,
     datum_porudzbine: input.datum_porudzbine,
     datum_isporuke: input.datum_isporuke,
     vreme_isporuke: input.vreme_isporuke ?? null,
@@ -190,8 +233,8 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     tezina_kg: zbirTezina,
     cena_po_kg: items.length === 1 ? items[0].cena_po_kg : null,
     total: grandTotal,
-    adresa: input.adresa ?? null,
-    grad: input.grad ?? null,
+    adresa,
+    grad,
     status: input.status,
   };
 
@@ -271,8 +314,10 @@ export async function getStats(): Promise<Stats> {
     const prihod = o.total ?? 0;
     ukupanPrihod += prihod;
     ukupnoKg += kg;
-    add(kupci, o.kupac_ime, kg, prihod);
-    add(gradovi, o.grad ?? "—", kg, prihod);
+    // Normalizujemo ključ da se "beograd"/"Beograd" spoje u jedan red,
+    // i za postojeće porudžbine unete pre ove izmene.
+    add(kupci, toTitleCase(o.kupac_ime), kg, prihod);
+    add(gradovi, toTitleCaseOrNull(o.grad) ?? "—", kg, prihod);
     add(proizvodi, o.proizvod, kg, prihod);
   }
 
