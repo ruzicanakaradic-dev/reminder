@@ -49,22 +49,78 @@ export function OrderForm({
   // Transport / dostava
   const [km, setKm] = useState(order?.transport_km?.toString() ?? "");
   const [transportCena, setTransportCena] = useState(order?.transport_cena?.toString() ?? "");
+  // Besplatna dostava: cena = 0, polja zaključana. Pri izmeni postojeće
+  // porudžbine izvodi se iz sačuvanog stanja (cena 0 uz postojeću kilometražu).
+  const [besplatna, setBesplatna] = useState<boolean>(
+    () => !!order && order.transport_cena === 0 && (order.transport_km ?? 0) > 0
+  );
   // Postojeća porudžbina: poštuj sačuvane vrednosti (ne prepisuj automatski).
   const kmTouched = useRef<boolean>(!!order);
   const cenaTouched = useRef<boolean>(!!order);
+  // Status automatskog računanja rastojanja (mapa): "" | "racuna" | "auto" | "greska"
+  const [autoKm, setAutoKm] = useState<{ stanje: "racuna" | "auto" | "greska"; tekst?: string } | null>(null);
+  // Procenjena povratna putarina sa mape (kad grad NIJE u tabeli rastojanja).
+  const [autoPutarina, setAutoPutarina] = useState<number | null>(null);
 
-  // Predlog povratne kilometraže iz tabele rastojanja (kad km nije ručno dirano)
+  // Automatska povratna kilometraža (kad km nije ručno dirano):
+  //  1) ako je grad u ugrađenoj tabeli → odmah, offline (tačno + putarina)
+  //  2) inače → geokodiraj adresu i izračunaj vozačku rutu preko /api/rastojanje
   useEffect(() => {
     if (kmTouched.current) return;
+
+    // 1) Poznato mesto iz tabele — trenutno, bez interneta.
     const pk = predlozenaKm(grad);
-    setKm(pk != null ? String(pk) : "");
-  }, [grad]);
+    if (pk != null) {
+      setKm(String(pk));
+      setAutoKm(null);
+      setAutoPutarina(null); // putarina se uzima iz tabele
+      return;
+    }
+
+    // 2) Nepoznato mesto — treba nam bar grad. Debounce + otkazivanje.
+    if (grad.trim().length < 3) {
+      setKm("");
+      setAutoKm(null);
+      setAutoPutarina(null);
+      return;
+    }
+
+    const ctrl = new AbortController();
+    const t = setTimeout(async () => {
+      setAutoKm({ stanje: "racuna" });
+      try {
+        const qs = new URLSearchParams({ grad: grad.trim(), adresa: adresa.trim() });
+        const res = await fetch(`/api/rastojanje?${qs}`, { signal: ctrl.signal });
+        const data = await res.json();
+        if (ctrl.signal.aborted) return;
+        if (res.ok && typeof data.km === "number") {
+          if (kmTouched.current) return; // korisnik je u međuvremenu uneo ručno
+          setKm(String(data.km));
+          setAutoPutarina(typeof data.putarina === "number" ? data.putarina : 0);
+          setAutoKm({ stanje: "auto", tekst: `${data.jednosmerno} km u jednom pravcu` });
+        } else {
+          setAutoPutarina(null);
+          setAutoKm({ stanje: "greska" });
+        }
+      } catch {
+        if (!ctrl.signal.aborted) setAutoKm({ stanje: "greska" });
+      }
+    }, 700);
+
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [grad, adresa]);
 
   const racun = useMemo(() => {
     const kmVal = num(km);
     if (kmVal == null || kmVal <= 0) return null;
-    return obracunajTransport(kmVal, predlozenaPutarina(grad), settings);
-  }, [km, grad, settings]);
+    // Putarina: tabela ima prednost; za mesta van tabele — procena sa mape.
+    const tablicna = predlozenaPutarina(grad);
+    const putarina = tablicna > 0 ? tablicna : (autoPutarina ?? 0);
+    return obracunajTransport(kmVal, putarina, settings);
+  }, [km, grad, settings, autoPutarina]);
 
   // Predloži cenu dostave dok je korisnik ručno ne promeni
   useEffect(() => {
@@ -215,54 +271,104 @@ export function OrderForm({
       </div>
 
       {/* Transport / dostava */}
-      <div className="card p-5 space-y-4">
-        <div className="flex items-center gap-2">
-          <Truck size={18} style={{ color: "var(--accent)" }} />
-          <label className="label !mb-0">Transport / dostava</label>
+      <div className="card p-4 space-y-3">
+        <div className="flex items-center gap-1.5">
+          <Truck size={15} style={{ color: "var(--accent)" }} />
+          <label className="label !mb-0" style={{ fontSize: 11 }}>Transport / dostava</label>
         </div>
-        <p className="text-xs text-muted -mt-2">
+        <p className="text-[11px] leading-snug text-muted -mt-2">
           Polazak: Inđija, Jug Bogdana 17 · povratna vožnja (tamo-nazad). Kilometražu možeš ručno da izmeniš.
         </p>
 
-        <div className="grid sm:grid-cols-2 gap-4">
+        {/* Besplatna dostava — cena 0 RSD, polja zaključana */}
+        <label className="flex items-center gap-2.5 cursor-pointer rounded-[10px] px-3 py-2.5"
+          style={{
+            background: besplatna ? "var(--accent-100)" : "var(--surface)",
+            border: `1px solid ${besplatna ? "var(--accent-300)" : "var(--divider)"}`,
+          }}>
+          <input
+            type="checkbox"
+            name="transport_besplatna"
+            checked={besplatna}
+            onChange={(e) => setBesplatna(e.target.checked)}
+            className="w-4 h-4 shrink-0 accent-[var(--accent)]"
+          />
+          <span className="text-[12px] font-bold" style={{ color: besplatna ? "var(--accent-800)" : "var(--ink)" }}>
+            Besplatna dostava (0 RSD)
+          </span>
+        </label>
+
+        {/* Kad je dostava besplatna, km/cena polja su disabled → ne šalju se;
+            zato vrednosti prosleđujemo skrivenim poljima (km ostaje zabeležen). */}
+        {besplatna && (
+          <>
+            <input type="hidden" name="transport_km" value={km} />
+            <input type="hidden" name="transport_cena" value="0" />
+          </>
+        )}
+        {/* Procenjena putarina (mapa) uvek ide u obračun na serveru */}
+        <input type="hidden" name="transport_putarina" value={racun ? String(racun.putarina) : ""} />
+
+        <div className="grid sm:grid-cols-2 gap-3" style={besplatna ? { opacity: 0.55 } : undefined}>
           <div>
-            <label className="label">Kilometraža (povratno, km)</label>
+            <label className="label" style={{ fontSize: 11 }}>Kilometraža (povratno, km)</label>
             <input
-              name="transport_km"
+              name={besplatna ? undefined : "transport_km"}
               value={km}
-              onChange={(e) => { kmTouched.current = true; setKm(e.target.value); }}
-              className="input"
+              disabled={besplatna}
+              onChange={(e) => { kmTouched.current = true; setAutoKm(null); setKm(e.target.value); }}
+              className="input disabled:cursor-not-allowed"
+              style={{ fontSize: 13, minHeight: 40 }}
               inputMode="decimal"
               placeholder={predlozenaKm(grad) != null ? String(predlozenaKm(grad)) : "npr. 100"}
             />
+            {!besplatna && autoKm?.stanje === "racuna" && (
+              <p className="text-[11px] leading-snug text-muted mt-1 flex items-center gap-1">
+                <Loader2 size={11} className="animate-spin" /> Računam rastojanje sa mape…
+              </p>
+            )}
+            {!besplatna && autoKm?.stanje === "auto" && (
+              <p className="text-[11px] leading-snug mt-1" style={{ color: "var(--accent)" }}>
+                Automatski sa mape ({autoKm.tekst}). Možeš da izmeniš.
+              </p>
+            )}
+            {!besplatna && autoKm?.stanje === "greska" && (
+              <p className="text-[11px] leading-snug text-muted mt-1">Nisam uspeo da nađem adresu — unesi km ručno.</p>
+            )}
           </div>
           <div>
-            <label className="label">Cena dostave (RSD)</label>
+            <label className="label" style={{ fontSize: 11 }}>Cena dostave (RSD)</label>
             <input
-              name="transport_cena"
-              value={transportCena}
+              name={besplatna ? undefined : "transport_cena"}
+              value={besplatna ? "0" : transportCena}
+              disabled={besplatna}
               onChange={(e) => { cenaTouched.current = true; setTransportCena(e.target.value); }}
-              className="input"
+              className="input disabled:cursor-not-allowed"
+              style={{ fontSize: 13, minHeight: 40 }}
               inputMode="decimal"
               placeholder="dogovorena cena"
             />
-            <p className="text-xs text-muted mt-1">
-              {racun ? <>Predlog: <b>{formatRSD(racun.predlog)}</b>. Možeš uneti dogovorenu cenu.</> : "Unesi km da bi dobila predlog."}
+            <p className="text-[11px] leading-snug text-muted mt-1">
+              {besplatna
+                ? <>Dostava je besplatna. {racun && <>Preporučeno bi bilo <b>{formatRSD(racun.predlog)}</b>.</>}</>
+                : racun
+                  ? <>Preporučeno: <b style={{ color: "var(--accent)" }}>{formatRSD(racun.predlog)}</b> — možeš da izmeniš.</>
+                  : "Unesi km da bi dobila predlog."}
             </p>
           </div>
         </div>
 
         {racun && (
-          <div className="grid grid-cols-2 gap-2 text-center">
+          <div className="grid grid-cols-2 gap-2 text-center" style={besplatna ? { opacity: 0.55 } : undefined}>
             <TransportCell label={`Gorivo (${racun.litara.toLocaleString("sr-RS", { maximumFractionDigits: 1 })} l)`} value={racun.gorivo} />
             <TransportCell label="Putarina" value={racun.putarina} />
           </div>
         )}
         {racun && (
-          <div className="flex items-center justify-between rounded-[12px] px-4 py-2.5"
-            style={{ background: "var(--surface)", border: "1px solid var(--divider)" }}>
-            <span className="kicker">Realan trošak prevoza</span>
-            <span className="font-extrabold tabular-nums">{formatRSD(racun.ukupno)}</span>
+          <div className="flex items-center justify-between rounded-[10px] px-3.5 py-2"
+            style={{ background: "var(--surface)", border: "1px solid var(--divider)", opacity: besplatna ? 0.55 : 1 }}>
+            <span className="kicker" style={{ fontSize: 10 }}>Realan trošak prevoza</span>
+            <span className="text-[13px] font-extrabold tabular-nums">{formatRSD(racun.ukupno)}</span>
           </div>
         )}
       </div>
@@ -406,8 +512,8 @@ export function OrderForm({
 function TransportCell({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-[10px] py-2 px-1" style={{ background: "var(--surface)", border: "1px solid var(--divider)" }}>
-      <div className="kicker" style={{ fontSize: 10 }}>{label}</div>
-      <div className="mt-0.5 font-bold tabular-nums" style={{ fontSize: 14 }}>{formatRSD(value)}</div>
+      <div className="kicker" style={{ fontSize: 9 }}>{label}</div>
+      <div className="mt-0.5 font-bold tabular-nums" style={{ fontSize: 13 }}>{formatRSD(value)}</div>
     </div>
   );
 }

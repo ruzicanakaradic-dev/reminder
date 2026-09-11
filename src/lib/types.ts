@@ -97,6 +97,7 @@ export type OrderInput = {
   grad?: string | null;
   // Transport: ako je prazno, izvodi se iz grada (tabela rastojanja).
   transport_km?: number | null; // povratna kilometraža (ručni unos ili auto)
+  transport_putarina?: number | null; // povratna putarina (procena sa mape kad grad nije u tabeli)
   transport_cena?: number | null; // naplaćena cena dostave (ručni unos ili = predlog)
   status: Status;
   items?: OrderItemInput[]; // više vrsta kolača u jednoj porudžbini

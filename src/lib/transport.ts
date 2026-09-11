@@ -19,6 +19,15 @@ export const DEFAULT_SETTINGS: TransportSettings = {
   amortizacija_rsd_km: 8,
 };
 
+// Polazna tačka (Inđija, Jug Bogdana 17) — koordinate iz OpenStreetMap-a.
+// Koristi se kao ishodište za automatsko računanje vozačke kilometraže
+// (OSRM ruta) kad mesto nije u tabeli RASTOJANJA ispod.
+export const POLAZISTE = {
+  lat: 45.0476342,
+  lon: 20.0845384,
+  opis: "Inđija, Jug Bogdana 17",
+} as const;
+
 // ── Tabela rastojanja od Inđije (jedan pravac, u km) ──────────────────
 // Približne vrednosti; po potrebi doradi. `putarina` je putarina za JEDAN
 // pravac (auto, I kategorija) — postoji samo tamo gde se ide autoputem.
@@ -93,6 +102,23 @@ export function predlozenaKm(grad: string | null | undefined): number | null {
 export function predlozenaPutarina(grad: string | null | undefined): number {
   const m = nadjiMesto(grad);
   return m?.putarina ? m.putarina * 2 : 0;
+}
+
+// Putarina (jedan smer, RSD) — deonice E-75 kroz koje se prolazi iz Inđije.
+export const PUTARINA_BEOGRAD_SMER = 100; // kat. I, putevi-srbije.rs
+export const PUTARINA_NOVI_SAD_SMER = 240;
+
+// Procena putarine (JEDAN smer, RSD) za mesto VAN tabele, iz koordinata.
+// Inđija je na auto-putu E-75 između Beograda (jug/istok) i Novog Sada (sever).
+//  - mesto jugoistočno se dostiže KROZ Beograd → beogradska putarina
+//    (npr. Ripanj je iza Beograda, ka Avali)
+//  - mesto severno iza Novog Sada → bar novosadska putarina
+//  - lokalna okolina Inđije (bez naplatne rampe) → 0
+// Granice su namerno grube; tabela RASTOJANJA ima prednost za poznata mesta.
+export function procenaPutarinaSmer(lat: number, lon: number): number {
+  if (lat < 44.95 && lon > 20.1) return PUTARINA_BEOGRAD_SMER; // kroz Beograd
+  if (lat > 45.2 && lon < 20.05) return PUTARINA_NOVI_SAD_SMER; // iza Novog Sada
+  return 0;
 }
 
 // ── Obračun troška prevoza ────────────────────────────────────────────
