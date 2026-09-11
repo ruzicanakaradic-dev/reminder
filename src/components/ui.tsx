@@ -55,9 +55,9 @@ export function EmptyState({
   );
 }
 
-export function Kpi({ label, value }: { label: string; value: string }) {
+export function Kpi({ label, value, sm }: { label: string; value: string; sm?: boolean }) {
   return (
-    <div className="kpi">
+    <div className={`kpi${sm ? " kpi-sm" : ""}`}>
       <div className="kpi-label">{label}</div>
       <div className="kpi-value">{value}</div>
     </div>

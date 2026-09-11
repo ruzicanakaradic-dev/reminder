@@ -136,15 +136,15 @@ export default async function StatistikaPage({
           <MonthSelect value={selMesec} options={monthOptions} />
         </div>
         <div className="grid grid-cols-2 min-[861px]:grid-cols-3 gap-3">
-          <Kpi label={`Gorivo (${formatNum(tr.litara, 1)} l)`} value={formatRSD(tr.gorivo)} />
-          <Kpi label="Putarina" value={formatRSD(tr.putarina)} />
-          <Kpi label="Ukupan trošak" value={formatRSD(trTrosak)} />
+          <Kpi sm label={`Gorivo (${formatNum(tr.litara, 1)} l)`} value={formatRSD(tr.gorivo)} />
+          <Kpi sm label="Putarina" value={formatRSD(tr.putarina)} />
+          <Kpi sm label="Ukupan trošak" value={formatRSD(trTrosak)} />
         </div>
         <div className="grid grid-cols-2 min-[861px]:grid-cols-4 gap-3 mt-3">
-          <Kpi label="Broj dostava" value={String(tr.dostava)} />
-          <Kpi label="Pređeno (povratno)" value={`${formatNum(tr.km, 0)} km`} />
-          <Kpi label="Naplaćeno za dostavu" value={formatRSD(tr.naplaceno)} />
-          <Kpi label="Naplaćeno − trošak" value={formatRSD(tr.naplaceno - trTrosak)} />
+          <Kpi sm label="Broj dostava" value={String(tr.dostava)} />
+          <Kpi sm label="Pređeno (povratno)" value={`${formatNum(tr.km, 0)} km`} />
+          <Kpi sm label="Naplaćeno za dostavu" value={formatRSD(tr.naplaceno)} />
+          <Kpi sm label="Naplaćeno − trošak" value={formatRSD(tr.naplaceno - trTrosak)} />
         </div>
         {tr.dostava === 0 && (
           <p className="text-sm text-muted mt-3">Nema zabeleženih dostava sa kilometražom za ovaj mesec.</p>

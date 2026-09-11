@@ -98,20 +98,31 @@ h1, h2, h3, h4, h5, .display {
   border-radius: var(--radius-lg);
 }
 .kpi {
+  display: flex;
+  flex-direction: column;
   border: 2px solid var(--divider);
   border-radius: var(--radius-lg);
   padding: 16px;
   background: transparent;
   min-width: 0; /* dozvoli ćeliji da se skupi u gridu (bez isticanja vrednosti) */
 }
-.kpi-label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--neutral-600); }
+.kpi-label {
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--neutral-600);
+  line-height: 1.25;
+  min-height: 2.5em; /* rezerviši 2 reda da vrednost bude poravnata bez obzira da li labela ide u 1 ili 2 reda */
+}
 .kpi-value {
   font-weight: 800;
   font-size: clamp(20px, 5.6vw, 34px); /* fluidno da duže cifre (npr. "12.000 RSD") ne izlaze iz boksa */
   line-height: 1.12;
-  margin-top: 2px;
+  margin-top: auto; /* vrednost prijanja uz dno — sve kartice u redu deluju ujednačeno */
+  padding-top: 2px;
   overflow-wrap: break-word; /* prelom po razmaku (12.000 / RSD), reč se lomi tek ako baš mora */
 }
+/* Kompaktna varijanta (npr. Troškovi prevoza) — manja vrednost, kao „Po mesecu" karte */
+.kpi.kpi-sm { padding: 14px; }
+.kpi.kpi-sm .kpi-label { min-height: 2.4em; }
+.kpi.kpi-sm .kpi-value { font-size: clamp(16px, 4.2vw, 20px); }
 
 /* ── Dugmad ────────────────────────────────────────────────── */
 .btn {
