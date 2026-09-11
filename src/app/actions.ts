@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { saveOrder, updateStatus, deleteOrder } from "@/lib/data";
-import type { OrderInput, OrderItemInput, Status } from "@/lib/types";
+import { saveOrder, updateStatus, deleteOrder, getSettings, updateSettings } from "@/lib/data";
+import type { AppSettings, OrderInput, OrderItemInput, Status } from "@/lib/types";
 
 function num(v: FormDataEntryValue | null): number | null {
   if (v == null) return null;
@@ -49,6 +49,8 @@ export async function saveOrderAction(formData: FormData): Promise<{ id: string 
     slika: str(formData.get("slika")) || null,
     adresa: str(formData.get("adresa")) || null,
     grad: str(formData.get("grad")) || null,
+    transport_km: num(formData.get("transport_km")),
+    transport_cena: num(formData.get("transport_cena")),
     status: (str(formData.get("status")) || "primljena") as Status,
     items,
   };
@@ -72,6 +74,19 @@ export async function setStatusAction(id: string, status: Status): Promise<void>
   revalidatePath("/porudzbine");
   revalidatePath("/kalendar");
   revalidatePath(`/porudzbine/${id}`);
+}
+
+// ── Podešavanja troškova prevoza ────────────────────────────────────
+export async function getSettingsAction(): Promise<AppSettings> {
+  return getSettings();
+}
+
+export async function saveSettingsAction(patch: Partial<AppSettings>): Promise<AppSettings> {
+  const saved = await updateSettings(patch);
+  // Nove porudžbine koriste nove vrednosti; postojeći snapshot ostaje.
+  revalidatePath("/porudzbine/nova");
+  revalidatePath("/statistika");
+  return saved;
 }
 
 export async function deleteOrderAction(id: string): Promise<void> {

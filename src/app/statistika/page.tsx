@@ -1,8 +1,9 @@
 import { supabaseConfigured } from "@/lib/supabase/admin";
 import { getOrders, getCustomers } from "@/lib/data";
 import { SetupNotice } from "@/components/SetupNotice";
+import { MonthSelect } from "@/components/MonthSelect";
 import { EmptyState, Kpi } from "@/components/ui";
-import { formatRSD, MESECI } from "@/lib/format";
+import { formatRSD, formatNum, MESECI } from "@/lib/format";
 import { proizvodnaCena, zarada } from "@/lib/costs";
 
 export const dynamic = "force-dynamic";
@@ -10,9 +11,13 @@ export const dynamic = "force-dynamic";
 type Row = { label: string; value: number; sub?: string };
 type MonthFin = { label: string; broj: number; promet: number; trosak: number; zarada: number; tekuci: boolean };
 
-export default async function StatistikaPage() {
+export default async function StatistikaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mesec?: string }>;
+}) {
   if (!supabaseConfigured()) return <SetupNotice />;
-  const [orders, customers] = await Promise.all([getOrders(), getCustomers()]);
+  const [orders, customers, sp] = await Promise.all([getOrders(), getCustomers(), searchParams]);
 
   if (orders.length === 0) {
     return (
@@ -86,6 +91,34 @@ export default async function StatistikaPage() {
   }
   const proizvodi = [...prodMap.values()].sort((a, b) => b.value - a.value).slice(0, 6);
 
+  // ── Transport: realan trošak za izabrani mesec ─────────────────────
+  const mkey = (m: Date) => `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}`;
+  const currentKey = mkey(now);
+  const monthsSet = new Set<string>(orders.map((o) => o.datum_isporuke.slice(0, 7)));
+  monthsSet.add(currentKey);
+  const monthOptions = [...monthsSet].sort().reverse().map((k) => {
+    const [y, m] = k.split("-").map(Number);
+    return { key: k, label: `${MESECI[m - 1]} ${y}` };
+  });
+  const selMesec = sp.mesec && monthsSet.has(sp.mesec) ? sp.mesec : currentKey;
+  const selLabel = monthOptions.find((o) => o.key === selMesec)?.label ?? "";
+  const mesecOrders = orders.filter((o) => o.datum_isporuke.slice(0, 7) === selMesec);
+  const tr = mesecOrders.reduce(
+    (a, o) => {
+      if (o.transport_km != null && o.transport_km > 0) a.dostava += 1;
+      a.km += o.transport_km ?? 0;
+      a.litara += o.transport_litara ?? 0;
+      a.gorivo += o.transport_gorivo ?? 0;
+      a.amortizacija += o.transport_amortizacija ?? 0;
+      a.putarina += o.transport_putarina ?? 0;
+      a.naplaceno += o.transport_cena ?? 0;
+      return a;
+    },
+    { dostava: 0, km: 0, litara: 0, gorivo: 0, amortizacija: 0, putarina: 0, naplaceno: 0 }
+  );
+  // Amortizacija se trenutno ne prikazuje (interni trošak) — trošak = gorivo + putarina.
+  const trTrosak = tr.gorivo + tr.putarina;
+
   return (
     <div className="space-y-6 animate-in">
       <div className="grid grid-cols-2 min-[861px]:grid-cols-4 gap-3">
@@ -95,6 +128,27 @@ export default async function StatistikaPage() {
         <Kpi label="Prosečna porudžbina" value={formatRSD(prosek)} />
         <Kpi label="Proizvodni trošak (~30%)" value={formatRSD(trosak)} />
         <Kpi label="Ukupna zarada" value={formatRSD(zaradaUk)} />
+      </div>
+
+      <div className="card p-5">
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <h2 className="text-lg">Troškovi prevoza — <span className="capitalize">{selLabel}</span></h2>
+          <MonthSelect value={selMesec} options={monthOptions} />
+        </div>
+        <div className="grid grid-cols-2 min-[861px]:grid-cols-3 gap-3">
+          <Kpi label={`Gorivo (${formatNum(tr.litara, 1)} l)`} value={formatRSD(tr.gorivo)} />
+          <Kpi label="Putarina" value={formatRSD(tr.putarina)} />
+          <Kpi label="Ukupan trošak" value={formatRSD(trTrosak)} />
+        </div>
+        <div className="grid grid-cols-2 min-[861px]:grid-cols-4 gap-3 mt-3">
+          <Kpi label="Broj dostava" value={String(tr.dostava)} />
+          <Kpi label="Pređeno (povratno)" value={`${formatNum(tr.km, 0)} km`} />
+          <Kpi label="Naplaćeno za dostavu" value={formatRSD(tr.naplaceno)} />
+          <Kpi label="Naplaćeno − trošak" value={formatRSD(tr.naplaceno - trTrosak)} />
+        </div>
+        {tr.dostava === 0 && (
+          <p className="text-sm text-muted mt-3">Nema zabeleženih dostava sa kilometražom za ovaj mesec.</p>
+        )}
       </div>
 
       <MonthFinanceList title="Po mesecu — promet, trošak i zarada" rows={mesecniFin} />
