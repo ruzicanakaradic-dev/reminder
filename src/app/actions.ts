@@ -50,6 +50,7 @@ export async function saveOrderAction(formData: FormData): Promise<{ id: string 
     adresa: str(formData.get("adresa")) || null,
     grad: str(formData.get("grad")) || null,
     transport_km: num(formData.get("transport_km")),
+    transport_putarina: num(formData.get("transport_putarina")),
     transport_cena: num(formData.get("transport_cena")),
     status: (str(formData.get("status")) || "primljena") as Status,
     items,

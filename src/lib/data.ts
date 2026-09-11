@@ -290,8 +290,17 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     input.transport_km != null && !isNaN(input.transport_km)
       ? input.transport_km
       : predlozenaKm(grad);
+  // Putarina: tabela ima prednost za poznata mesta; inače procena sa mape
+  // (prosleđena iz forme). Fallback 0.
+  const tablicna = predlozenaPutarina(grad);
+  const putarinaPovratno =
+    tablicna > 0
+      ? tablicna
+      : input.transport_putarina != null && !isNaN(input.transport_putarina)
+        ? input.transport_putarina
+        : 0;
   const t = kmPovratno && kmPovratno > 0
-    ? obracunajTransport(kmPovratno, predlozenaPutarina(grad), settings)
+    ? obracunajTransport(kmPovratno, putarinaPovratno, settings)
     : null;
   const transportCena =
     input.transport_cena != null && !isNaN(input.transport_cena)
