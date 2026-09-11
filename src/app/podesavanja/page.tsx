@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, LogOut, Loader2, BellRing, Check, Lock, Volume2, AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/components/ui";
+import { TransportSettings } from "@/components/TransportSettings";
 import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
 
 type Status = "loading" | "unsupported" | "denied" | "off" | "on";
@@ -217,6 +218,8 @@ export default function PodesavanjaPage() {
           </div>
         )}
       </div>
+
+      <TransportSettings />
 
       <div className="card p-5 space-y-2" style={{ borderLeft: "4px solid var(--accent)" }}>
         <div className="text-ink font-semibold">📣 Kako da testiraš zaključan ekran</div>

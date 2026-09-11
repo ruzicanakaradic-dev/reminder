@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, Truck } from "lucide-react";
 import { supabaseConfigured } from "@/lib/supabase/admin";
 import { getOrder, getCustomer } from "@/lib/data";
 import { SetupNotice } from "@/components/SetupNotice";
 import { StatusControl } from "@/components/StatusControl";
 import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { customerCode } from "@/lib/types";
-import { formatRSD, formatKg, formatDatum, danaDo, relativnoDana } from "@/lib/format";
+import { formatRSD, formatKg, formatNum, formatDatum, danaDo, relativnoDana } from "@/lib/format";
 import { proizvodnaCena, zarada, COST_RATE } from "@/lib/costs";
 import { PhoneActions } from "@/components/PhoneActions";
 import { AddressActions } from "@/components/AddressActions";
@@ -135,6 +135,40 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
         </div>
       </div>
 
+      {(order.transport_km != null || order.transport_cena != null) && (
+        <div className="card p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Truck size={16} style={{ color: "var(--accent)" }} />
+            <div className="kicker !mb-0">Transport / dostava</div>
+          </div>
+
+          {order.transport_km != null && (
+            <div className="grid grid-cols-2 gap-2 text-center mb-3">
+              <TransportInfo
+                label={`Gorivo${order.transport_litara != null ? ` (${formatNum(order.transport_litara, 1)} l)` : ""}`}
+                value={order.transport_gorivo}
+              />
+              <TransportInfo label="Putarina" value={order.transport_putarina} />
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {order.transport_km != null && (
+              <Row label={`Realan trošak (${formatNum(order.transport_km, 0)} km, povratno)`}
+                value={formatRSD((order.transport_gorivo ?? 0) + (order.transport_putarina ?? 0))} />
+            )}
+            {order.transport_predlog != null && (
+              <Row label="Predložena cena" value={formatRSD(order.transport_predlog)} muted />
+            )}
+            <div className="flex items-center justify-between rounded-[12px] px-4 py-3"
+              style={{ background: "var(--accent-100)", border: "1px solid var(--accent-300)" }}>
+              <span className="text-sm font-semibold" style={{ color: "var(--accent-800)" }}>Naplaćena dostava</span>
+              <span className="text-xl font-extrabold" style={{ color: "var(--accent-800)" }}>{formatRSD(order.transport_cena)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {order.napomena && (
         <div className="card p-4" style={{ borderLeft: "4px solid var(--accent)" }}>
           <div className="kicker mb-1">Posebna želja / napomena</div>
@@ -170,6 +204,24 @@ function Info({ label, value }: { label: string; value: React.ReactNode }) {
     <div>
       <div className="kicker" style={{ fontSize: 11 }}>{label}</div>
       <div className="mt-0.5 font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function TransportInfo({ label, value }: { label: string; value: number | null }) {
+  return (
+    <div className="rounded-[10px] py-2 px-1" style={{ background: "var(--surface)", border: "1px solid var(--divider)" }}>
+      <div className="kicker" style={{ fontSize: 10 }}>{label}</div>
+      <div className="mt-0.5 font-bold tabular-nums" style={{ fontSize: 14 }}>{formatRSD(value)}</div>
+    </div>
+  );
+}
+
+function Row({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className={muted ? "text-muted" : "font-semibold"}>{label}</span>
+      <span className={`tabular-nums ${muted ? "text-muted" : "font-bold"}`}>{value}</span>
     </div>
   );
 }

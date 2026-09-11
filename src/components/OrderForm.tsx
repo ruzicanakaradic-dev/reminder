@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Save, ImagePlus, X, Plus, Trash2 } from "lucide-react";
+import { Loader2, Save, ImagePlus, X, Plus, Trash2, Truck } from "lucide-react";
 import { saveOrderAction } from "@/app/actions";
-import { STATUS_LABEL, STATUS_ORDER, type Order, type Status } from "@/lib/types";
+import { STATUS_LABEL, STATUS_ORDER, type AppSettings, type Order, type Status } from "@/lib/types";
 import { formatRSD, toISODate } from "@/lib/format";
+import { DEFAULT_SETTINGS, obracunajTransport, predlozenaKm, predlozenaPutarina } from "@/lib/transport";
 
 type CustomerLite = { ime: string; telefon: string | null; grad: string | null; adresa: string | null };
 
@@ -26,10 +27,12 @@ export function OrderForm({
   order,
   customers,
   products = [],
+  settings = DEFAULT_SETTINGS,
 }: {
   order?: Order;
   customers: CustomerLite[];
   products?: string[];
+  settings?: AppSettings;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -42,6 +45,32 @@ export function OrderForm({
   const [grad, setGrad] = useState(order?.grad ?? "");
   const [adresa, setAdresa] = useState(order?.adresa ?? "");
   const [slika, setSlika] = useState<string | null>(order?.slika ?? null);
+
+  // Transport / dostava
+  const [km, setKm] = useState(order?.transport_km?.toString() ?? "");
+  const [transportCena, setTransportCena] = useState(order?.transport_cena?.toString() ?? "");
+  // Postojeća porudžbina: poštuj sačuvane vrednosti (ne prepisuj automatski).
+  const kmTouched = useRef<boolean>(!!order);
+  const cenaTouched = useRef<boolean>(!!order);
+
+  // Predlog povratne kilometraže iz tabele rastojanja (kad km nije ručno dirano)
+  useEffect(() => {
+    if (kmTouched.current) return;
+    const pk = predlozenaKm(grad);
+    setKm(pk != null ? String(pk) : "");
+  }, [grad]);
+
+  const racun = useMemo(() => {
+    const kmVal = num(km);
+    if (kmVal == null || kmVal <= 0) return null;
+    return obracunajTransport(kmVal, predlozenaPutarina(grad), settings);
+  }, [km, grad, settings]);
+
+  // Predloži cenu dostave dok je korisnik ručno ne promeni
+  useEffect(() => {
+    if (cenaTouched.current) return;
+    setTransportCena(racun ? String(racun.predlog) : "");
+  }, [racun]);
 
   const [items, setItems] = useState<ItemRow[]>(() => {
     if (order?.items && order.items.length) {
@@ -185,6 +214,59 @@ export function OrderForm({
         </div>
       </div>
 
+      {/* Transport / dostava */}
+      <div className="card p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Truck size={18} style={{ color: "var(--accent)" }} />
+          <label className="label !mb-0">Transport / dostava</label>
+        </div>
+        <p className="text-xs text-muted -mt-2">
+          Polazak: Inđija, Jug Bogdana 17 · povratna vožnja (tamo-nazad). Kilometražu možeš ručno da izmeniš.
+        </p>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="label">Kilometraža (povratno, km)</label>
+            <input
+              name="transport_km"
+              value={km}
+              onChange={(e) => { kmTouched.current = true; setKm(e.target.value); }}
+              className="input"
+              inputMode="decimal"
+              placeholder={predlozenaKm(grad) != null ? String(predlozenaKm(grad)) : "npr. 100"}
+            />
+          </div>
+          <div>
+            <label className="label">Cena dostave (RSD)</label>
+            <input
+              name="transport_cena"
+              value={transportCena}
+              onChange={(e) => { cenaTouched.current = true; setTransportCena(e.target.value); }}
+              className="input"
+              inputMode="decimal"
+              placeholder="dogovorena cena"
+            />
+            <p className="text-xs text-muted mt-1">
+              {racun ? <>Predlog: <b>{formatRSD(racun.predlog)}</b>. Možeš uneti dogovorenu cenu.</> : "Unesi km da bi dobila predlog."}
+            </p>
+          </div>
+        </div>
+
+        {racun && (
+          <div className="grid grid-cols-2 gap-2 text-center">
+            <TransportCell label={`Gorivo (${racun.litara.toLocaleString("sr-RS", { maximumFractionDigits: 1 })} l)`} value={racun.gorivo} />
+            <TransportCell label="Putarina" value={racun.putarina} />
+          </div>
+        )}
+        {racun && (
+          <div className="flex items-center justify-between rounded-[12px] px-4 py-2.5"
+            style={{ background: "var(--surface)", border: "1px solid var(--divider)" }}>
+            <span className="kicker">Realan trošak prevoza</span>
+            <span className="font-extrabold tabular-nums">{formatRSD(racun.ukupno)}</span>
+          </div>
+        )}
+      </div>
+
       {/* Datumi + status */}
       <div className="card p-5 grid sm:grid-cols-2 gap-4">
         <div>
@@ -318,5 +400,14 @@ export function OrderForm({
         <button type="button" onClick={() => router.back()} className="btn btn-secondary">Otkaži</button>
       </div>
     </form>
+  );
+}
+
+function TransportCell({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-[10px] py-2 px-1" style={{ background: "var(--surface)", border: "1px solid var(--divider)" }}>
+      <div className="kicker" style={{ fontSize: 10 }}>{label}</div>
+      <div className="mt-0.5 font-bold tabular-nums" style={{ fontSize: 14 }}>{formatRSD(value)}</div>
+    </div>
   );
 }

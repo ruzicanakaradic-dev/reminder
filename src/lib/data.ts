@@ -1,6 +1,12 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import type { Customer, Order, OrderInput, OrderItem, Status } from "@/lib/types";
+import type { AppSettings, Customer, Order, OrderInput, OrderItem, Status } from "@/lib/types";
+import {
+  DEFAULT_SETTINGS,
+  obracunajTransport,
+  predlozenaKm,
+  predlozenaPutarina,
+} from "@/lib/transport";
 
 // ── Pomoćne funkcije ───────────────────────────────────────────────
 
@@ -55,6 +61,49 @@ export function normalizePhone(raw: string | null | undefined): string | null {
   if (d.startsWith("381")) return "+" + d;
   if (d.startsWith("0")) return "+381" + d.slice(1); // 064... → +38164...
   return "+381" + d; // 64... → +38164...
+}
+
+// ── Podešavanja (troškovi prevoza) ─────────────────────────────────
+
+// Učitaj podešavanja; ako tabela/red ne postoje, vrati podrazumevane
+// (aplikacija ne sme da padne dok migracija 6 nije pokrenuta).
+export async function getSettings(): Promise<AppSettings> {
+  const sb = supabaseAdmin();
+  try {
+    const { data, error } = await sb
+      .from("app_settings")
+      .select("dizel_cena_rsd, potrosnja_l_100km, amortizacija_rsd_km")
+      .eq("id", 1)
+      .maybeSingle();
+    if (error || !data) return { ...DEFAULT_SETTINGS };
+    return {
+      dizel_cena_rsd: Number(data.dizel_cena_rsd),
+      potrosnja_l_100km: Number(data.potrosnja_l_100km),
+      amortizacija_rsd_km: Number(data.amortizacija_rsd_km),
+    };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+export async function updateSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
+  const sb = supabaseAdmin();
+  const clean: Record<string, number> = {};
+  for (const [k, v] of Object.entries(patch)) {
+    if (v != null && !isNaN(Number(v)) && Number(v) >= 0) clean[k] = Number(v);
+  }
+  // upsert reda id=1 (radi i kad red još ne postoji)
+  const { data, error } = await sb
+    .from("app_settings")
+    .upsert({ id: 1, ...clean }, { onConflict: "id" })
+    .select("dizel_cena_rsd, potrosnja_l_100km, amortizacija_rsd_km")
+    .single();
+  if (error) throw error;
+  return {
+    dizel_cena_rsd: Number(data.dizel_cena_rsd),
+    potrosnja_l_100km: Number(data.potrosnja_l_100km),
+    amortizacija_rsd_km: Number(data.amortizacija_rsd_km),
+  };
 }
 
 // ── Kupci ──────────────────────────────────────────────────────────
@@ -233,6 +282,22 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
   const zbirTezina = items.reduce((s, i) => s + (i.tezina_kg ?? 0), 0) || null;
   const proizvodSummary = items.map((i) => i.naziv).join(", ");
 
+  // Transport: km iz forme (ručno) ili iz tabele rastojanja po gradu.
+  // Trošak se "zaključava" na porudžbini po TRENUTNIM podešavanjima, da bi
+  // istorijska statistika ostala tačna i posle promene cene dizela.
+  const settings = await getSettings();
+  const kmPovratno =
+    input.transport_km != null && !isNaN(input.transport_km)
+      ? input.transport_km
+      : predlozenaKm(grad);
+  const t = kmPovratno && kmPovratno > 0
+    ? obracunajTransport(kmPovratno, predlozenaPutarina(grad), settings)
+    : null;
+  const transportCena =
+    input.transport_cena != null && !isNaN(input.transport_cena)
+      ? input.transport_cena
+      : (t?.predlog ?? null);
+
   const row = {
     customer_id: customerId,
     kupac_ime: kupacIme,
@@ -249,6 +314,13 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     total: grandTotal,
     adresa,
     grad,
+    transport_km: t?.km ?? null,
+    transport_litara: t?.litara ?? null,
+    transport_gorivo: t?.gorivo ?? null,
+    transport_amortizacija: t?.amortizacija ?? null,
+    transport_putarina: t?.putarina ?? null,
+    transport_predlog: t?.predlog ?? null,
+    transport_cena: transportCena,
     status: input.status,
   };
 

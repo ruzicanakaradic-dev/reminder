@@ -61,6 +61,14 @@ export type Order = {
   total: number | null;
   adresa: string | null;
   grad: string | null;
+  // Transport / dostava (snapshot troška u trenutku čuvanja)
+  transport_km: number | null; // povratna kilometraža
+  transport_litara: number | null; // potrošeno goriva (l)
+  transport_gorivo: number | null; // trošak goriva (RSD)
+  transport_amortizacija: number | null; // amortizacija vozila (RSD)
+  transport_putarina: number | null; // putarina (RSD)
+  transport_predlog: number | null; // predložena cena dostave (RSD)
+  transport_cena: number | null; // naplaćena cena dostave (RSD)
   status: Status;
   reminded_2d: boolean;
   reminded_1d: boolean;
@@ -87,6 +95,16 @@ export type OrderInput = {
   total?: number | null;
   adresa?: string | null;
   grad?: string | null;
+  // Transport: ako je prazno, izvodi se iz grada (tabela rastojanja).
+  transport_km?: number | null; // povratna kilometraža (ručni unos ili auto)
+  transport_cena?: number | null; // naplaćena cena dostave (ručni unos ili = predlog)
   status: Status;
   items?: OrderItemInput[]; // više vrsta kolača u jednoj porudžbini
+};
+
+// Podešavanja troškova prevoza (tabela app_settings)
+export type AppSettings = {
+  dizel_cena_rsd: number;
+  potrosnja_l_100km: number;
+  amortizacija_rsd_km: number;
 };
