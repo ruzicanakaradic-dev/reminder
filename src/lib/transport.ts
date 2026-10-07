@@ -54,10 +54,15 @@ export const RASTOJANJA: Record<string, MestoInfo> = {
   "ruma": { km: 25 },
   "irig": { km: 22 },
   "pecinci": { km: 30 },
-  "sremska mitrovica": { km: 55 },
   "sremski karlovci": { km: 32 },
-  "sid": { km: 85 },
-  "sabac": { km: 70 },
+
+  // Auto-put ka Zagrebu (E-70): do Rume lokalnim putem, pa auto-putem od
+  // naplatne stanice Ruma. Putarina kat. I, zvanični kalkulator
+  // putevi-srbije.rs (potvrđeno 2026-10-07).
+  "sremska mitrovica": { km: 55, putarina: 80 }, // Ruma → Sremska Mitrovica
+  "sid": { km: 85, putarina: 320 }, // Ruma → Šid
+  // Brzi put Ruma → Šabac (isti ulaz u Rumi), takođe naplatan.
+  "sabac": { km: 70, putarina: 150 }, // Ruma → Šabac
 
   // Beograd i okolina — putarina 100 RSD/smer (kat. I, zvanični kalkulator
   // putevi-srbije.rs, potvrđeno 2026-09-11). Podokolina koristi istu deonicu.
@@ -107,9 +112,17 @@ export function predlozenaPutarina(grad: string | null | undefined): number {
   return m?.putarina ? m.putarina * 2 : 0;
 }
 
-// Putarina (jedan smer, RSD) — deonice E-75 kroz koje se prolazi iz Inđije.
-export const PUTARINA_BEOGRAD_SMER = 100; // kat. I, putevi-srbije.rs
+// Putarina (jedan smer, RSD, kat. I, putevi-srbije.rs) — deonice kroz koje
+// se prolazi iz Inđije. E-75: Inđija → Beograd / Novi Sad.
+export const PUTARINA_BEOGRAD_SMER = 100;
 export const PUTARINA_NOVI_SAD_SMER = 240;
+// E-70 (ka Zagrebu), ulaz u Rumi → izlaz (potvrđeno 2026-10-07).
+export const PUTARINA_RUMA_SREMSKA_MITROVICA = 80;
+export const PUTARINA_RUMA_KUZMIN = 190;
+export const PUTARINA_RUMA_SID = 320;
+// Brzi put Ruma → Šabac, ulaz u Rumi → izlaz (potvrđeno 2026-10-07).
+export const PUTARINA_RUMA_HRTKOVCI = 80;
+export const PUTARINA_RUMA_SABAC = 150;
 
 // Procena putarine (JEDAN smer, RSD) za mesto VAN tabele, iz koordinata.
 // Inđija je na auto-putu E-75 između Beograda (jug/istok) i Novog Sada (sever).
@@ -118,11 +131,26 @@ export const PUTARINA_NOVI_SAD_SMER = 240;
 //    Beograda, npr. Ripanj) → beogradska putarina; zona počinje od Stare
 //    Pazove (Banovci, Vojka, Belegiš… se voze preko izlaza za Pazove)
 //  - mesto severno iza Novog Sada → bar novosadska putarina
-//  - lokalna okolina Inđije (Golubinci, Novi Karlovci, Beška…) → 0
+//  - Srem zapadno od Rume (pravac Zagreb) → do Rume lokalno, pa auto-put
+//    od Rume do najbližeg izlaza: Sremska Mitrovica / Kuzmin / Šid
+//  - jug ka Šapcu → do Rume lokalno, pa brzi put Ruma–Šabac (Hrtkovci / Šabac)
+//  - lokalna okolina Inđije (Golubinci, Novi Karlovci, Beška…) i Rume
+//    (Voganj, Irig, Vrdnik…) → 0
 // Granice su namerno grube; tabela RASTOJANJA ima prednost za poznata mesta.
 export function procenaPutarinaSmer(lat: number, lon: number): number {
   if (lat < 45.03 && lon > 20.12) return PUTARINA_BEOGRAD_SMER; // auto-put ka Beogradu
   if (lat > 45.2 && lon < 20.05) return PUTARINA_NOVI_SAD_SMER; // iza Novog Sada
+  if (lat > 44.93 && lat < 45.14 && lon < 19.72) {
+    // auto-put ka Zagrebu — izlaz po geografskoj dužini (sredina između izlaza)
+    if (lon >= 19.51) return PUTARINA_RUMA_SREMSKA_MITROVICA; // Laćarak, Mačvanska Mitrovica…
+    if (lon >= 19.32) return PUTARINA_RUMA_KUZMIN; // Martinci, Kuzmin, Erdevik…
+    return PUTARINA_RUMA_SID; // Šid, Adaševci, Morović…
+  }
+  if (lat > 44.6 && lat < 44.93 && lon > 19.55 && lon < 19.85) {
+    // brzi put Ruma–Šabac — izlaz po geografskoj širini
+    if (lat >= 44.83) return PUTARINA_RUMA_HRTKOVCI; // Hrtkovci, Nikinci…
+    return PUTARINA_RUMA_SABAC; // Šabac, Majur, Mišar…
+  }
   return 0;
 }
 
