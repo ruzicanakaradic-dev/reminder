@@ -3,6 +3,19 @@
 import { revalidatePath } from "next/cache";
 import { saveOrder, updateStatus, deleteOrder, getSettings, updateSettings } from "@/lib/data";
 import type { AppSettings, OrderInput, OrderItemInput, Status } from "@/lib/types";
+import { KorisnickaGreska, razumljivaPoruka, type Rezultat } from "@/lib/greske";
+
+// Izvrši akciju i vrati Rezultat umesto bacanja greške — u produkciji Next.js
+// sakriva poruku bačene greške, pa korisnik ne bi znao šta nije u redu.
+// Puna greška ide u serverski log (Vercel → Logs) radi dijagnoze.
+async function pokusaj<T>(naziv: string, fn: () => Promise<T>): Promise<Rezultat<T>> {
+  try {
+    return { ok: true, data: await fn() };
+  } catch (e) {
+    console.error(`[${naziv}]`, e);
+    return { ok: false, greska: razumljivaPoruka(e) };
+  }
+}
 
 function num(v: FormDataEntryValue | null): number | null {
   if (v == null) return null;
@@ -33,49 +46,54 @@ function parseItems(v: FormDataEntryValue | null): OrderItemInput[] {
   }
 }
 
-export async function saveOrderAction(formData: FormData): Promise<{ id: string }> {
-  const items = parseItems(formData.get("items"));
+export async function saveOrderAction(formData: FormData): Promise<Rezultat<{ id: string }>> {
+  return pokusaj("saveOrder", async () => {
+    const items = parseItems(formData.get("items"));
 
-  const input: OrderInput = {
-    id: str(formData.get("id")) || undefined,
-    kupac_ime: str(formData.get("kupac_ime")),
-    kupac_telefon: str(formData.get("kupac_telefon")) || null,
-    datum_porudzbine: str(formData.get("datum_porudzbine")),
-    datum_isporuke: str(formData.get("datum_isporuke")),
-    vreme_isporuke: str(formData.get("vreme_isporuke")) || null,
-    proizvod: items.map((i) => i.naziv).join(", "),
-    opis: str(formData.get("opis")) || null,
-    napomena: str(formData.get("napomena")) || null,
-    slika: str(formData.get("slika")) || null,
-    adresa: str(formData.get("adresa")) || null,
-    grad: str(formData.get("grad")) || null,
-    dekoracija_cena: num(formData.get("dekoracija_cena")),
-    transport_km: num(formData.get("transport_km")),
-    transport_putarina: num(formData.get("transport_putarina")),
-    transport_cena: num(formData.get("transport_cena")),
-    status: (str(formData.get("status")) || "primljena") as Status,
-    items,
-  };
+    const input: OrderInput = {
+      id: str(formData.get("id")) || undefined,
+      kupac_ime: str(formData.get("kupac_ime")),
+      kupac_telefon: str(formData.get("kupac_telefon")) || null,
+      datum_porudzbine: str(formData.get("datum_porudzbine")),
+      datum_isporuke: str(formData.get("datum_isporuke")),
+      vreme_isporuke: str(formData.get("vreme_isporuke")) || null,
+      proizvod: items.map((i) => i.naziv).join(", "),
+      opis: str(formData.get("opis")) || null,
+      napomena: str(formData.get("napomena")) || null,
+      slika: str(formData.get("slika")) || null,
+      adresa: str(formData.get("adresa")) || null,
+      grad: str(formData.get("grad")) || null,
+      dekoracija_cena: num(formData.get("dekoracija_cena")),
+      transport_km: num(formData.get("transport_km")),
+      transport_putarina: num(formData.get("transport_putarina")),
+      transport_cena: num(formData.get("transport_cena")),
+      status: (str(formData.get("status")) || "primljena") as Status,
+      items,
+    };
 
-  if (!input.kupac_ime) throw new Error("Ime kupca je obavezno.");
-  if (items.length === 0) throw new Error("Dodaj bar jedan proizvod (kolač).");
-  if (!input.datum_isporuke) throw new Error("Datum isporuke je obavezan.");
+    if (!input.kupac_ime) throw new KorisnickaGreska("Ime kupca je obavezno.");
+    if (items.length === 0) throw new KorisnickaGreska("Dodaj bar jedan proizvod (kolač).");
+    if (!input.datum_isporuke) throw new KorisnickaGreska("Datum isporuke je obavezan.");
 
-  const order = await saveOrder(input);
-  revalidatePath("/");
-  revalidatePath("/porudzbine");
-  revalidatePath("/kalendar");
-  revalidatePath("/kupci");
-  revalidatePath("/statistika");
-  return { id: order.id };
+    const order = await saveOrder(input);
+    revalidatePath("/");
+    revalidatePath("/porudzbine");
+    revalidatePath("/kalendar");
+    revalidatePath("/kupci");
+    revalidatePath("/statistika");
+    return { id: order.id };
+  });
 }
 
-export async function setStatusAction(id: string, status: Status): Promise<void> {
-  await updateStatus(id, status);
-  revalidatePath("/");
-  revalidatePath("/porudzbine");
-  revalidatePath("/kalendar");
-  revalidatePath(`/porudzbine/${id}`);
+export async function setStatusAction(id: string, status: Status): Promise<Rezultat<null>> {
+  return pokusaj("setStatus", async () => {
+    await updateStatus(id, status);
+    revalidatePath("/");
+    revalidatePath("/porudzbine");
+    revalidatePath("/kalendar");
+    revalidatePath(`/porudzbine/${id}`);
+    return null;
+  });
 }
 
 // ── Podešavanja troškova prevoza ────────────────────────────────────
@@ -83,18 +101,23 @@ export async function getSettingsAction(): Promise<AppSettings> {
   return getSettings();
 }
 
-export async function saveSettingsAction(patch: Partial<AppSettings>): Promise<AppSettings> {
-  const saved = await updateSettings(patch);
-  // Nove porudžbine koriste nove vrednosti; postojeći snapshot ostaje.
-  revalidatePath("/porudzbine/nova");
-  revalidatePath("/statistika");
-  return saved;
+export async function saveSettingsAction(patch: Partial<AppSettings>): Promise<Rezultat<AppSettings>> {
+  return pokusaj("saveSettings", async () => {
+    const saved = await updateSettings(patch);
+    // Nove porudžbine koriste nove vrednosti; postojeći snapshot ostaje.
+    revalidatePath("/porudzbine/nova");
+    revalidatePath("/statistika");
+    return saved;
+  });
 }
 
-export async function deleteOrderAction(id: string): Promise<void> {
-  await deleteOrder(id);
-  revalidatePath("/");
-  revalidatePath("/porudzbine");
-  revalidatePath("/kalendar");
-  revalidatePath("/statistika");
+export async function deleteOrderAction(id: string): Promise<Rezultat<null>> {
+  return pokusaj("deleteOrder", async () => {
+    await deleteOrder(id);
+    revalidatePath("/");
+    revalidatePath("/porudzbine");
+    revalidatePath("/kalendar");
+    revalidatePath("/statistika");
+    return null;
+  });
 }

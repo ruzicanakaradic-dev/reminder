@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Save, ImagePlus, X, Plus, Trash2, Truck } from "lucide-react";
+import { Loader2, Save, ImagePlus, X, Plus, Trash2, Truck, AlertTriangle } from "lucide-react";
 import { saveOrderAction } from "@/app/actions";
 import { STATUS_LABEL, STATUS_ORDER, type AppSettings, type Order, type Status } from "@/lib/types";
 import { formatRSD, toISODate } from "@/lib/format";
+import { razumljivaPoruka } from "@/lib/greske";
 import { DEFAULT_SETTINGS, obracunajTransport, predlozenaKm, predlozenaPutarina } from "@/lib/transport";
 
 type CustomerLite = { ime: string; telefon: string | null; grad: string | null; adresa: string | null };
@@ -233,11 +234,16 @@ export function OrderForm({
     fd.set("slika", slika ?? "");
     start(async () => {
       try {
-        const { id } = await saveOrderAction(fd);
-        router.push(`/porudzbine/${id}`);
+        const res = await saveOrderAction(fd);
+        if (!res.ok) {
+          setError(res.greska);
+          return;
+        }
+        router.push(`/porudzbine/${res.data.id}`);
         router.refresh();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Greška pri čuvanju.");
+        // Sam poziv nije stigao do servera (npr. nema interneta)
+        setError(razumljivaPoruka(err));
       }
     });
   }
@@ -522,7 +528,13 @@ export function OrderForm({
         </div>
       </div>
 
-      {error && <div className="card p-3 text-sm font-bold" style={{ color: "var(--accent)" }}>{error}</div>}
+      {error && (
+        <div role="alert" className="card p-3 text-sm flex items-start gap-2"
+          style={{ color: "var(--accent)", borderColor: "var(--accent)" }}>
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+          <div><b>Nije sačuvano.</b> {error}</div>
+        </div>
+      )}
 
       <div className="flex gap-3">
         <button type="submit" disabled={pending} className="btn btn-primary flex-1">

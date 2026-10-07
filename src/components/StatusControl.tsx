@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { STATUS_LABEL, STATUS_ORDER, type Status } from "@/lib/types";
 import { setStatusAction } from "@/app/actions";
+import { razumljivaPoruka } from "@/lib/greske";
 
 const ACTIVE: Record<Status, { bg: string; fg: string }> = {
   primljena: { bg: "#9a8fa0", fg: "#fff" },
@@ -28,10 +29,16 @@ export function StatusControl({
     const prev = current;
     setCurrent(s);
     start(async () => {
+      let greska: string | null = null;
       try {
-        await setStatusAction(id, s);
-      } catch {
+        const res = await setStatusAction(id, s);
+        if (!res.ok) greska = res.greska;
+      } catch (err) {
+        greska = razumljivaPoruka(err);
+      }
+      if (greska) {
         setCurrent(prev);
+        alert(`Status nije promenjen. ${greska}`);
       }
     });
   };
