@@ -1,17 +1,19 @@
 // Gruba procena troška i zarade po porudžbini.
 //
 // Ukupna cena za naplatu = proizvodi (kolači/torte po kg) + dekoracija/toper + dostava.
-// Trošak                 = proizvodnja (~30% cene proizvoda) + dekoracija + gorivo + putarina.
-// Zarada                 = ukupna cena − trošak.
+// Trošak                 = sastojci (~30% cene proizvoda)
+//                          + deo troška dostave koji naplata NE pokriva (besplatna dostava).
+// Zarada                 = cena proizvoda − sastojci + (naplaćena dostava − gorivo − putarina).
 //
-// Dekoracija, gorivo i putarina se naplaćuju kupcu, ali su izdatak za tu
-// porudžbinu — zato idu u trošak, a ne u zaradu.
+// Toper kupac plaća, a time pokriva kupljeni toper — nije ni trošak ni zarada.
+// Dostava pokriva gorivo i putarinu: ako je naplaćena više, razlika ide u
+// zaradu; ako je besplatna, gorivo i putarina padaju na nas (trošak).
 
 import type { Order } from "@/lib/types";
 
 export const COST_RATE = 0.3;
 
-// Proizvodna cena (materijal + izrada) — grubo 30% od cene proizvoda
+// Sastojci za proizvodnju — grubo 30% od cene proizvoda
 export function proizvodnaCena(total: number | null | undefined): number | null {
   if (total == null || isNaN(total)) return null;
   return Math.round(total * COST_RATE);
@@ -28,17 +30,29 @@ export function ukupnaCena(o: FinPolja): number {
   return (o.total ?? 0) + (o.dekoracija_cena ?? 0) + (o.transport_cena ?? 0);
 }
 
-// Trošak prevoza (gorivo + putarina; amortizacija se ne računa — vidi transport.ts)
+// Naplaćena dostava − stvarni trošak puta (gorivo + putarina; amortizacija se
+// ne računa — vidi transport.ts). Pozitivno = zarada na dostavi, negativno =
+// dostava ne pokriva put (npr. besplatna dostava).
+export function razlikaDostave(o: FinPolja): number {
+  return (o.transport_cena ?? 0) - (o.transport_gorivo ?? 0) - (o.transport_putarina ?? 0);
+}
+
+// Trošak puta koji naplata ne pokriva (kod besplatne dostave: gorivo + putarina)
 export function trosakPrevoza(o: FinPolja): number {
-  return (o.transport_gorivo ?? 0) + (o.transport_putarina ?? 0);
+  return Math.max(0, -razlikaDostave(o));
 }
 
-// Ukupan trošak porudžbine: proizvodnja + dekoracija + gorivo + putarina
+// Zarada na dostavi: koliko je naplaćeno više od stvarnog troška puta
+export function zaradaOdDostave(o: FinPolja): number {
+  return Math.max(0, razlikaDostave(o));
+}
+
+// Ukupan trošak porudžbine: sastojci + nepokriven trošak puta
 export function trosak(o: FinPolja): number {
-  return (proizvodnaCena(o.total) ?? 0) + (o.dekoracija_cena ?? 0) + trosakPrevoza(o);
+  return (proizvodnaCena(o.total) ?? 0) + trosakPrevoza(o);
 }
 
-// Zarada = ukupna cena − ukupan trošak
+// Zarada = cena proizvoda − trošak + zarada na dostavi (toper je prolazna stavka)
 export function zarada(o: FinPolja): number {
-  return ukupnaCena(o) - trosak(o);
+  return (o.total ?? 0) - trosak(o) + zaradaOdDostave(o);
 }
