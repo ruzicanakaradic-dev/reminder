@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Fuel, Loader2, Check, AlertTriangle, Save } from "lucide-react";
 import { getSettingsAction, saveSettingsAction } from "@/app/actions";
 import type { AppSettings } from "@/lib/types";
+import { razumljivaPoruka } from "@/lib/greske";
 
 // Podešavanja troškova prevoza — Ružica menja cenu dizela (menja se nedeljno),
 // potrošnju i amortizaciju. Trošak se zaključava na porudžbini pri čuvanju,
@@ -29,13 +30,18 @@ export function TransportSettings() {
     setBusy(true);
     setMsg(null);
     try {
-      const saved = await saveSettingsAction(s);
-      setS(saved);
-      setTone("ok");
-      setMsg("✓ Sačuvano. Nove porudžbine koriste ove vrednosti.");
-    } catch {
+      const res = await saveSettingsAction(s);
+      if (res.ok) {
+        setS(res.data);
+        setTone("ok");
+        setMsg("✓ Sačuvano. Nove porudžbine koriste ove vrednosti.");
+      } else {
+        setTone("warn");
+        setMsg(`Nije sačuvano. ${res.greska}`);
+      }
+    } catch (err) {
       setTone("warn");
-      setMsg("Greška pri čuvanju. Pokušaj ponovo.");
+      setMsg(`Nije sačuvano. ${razumljivaPoruka(err)}`);
     } finally {
       setBusy(false);
     }

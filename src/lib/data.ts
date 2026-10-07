@@ -8,6 +8,7 @@ import {
   predlozenaPutarina,
 } from "@/lib/transport";
 import { ukupnaCena } from "@/lib/costs";
+import { KorisnickaGreska } from "@/lib/greske";
 
 // ── Pomoćne funkcije ───────────────────────────────────────────────
 
@@ -276,7 +277,7 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
   const customerId = await ensureCustomer(kupacIme, telefon, grad, adresa);
 
   const items = normalizeItems(input);
-  if (items.length === 0) throw new Error("Bar jedan proizvod je obavezan.");
+  if (items.length === 0) throw new KorisnickaGreska("Bar jedan proizvod je obavezan.");
 
   // Zbirni podaci na nivou porudžbine (za listu, kalendar, statistiku)
   const grandTotal = items.reduce((s, i) => s + (i.total ?? 0), 0) || null;
@@ -348,7 +349,7 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
   // pucamo jasno, da se cena ne izgubi tiho.
   if (error && nedostajeKolona(error, "dekoracija_cena")) {
     if (row.dekoracija_cena != null) {
-      throw new Error(
+      throw new KorisnickaGreska(
         "Cena dekoracije ne može da se sačuva dok se ne pokrene migracija 7 (supabase/migration_7_dekoracija.sql)."
       );
     }
