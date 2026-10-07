@@ -9,7 +9,7 @@ import {
 import type { Order, Status } from "@/lib/types";
 import { OrderCard } from "@/components/OrderCard";
 import { DANI_KRATKO, MESECI, parseDate, toISODate, formatDatum, danUNedelji, formatRSD } from "@/lib/format";
-import { proizvodnaCena, zarada } from "@/lib/costs";
+import { trosak, ukupnaCena, zarada } from "@/lib/costs";
 
 type View = "mesec" | "nedelja" | "dan";
 
@@ -48,7 +48,7 @@ export function CalendarView({ orders }: { orders: Order[] }) {
     : view === "nedelja" ? nedeljaLabel(cursor)
     : formatDatum(cursor);
 
-  // Zbir za prikazani period (mesec/nedelja): promet, proizvodna cena i zarada
+  // Zbir za prikazani period (mesec/nedelja): promet, troškovi i zarada
   const period = useMemo(() => {
     let from: Date, to: Date;
     if (view === "nedelja") {
@@ -62,9 +62,9 @@ export function CalendarView({ orders }: { orders: Order[] }) {
     const list = orders.filter((o) => o.datum_isporuke >= fi && o.datum_isporuke <= ti);
     return {
       broj: list.length,
-      promet: list.reduce((s, o) => s + (o.total ?? 0), 0),
-      trosak: list.reduce((s, o) => s + (proizvodnaCena(o.total) ?? 0), 0),
-      zarada: list.reduce((s, o) => s + (zarada(o.total) ?? 0), 0),
+      promet: list.reduce((s, o) => s + ukupnaCena(o), 0),
+      trosak: list.reduce((s, o) => s + trosak(o), 0),
+      zarada: list.reduce((s, o) => s + zarada(o), 0),
     };
   }, [orders, view, cursor]);
 
@@ -107,7 +107,7 @@ export function CalendarView({ orders }: { orders: Order[] }) {
       {view !== "dan" && (
         <div className="card p-3 grid grid-cols-3 gap-2 text-center">
           <PeriodStat label="Promet" value={period.promet} strong sub={`${period.broj} porudžbina`} />
-          <PeriodStat label="Proizvodna" value={period.trosak} />
+          <PeriodStat label="Troškovi" value={period.trosak} />
           <PeriodStat label="Zarada" value={period.zarada} accent />
         </div>
       )}
@@ -240,7 +240,7 @@ function WeekGrid({ cursor, byDay, onPick }: {
 
 function DayList({ datum, orders }: { datum: string; orders: Order[] }) {
   const d = parseDate(datum);
-  const prihod = orders.reduce((s, o) => s + (o.total ?? 0), 0);
+  const prihod = orders.reduce((s, o) => s + ukupnaCena(o), 0);
   return (
     <div>
       <div className="flex items-center justify-between mb-3 mt-2">

@@ -45,9 +45,12 @@ export const RASTOJANJA: Record<string, MestoInfo> = {
   "stari slankamen": { km: 26 },
 
   // Srem
-  "stara pazova": { km: 15 },
-  "nova pazova": { km: 20 },
-  "pazova": { km: 15 },
+  // Do Pazova se ide auto-putem (E-75 ka Beogradu) i plaća se ista putarina
+  // kao do Beograda — važi za SVE što se vozi auto-putem (potvrđeno iz
+  // prakse, 2026-10-07).
+  "stara pazova": { km: 15, putarina: 100 },
+  "nova pazova": { km: 20, putarina: 100 },
+  "pazova": { km: 15, putarina: 100 },
   "ruma": { km: 25 },
   "irig": { km: 22 },
   "pecinci": { km: 30 },
@@ -110,13 +113,15 @@ export const PUTARINA_NOVI_SAD_SMER = 240;
 
 // Procena putarine (JEDAN smer, RSD) za mesto VAN tabele, iz koordinata.
 // Inđija je na auto-putu E-75 između Beograda (jug/istok) i Novog Sada (sever).
-//  - mesto jugoistočno se dostiže KROZ Beograd → beogradska putarina
-//    (npr. Ripanj je iza Beograda, ka Avali)
+// Putarina se plaća za sve što se vozi auto-putem:
+//  - mesto jugoistočno (pravac Pazova → Batajnica → Beograd, i dalje iza
+//    Beograda, npr. Ripanj) → beogradska putarina; zona počinje od Stare
+//    Pazove (Banovci, Vojka, Belegiš… se voze preko izlaza za Pazove)
 //  - mesto severno iza Novog Sada → bar novosadska putarina
-//  - lokalna okolina Inđije (bez naplatne rampe) → 0
+//  - lokalna okolina Inđije (Golubinci, Novi Karlovci, Beška…) → 0
 // Granice su namerno grube; tabela RASTOJANJA ima prednost za poznata mesta.
 export function procenaPutarinaSmer(lat: number, lon: number): number {
-  if (lat < 44.95 && lon > 20.1) return PUTARINA_BEOGRAD_SMER; // kroz Beograd
+  if (lat < 45.03 && lon > 20.12) return PUTARINA_BEOGRAD_SMER; // auto-put ka Beogradu
   if (lat > 45.2 && lon < 20.05) return PUTARINA_NOVI_SAD_SMER; // iza Novog Sada
   return 0;
 }

@@ -6,6 +6,7 @@ import { SetupNotice } from "@/components/SetupNotice";
 import { EmptyState } from "@/components/ui";
 import { customerCode } from "@/lib/types";
 import { formatRSD } from "@/lib/format";
+import { ukupnaCena } from "@/lib/costs";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export default async function KupciPage() {
     if (!o.customer_id) continue;
     const a = agg.get(o.customer_id) ?? { broj: 0, prihod: 0 };
     a.broj += 1;
-    a.prihod += o.total ?? 0;
+    a.prihod += ukupnaCena(o);
     agg.set(o.customer_id, a);
   }
 

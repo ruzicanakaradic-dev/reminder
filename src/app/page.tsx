@@ -6,7 +6,7 @@ import { OrderCard } from "@/components/OrderCard";
 import { SetupNotice } from "@/components/SetupNotice";
 import { Kpi, SectionLabel } from "@/components/ui";
 import { danaDo, toISODate, formatRSD, MESECI } from "@/lib/format";
-import { proizvodnaCena, zarada } from "@/lib/costs";
+import { trosak, ukupnaCena, zarada } from "@/lib/costs";
 
 export const dynamic = "force-dynamic";
 
@@ -28,9 +28,9 @@ export default async function DanasPage() {
   const now = new Date();
   const mesecISO = toISODate(now).slice(0, 7);
   const mesecOrders = orders.filter((o) => o.datum_isporuke.slice(0, 7) === mesecISO);
-  const prometMeseca = mesecOrders.reduce((s, o) => s + (o.total ?? 0), 0);
-  const troskoviMeseca = mesecOrders.reduce((s, o) => s + (proizvodnaCena(o.total) ?? 0), 0);
-  const zaradaMeseca = mesecOrders.reduce((s, o) => s + (zarada(o.total) ?? 0), 0);
+  const prometMeseca = mesecOrders.reduce((s, o) => s + ukupnaCena(o), 0);
+  const troskoviMeseca = mesecOrders.reduce((s, o) => s + trosak(o), 0);
+  const zaradaMeseca = mesecOrders.reduce((s, o) => s + zarada(o), 0);
   const imeMeseca = MESECI[now.getMonth()];
 
   // Za danas: današnje + zakasnele (hitno)

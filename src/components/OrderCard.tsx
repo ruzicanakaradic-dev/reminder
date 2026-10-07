@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Order, Status } from "@/lib/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatRSD, formatKg, danaDo, relativnoDana } from "@/lib/format";
+import { ukupnaCena } from "@/lib/costs";
 
 export const STATUS_DOT: Record<Status, string> = {
   primljena: "#9a8fa0",
@@ -28,7 +29,7 @@ export function OrderCard({ order }: { order: Order }) {
       <div className="text-[12px] text-muted flex flex-wrap gap-x-3 gap-y-0.5">
         {order.tezina_kg != null && <span>{formatKg(order.tezina_kg)}</span>}
         <span className="font-bold" style={{ color: "var(--ink)" }}>
-          {formatRSD(order.total)}
+          {formatRSD(ukupnaCena(order))}
         </span>
         {order.grad && <span>{order.grad}</span>}
       </div>
