@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import type { Order } from "@/lib/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatRSD, formatKg, formatDatumKratko } from "@/lib/format";
-import { proizvodnaCena, zarada } from "@/lib/costs";
+import { trosak, ukupnaCena, zarada } from "@/lib/costs";
 
 export function OrdersTable({ orders }: { orders: Order[] }) {
   const router = useRouter();
@@ -19,8 +19,8 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
             <th>Isporuka</th>
             <th>Grad</th>
             <th>Težina</th>
-            <th>Prodajna</th>
-            <th>Proizvodna</th>
+            <th>Ukupno</th>
+            <th>Trošak</th>
             <th>Zarada</th>
             <th>Status</th>
           </tr>
@@ -37,9 +37,9 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
               </td>
               <td>{o.grad ?? "—"}</td>
               <td className="whitespace-nowrap">{formatKg(o.tezina_kg)}</td>
-              <td className="whitespace-nowrap font-extrabold">{formatRSD(o.total)}</td>
-              <td className="whitespace-nowrap text-muted">{formatRSD(proizvodnaCena(o.total))}</td>
-              <td className="whitespace-nowrap font-extrabold" style={{ color: "var(--accent)" }}>{formatRSD(zarada(o.total))}</td>
+              <td className="whitespace-nowrap font-extrabold">{formatRSD(ukupnaCena(o))}</td>
+              <td className="whitespace-nowrap text-muted">{formatRSD(trosak(o))}</td>
+              <td className="whitespace-nowrap font-extrabold" style={{ color: "var(--accent)" }}>{formatRSD(zarada(o))}</td>
               <td>
                 <StatusBadge status={o.status} />
               </td>

@@ -45,6 +45,8 @@ export function OrderForm({
   const [grad, setGrad] = useState(order?.grad ?? "");
   const [adresa, setAdresa] = useState(order?.adresa ?? "");
   const [slika, setSlika] = useState<string | null>(order?.slika ?? null);
+  // Dekoracija / toper — Ružica sama upisuje cenu (prazno = nema)
+  const [dekoracija, setDekoracija] = useState(order?.dekoracija_cena?.toString() ?? "");
 
   // Transport / dostava
   const [km, setKm] = useState(order?.transport_km?.toString() ?? "");
@@ -142,10 +144,14 @@ export function OrderForm({
     return [emptyRow()];
   });
 
-  const grandTotal = useMemo(
+  const proizvodiTotal = useMemo(
     () => items.reduce((s, r) => s + (itemTotal(r) ?? 0), 0),
     [items]
   );
+  // Ukupno za naplatu = proizvodi + dekoracija + dostava
+  const dekoracijaIznos = Math.max(0, num(dekoracija) ?? 0);
+  const dostavaIznos = besplatna ? 0 : Math.max(0, num(transportCena) ?? 0);
+  const ukupno = proizvodiTotal + dekoracijaIznos + dostavaIznos;
 
   // Jedinstveni kupci (bez duplikata po imenu) za padajuću listu / "imenik"
   const uniqueCustomers = useMemo(() => {
@@ -456,10 +462,30 @@ export function OrderForm({
           <Plus size={18} /> Dodaj još jedan proizvod
         </button>
 
-        <div className="flex items-center justify-between rounded-[12px] px-4 py-3"
+        {/* Dekoracija / toper — ulazi u ukupnu cenu, a u obračunu je trošak */}
+        <div>
+          <label className="label">Dekoracija / toper (RSD)</label>
+          <input name="dekoracija_cena" value={dekoracija} onChange={(e) => setDekoracija(e.target.value)}
+            className="input" inputMode="decimal" placeholder="prazno ako nema" />
+          <p className="text-xs text-muted mt-1">Dodaje se na ukupnu cenu. U obračunu ide u trošak, ne u zaradu.</p>
+        </div>
+
+        <div className="rounded-[12px] px-4 py-3"
           style={{ background: "var(--accent-100)", border: "1px solid var(--accent-300)" }}>
-          <span className="kicker" style={{ color: "var(--accent-800)" }}>Ukupno cela porudžbina</span>
-          <span className="text-xl font-extrabold" style={{ color: "var(--accent-800)" }}>{formatRSD(grandTotal)}</span>
+          {(dekoracijaIznos > 0 || dostavaIznos > 0 || besplatna) && (
+            <div className="space-y-1 pb-2 mb-2 border-b text-[13px]"
+              style={{ borderColor: "var(--accent-300)", color: "var(--accent-800)" }}>
+              <ZbirRed label="Proizvodi" value={formatRSD(proizvodiTotal)} />
+              {dekoracijaIznos > 0 && <ZbirRed label="Dekoracija / toper" value={formatRSD(dekoracijaIznos)} />}
+              {(dostavaIznos > 0 || besplatna) && (
+                <ZbirRed label="Dostava" value={besplatna ? "besplatna" : formatRSD(dostavaIznos)} />
+              )}
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <span className="kicker" style={{ color: "var(--accent-800)" }}>Ukupno za naplatu</span>
+            <span className="text-xl font-extrabold" style={{ color: "var(--accent-800)" }}>{formatRSD(ukupno)}</span>
+          </div>
         </div>
 
         <div>
@@ -506,6 +532,15 @@ export function OrderForm({
         <button type="button" onClick={() => router.back()} className="btn btn-secondary">Otkaži</button>
       </div>
     </form>
+  );
+}
+
+function ZbirRed({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span>{label}</span>
+      <span className="font-bold tabular-nums">{value}</span>
+    </div>
   );
 }
 

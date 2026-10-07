@@ -8,7 +8,7 @@ import { StatusControl } from "@/components/StatusControl";
 import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { customerCode } from "@/lib/types";
 import { formatRSD, formatKg, formatNum, formatDatum, danaDo, relativnoDana } from "@/lib/format";
-import { proizvodnaCena, zarada, COST_RATE } from "@/lib/costs";
+import { proizvodnaCena, trosak, trosakPrevoza, ukupnaCena, zarada, COST_RATE } from "@/lib/costs";
 import { PhoneActions } from "@/components/PhoneActions";
 import { AddressActions } from "@/components/AddressActions";
 
@@ -23,6 +23,9 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
   const kupac = order.customer_id ? await getCustomer(order.customer_id) : null;
   const dana = danaDo(order.datum_isporuke);
   const hitno = order.status !== "isporuceno" && dana <= 2;
+  const dekoracija = order.dekoracija_cena ?? 0;
+  const prevoz = trosakPrevoza(order);
+  const imaDostavu = order.transport_cena != null;
 
   return (
     <div className="space-y-4 animate-in max-w-2xl">
@@ -107,31 +110,48 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
       </div>
 
       <div className="card p-0 overflow-hidden" style={{ background: "var(--accent-100)", borderColor: "var(--accent-300)" }}>
-        {/* Prodajna cena — najbitniji red */}
+        {/* Šta ulazi u cenu: proizvodi + dekoracija + dostava */}
+        {(dekoracija > 0 || imaDostavu) && (
+          <div className="px-5 pt-4 space-y-1.5">
+            <Stavka label="Proizvodi" value={formatRSD(order.total)} />
+            {dekoracija > 0 && <Stavka label="Dekoracija / toper" value={formatRSD(dekoracija)} />}
+            {imaDostavu && (
+              <Stavka label="Dostava" value={order.transport_cena === 0 ? "besplatna" : formatRSD(order.transport_cena)} />
+            )}
+          </div>
+        )}
+        {/* Ukupna (prodajna) cena — najbitniji red */}
         <div className="flex items-center justify-between px-5 py-4">
-          <span className="kicker" style={{ color: "var(--accent-800)" }}>Prodajna cena</span>
+          <span className="kicker" style={{ color: "var(--accent-800)" }}>Ukupno za naplatu</span>
           <span className="text-[28px] leading-none font-extrabold" style={{ color: "var(--accent-800)" }}>
-            {formatRSD(order.total)}
+            {formatRSD(ukupnaCena(order))}
           </span>
         </div>
-        {/* Proizvodna cena */}
-        <div className="flex items-center justify-between px-5 py-3 border-t" style={{ borderColor: "var(--accent-300)" }}>
-          <span className="text-sm font-semibold" style={{ color: "var(--accent-800)" }}>
-            Proizvodna cena <span className="text-muted font-normal">(~{Math.round(COST_RATE * 100)}%)</span>
-          </span>
-          <span className="text-xl font-extrabold" style={{ color: "var(--accent-800)" }}>
-            {formatRSD(proizvodnaCena(order.total))}
-          </span>
+        {/* Troškovi: proizvodnja + dekoracija + gorivo/putarina */}
+        <div className="px-5 py-3 border-t space-y-1.5" style={{ borderColor: "var(--accent-300)" }}>
+          <Stavka
+            label={<>Proizvodnja <span className="text-muted font-normal">(~{Math.round(COST_RATE * 100)}% proizvoda)</span></>}
+            value={formatRSD(proizvodnaCena(order.total))}
+          />
+          {dekoracija > 0 && <Stavka label="Dekoracija / toper" value={formatRSD(dekoracija)} />}
+          {prevoz > 0 && <Stavka label="Gorivo + putarina" value={formatRSD(prevoz)} />}
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-sm font-semibold" style={{ color: "var(--accent-800)" }}>Ukupan trošak</span>
+            <span className="text-xl font-extrabold" style={{ color: "var(--accent-800)" }}>
+              {formatRSD(trosak(order))}
+            </span>
+          </div>
         </div>
         {/* Zarada */}
         <div className="flex items-center justify-between px-5 py-3 border-t" style={{ borderColor: "var(--accent-300)" }}>
           <span className="text-sm font-semibold" style={{ color: "var(--accent-800)" }}>Zarada</span>
           <span className="text-xl font-extrabold" style={{ color: "var(--accent-800)" }}>
-            {formatRSD(zarada(order.total))}
+            {formatRSD(zarada(order))}
           </span>
         </div>
         <div className="px-5 py-2.5 text-[11px] text-muted border-t" style={{ borderColor: "var(--accent-300)" }}>
-          Proizvodna cena je gruba procena (materijal + izrada ≈ {Math.round(COST_RATE * 100)}% prodajne cene).
+          Proizvodnja je gruba procena (materijal + izrada ≈ {Math.round(COST_RATE * 100)}% cene proizvoda).
+          Dekoracija, gorivo i putarina se naplaćuju kupcu, ali idu u trošak — ne u zaradu.
         </div>
       </div>
 
@@ -213,6 +233,15 @@ function TransportInfo({ label, value }: { label: string; value: number | null }
     <div className="rounded-[10px] py-2 px-1" style={{ background: "var(--surface)", border: "1px solid var(--divider)" }}>
       <div className="kicker" style={{ fontSize: 10 }}>{label}</div>
       <div className="mt-0.5 font-bold tabular-nums" style={{ fontSize: 14 }}>{formatRSD(value)}</div>
+    </div>
+  );
+}
+
+function Stavka({ label, value }: { label: React.ReactNode; value: string }) {
+  return (
+    <div className="flex items-center justify-between text-sm" style={{ color: "var(--accent-800)" }}>
+      <span className="font-semibold">{label}</span>
+      <span className="font-bold tabular-nums">{value}</span>
     </div>
   );
 }

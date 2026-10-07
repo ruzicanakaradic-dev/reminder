@@ -58,9 +58,10 @@ export type Order = {
   slika: string | null; // data URL slike primera
   tezina_kg: number | null;
   cena_po_kg: number | null;
-  total: number | null;
+  total: number | null; // zbir proizvoda (kolači/torte) — BEZ dekoracije i dostave; ukupno → ukupnaCena()
   adresa: string | null;
   grad: string | null;
+  dekoracija_cena: number | null; // cena dekoracije/topera (RSD) — ulazi u ukupnu cenu, a u obračunu je trošak
   // Transport / dostava (snapshot troška u trenutku čuvanja)
   transport_km: number | null; // povratna kilometraža
   transport_litara: number | null; // potrošeno goriva (l)
@@ -95,6 +96,7 @@ export type OrderInput = {
   total?: number | null;
   adresa?: string | null;
   grad?: string | null;
+  dekoracija_cena?: number | null; // ručno upisana cena dekoracije/topera (RSD)
   // Transport: ako je prazno, izvodi se iz grada (tabela rastojanja).
   transport_km?: number | null; // povratna kilometraža (ručni unos ili auto)
   transport_putarina?: number | null; // povratna putarina (procena sa mape kad grad nije u tabeli)

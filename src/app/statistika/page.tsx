@@ -4,7 +4,7 @@ import { SetupNotice } from "@/components/SetupNotice";
 import { MonthSelect } from "@/components/MonthSelect";
 import { EmptyState, Kpi } from "@/components/ui";
 import { formatRSD, formatNum, MESECI } from "@/lib/format";
-import { proizvodnaCena, zarada } from "@/lib/costs";
+import { trosak, ukupnaCena, zarada } from "@/lib/costs";
 
 export const dynamic = "force-dynamic";
 
@@ -27,10 +27,10 @@ export default async function StatistikaPage({
     );
   }
 
-  const promet = orders.reduce((s, o) => s + (o.total ?? 0), 0);
+  const promet = orders.reduce((s, o) => s + ukupnaCena(o), 0);
   const prosek = Math.round(promet / orders.length);
-  const trosak = orders.reduce((s, o) => s + (proizvodnaCena(o.total) ?? 0), 0);
-  const zaradaUk = orders.reduce((s, o) => s + (zarada(o.total) ?? 0), 0);
+  const trosakUk = orders.reduce((s, o) => s + trosak(o), 0);
+  const zaradaUk = orders.reduce((s, o) => s + zarada(o), 0);
 
   // Promet po mesecu (poslednjih 6)
   const now = new Date();
@@ -38,11 +38,11 @@ export default async function StatistikaPage({
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const v = orders.filter((o) => o.datum_isporuke.slice(0, 7) === key).reduce((s, o) => s + (o.total ?? 0), 0);
+    const v = orders.filter((o) => o.datum_isporuke.slice(0, 7) === key).reduce((s, o) => s + ukupnaCena(o), 0);
     mesecni.push({ label: MESECI[d.getMonth()].slice(0, 3), value: v });
   }
 
-  // Pregled po mesecu (tekući + 3 unapred): promet, proizvodna cena i zarada za
+  // Pregled po mesecu (tekući + 3 unapred): promet, troškovi i zarada za
   // porudžbine već zakazane za budućnost.
   const mesecniFin: MonthFin[] = [];
   for (let i = 0; i <= 3; i++) {
@@ -52,9 +52,9 @@ export default async function StatistikaPage({
     mesecniFin.push({
       label: `${MESECI[d.getMonth()]} ${d.getFullYear()}`,
       broj: meseca.length,
-      promet: meseca.reduce((s, o) => s + (o.total ?? 0), 0),
-      trosak: meseca.reduce((s, o) => s + (proizvodnaCena(o.total) ?? 0), 0),
-      zarada: meseca.reduce((s, o) => s + (zarada(o.total) ?? 0), 0),
+      promet: meseca.reduce((s, o) => s + ukupnaCena(o), 0),
+      trosak: meseca.reduce((s, o) => s + trosak(o), 0),
+      zarada: meseca.reduce((s, o) => s + zarada(o), 0),
       tekuci: i === 0,
     });
   }
@@ -71,8 +71,8 @@ export default async function StatistikaPage({
     return [...m.entries()].map(([label, x]) => ({ label, value: x.v, sub: `${x.n} porudžbina` }));
   };
 
-  const kupci = grp((o) => o.kupac_ime, (o) => o.total ?? 0).sort((a, b) => b.value - a.value).slice(0, 5);
-  const gradovi = grp((o) => o.grad ?? "—", (o) => o.total ?? 0).sort((a, b) => b.value - a.value).slice(0, 6);
+  const kupci = grp((o) => o.kupac_ime, ukupnaCena).sort((a, b) => b.value - a.value).slice(0, 5);
+  const gradovi = grp((o) => o.grad ?? "—", ukupnaCena).sort((a, b) => b.value - a.value).slice(0, 6);
   // Najprodavaniji proizvod — grupiši po GLAVNOM proizvodu (prva reč naziva).
   // Npr. „strudla mak", „strudla orasi" i „strudla" spadaju pod „strudla";
   // brojimo svaku stavku (kolač), a ne porudžbinu.
@@ -126,7 +126,7 @@ export default async function StatistikaPage({
         <Kpi label="Broj porudžbina" value={String(orders.length)} />
         <Kpi label="Broj kupaca" value={String(customers.length)} />
         <Kpi label="Prosečna porudžbina" value={formatRSD(prosek)} />
-        <Kpi label="Proizvodni trošak (~30%)" value={formatRSD(trosak)} />
+        <Kpi label="Ukupni troškovi" value={formatRSD(trosakUk)} />
         <Kpi label="Ukupna zarada" value={formatRSD(zaradaUk)} />
       </div>
 
@@ -182,7 +182,7 @@ function MonthFinanceList({ title, rows }: { title: string; rows: MonthFin[] }) 
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
               <FinCell label="Promet" value={r.promet} strong />
-              <FinCell label="Proizvodna" value={r.trosak} />
+              <FinCell label="Troškovi" value={r.trosak} />
               <FinCell label="Zarada" value={r.zarada} accent />
             </div>
           </div>

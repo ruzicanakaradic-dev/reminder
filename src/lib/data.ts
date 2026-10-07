@@ -7,6 +7,7 @@ import {
   predlozenaKm,
   predlozenaPutarina,
 } from "@/lib/transport";
+import { ukupnaCena } from "@/lib/costs";
 
 // ── Pomoćne funkcije ───────────────────────────────────────────────
 
@@ -323,6 +324,9 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     total: grandTotal,
     adresa,
     grad,
+    // Prazno ili 0 = nema dekoracije
+    dekoracija_cena:
+      input.dekoracija_cena != null && input.dekoracija_cena > 0 ? input.dekoracija_cena : null,
     transport_km: t?.km ?? null,
     transport_litara: t?.litara ?? null,
     transport_gorivo: t?.gorivo ?? null,
@@ -333,19 +337,28 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     status: input.status,
   };
 
-  let orderId: string;
-  let saved: Order;
-  if (input.id) {
-    const { data, error } = await sb.from("orders").update(row).eq("id", input.id).select("*").single();
-    if (error) throw error;
-    saved = data as Order;
-    orderId = input.id;
-  } else {
-    const { data, error } = await sb.from("orders").insert(row).select("*").single();
-    if (error) throw error;
-    saved = data as Order;
-    orderId = saved.id;
+  const write = (r: Record<string, unknown>) =>
+    input.id
+      ? sb.from("orders").update(r).eq("id", input.id).select("*").single()
+      : sb.from("orders").insert(r).select("*").single();
+
+  let { data, error } = await write(row);
+  // Kolona dekoracija_cena stiže sa migracijom 7. Dok migracija nije pokrenuta,
+  // porudžbina BEZ dekoracije se i dalje čuva (bez te kolone); sa dekoracijom
+  // pucamo jasno, da se cena ne izgubi tiho.
+  if (error && nedostajeKolona(error, "dekoracija_cena")) {
+    if (row.dekoracija_cena != null) {
+      throw new Error(
+        "Cena dekoracije ne može da se sačuva dok se ne pokrene migracija 7 (supabase/migration_7_dekoracija.sql)."
+      );
+    }
+    const bezDekoracije: Record<string, unknown> = { ...row };
+    delete bezDekoracije.dekoracija_cena;
+    ({ data, error } = await write(bezDekoracije));
   }
+  if (error) throw error;
+  const saved = data as Order;
+  const orderId = input.id ?? saved.id;
 
   // Zameni stavke: obriši postojeće pa upiši nove (jednostavno i pouzdano)
   const { error: delErr } = await sb.from("order_items").delete().eq("order_id", orderId);
@@ -356,6 +369,11 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
   if (insErr) throw insErr;
 
   return saved;
+}
+
+// Da li je greška nastala jer kolona još ne postoji u bazi (migracija nije pokrenuta)
+function nedostajeKolona(error: { code?: string; message?: string }, kolona: string): boolean {
+  return (error.code === "PGRST204" || error.code === "42703") && (error.message ?? "").includes(kolona);
 }
 
 export async function updateStatus(id: string, status: Status): Promise<void> {
@@ -406,7 +424,7 @@ export async function getStats(): Promise<Stats> {
   for (const o of orders) {
     poStatusu[o.status] += 1;
     const kg = o.tezina_kg ?? 0;
-    const prihod = o.total ?? 0;
+    const prihod = ukupnaCena(o);
     ukupanPrihod += prihod;
     ukupnoKg += kg;
     // Normalizujemo ključ da se "beograd"/"Beograd" spoje u jedan red,

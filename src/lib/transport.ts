@@ -46,7 +46,9 @@ export const RASTOJANJA: Record<string, MestoInfo> = {
 
   // Srem
   "stara pazova": { km: 15 },
-  "nova pazova": { km: 20 },
+  // Do Nove Pazove se ide auto-putem i plaća se ista putarina kao do
+  // Beograda (potvrđeno iz prakse, 2026-10-07).
+  "nova pazova": { km: 20, putarina: 100 },
   "pazova": { km: 15 },
   "ruma": { km: 25 },
   "irig": { km: 22 },

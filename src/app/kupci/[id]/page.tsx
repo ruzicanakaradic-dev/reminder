@@ -9,6 +9,7 @@ import { Kpi, SectionLabel } from "@/components/ui";
 import { PhoneActions } from "@/components/PhoneActions";
 import { customerCode } from "@/lib/types";
 import { formatRSD, formatKg } from "@/lib/format";
+import { ukupnaCena } from "@/lib/costs";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export default async function KupacDetalj({ params }: { params: Promise<{ id: st
 
   const orders = await getOrders({ customerId: id });
   const sorted = [...orders].sort((a, b) => b.datum_isporuke.localeCompare(a.datum_isporuke));
-  const prihod = orders.reduce((s, o) => s + (o.total ?? 0), 0);
+  const prihod = orders.reduce((s, o) => s + ukupnaCena(o), 0);
   const kg = orders.reduce((s, o) => s + (o.tezina_kg ?? 0), 0);
 
   return (
