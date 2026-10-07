@@ -473,7 +473,7 @@ export function OrderForm({
           <label className="label">Dekoracija / toper (RSD)</label>
           <input name="dekoracija_cena" value={dekoracija} onChange={(e) => setDekoracija(e.target.value)}
             className="input" inputMode="decimal" placeholder="prazno ako nema" />
-          <p className="text-xs text-muted mt-1">Dodaje se na ukupnu cenu. U obračunu ide u trošak, ne u zaradu.</p>
+          <p className="text-xs text-muted mt-1">Dodaje se na ukupnu cenu. Kupac je plaća, pa nije ni trošak ni zarada.</p>
         </div>
 
         <div className="rounded-[12px] px-4 py-3"

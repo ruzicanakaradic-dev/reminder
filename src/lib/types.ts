@@ -61,7 +61,7 @@ export type Order = {
   total: number | null; // zbir proizvoda (kolači/torte) — BEZ dekoracije i dostave; ukupno → ukupnaCena()
   adresa: string | null;
   grad: string | null;
-  dekoracija_cena: number | null; // cena dekoracije/topera (RSD) — ulazi u ukupnu cenu, a u obračunu je trošak
+  dekoracija_cena: number | null; // cena dekoracije/topera (RSD) — ulazi u ukupnu cenu; kupac je plaća, pa nije ni trošak ni zarada
   // Transport / dostava (snapshot troška u trenutku čuvanja)
   transport_km: number | null; // povratna kilometraža
   transport_litara: number | null; // potrošeno goriva (l)

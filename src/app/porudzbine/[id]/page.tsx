@@ -8,7 +8,7 @@ import { StatusControl } from "@/components/StatusControl";
 import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { customerCode } from "@/lib/types";
 import { formatRSD, formatKg, formatNum, formatDatum, danaDo, relativnoDana } from "@/lib/format";
-import { proizvodnaCena, trosak, trosakPrevoza, ukupnaCena, zarada, COST_RATE } from "@/lib/costs";
+import { proizvodnaCena, trosak, trosakPrevoza, ukupnaCena, zarada, zaradaOdDostave, COST_RATE } from "@/lib/costs";
 import { PhoneActions } from "@/components/PhoneActions";
 import { AddressActions } from "@/components/AddressActions";
 
@@ -25,6 +25,7 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
   const hitno = order.status !== "isporuceno" && dana <= 2;
   const dekoracija = order.dekoracija_cena ?? 0;
   const prevoz = trosakPrevoza(order);
+  const naDostavi = zaradaOdDostave(order);
   const imaDostavu = order.transport_cena != null;
 
   return (
@@ -127,14 +128,20 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
             {formatRSD(ukupnaCena(order))}
           </span>
         </div>
-        {/* Troškovi: proizvodnja + dekoracija + gorivo/putarina */}
+        {/* Troškovi: sastojci + trošak puta koji naplata ne pokriva */}
         <div className="px-5 py-3 border-t space-y-1.5" style={{ borderColor: "var(--accent-300)" }}>
           <Stavka
-            label={<>Proizvodnja <span className="text-muted font-normal">(~{Math.round(COST_RATE * 100)}% proizvoda)</span></>}
+            label={<>Sastojci <span className="text-muted font-normal">(~{Math.round(COST_RATE * 100)}% proizvoda)</span></>}
             value={formatRSD(proizvodnaCena(order.total))}
           />
-          {dekoracija > 0 && <Stavka label="Dekoracija / toper" value={formatRSD(dekoracija)} />}
-          {prevoz > 0 && <Stavka label="Gorivo + putarina" value={formatRSD(prevoz)} />}
+          {prevoz > 0 && (
+            <Stavka
+              label={(order.transport_cena ?? 0) > 0
+                ? <>Gorivo + putarina <span className="text-muted font-normal">(nepokriveno dostavom)</span></>
+                : <>Gorivo + putarina <span className="text-muted font-normal">(besplatna dostava)</span></>}
+              value={formatRSD(prevoz)}
+            />
+          )}
           <div className="flex items-center justify-between pt-1">
             <span className="text-sm font-semibold" style={{ color: "var(--accent-800)" }}>Ukupan trošak</span>
             <span className="text-xl font-extrabold" style={{ color: "var(--accent-800)" }}>
@@ -142,16 +149,25 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
             </span>
           </div>
         </div>
-        {/* Zarada */}
-        <div className="flex items-center justify-between px-5 py-3 border-t" style={{ borderColor: "var(--accent-300)" }}>
-          <span className="text-sm font-semibold" style={{ color: "var(--accent-800)" }}>Zarada</span>
-          <span className="text-xl font-extrabold" style={{ color: "var(--accent-800)" }}>
-            {formatRSD(zarada(order))}
-          </span>
+        {/* Zarada (+ razlika na dostavi, ako je naplaćena više od troška puta) */}
+        <div className="px-5 py-3 border-t space-y-1.5" style={{ borderColor: "var(--accent-300)" }}>
+          {naDostavi > 0 && (
+            <Stavka
+              label={<>Zarada na dostavi <span className="text-muted font-normal">(naplaćeno više od troška puta)</span></>}
+              value={`+${formatRSD(naDostavi)}`}
+            />
+          )}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold" style={{ color: "var(--accent-800)" }}>Zarada</span>
+            <span className="text-xl font-extrabold" style={{ color: "var(--accent-800)" }}>
+              {formatRSD(zarada(order))}
+            </span>
+          </div>
         </div>
         <div className="px-5 py-2.5 text-[11px] text-muted border-t" style={{ borderColor: "var(--accent-300)" }}>
-          Proizvodnja je gruba procena (materijal + izrada ≈ {Math.round(COST_RATE * 100)}% cene proizvoda).
-          Dekoracija, gorivo i putarina se naplaćuju kupcu, ali idu u trošak — ne u zaradu.
+          Trošak su sastojci (gruba procena ≈ {Math.round(COST_RATE * 100)}% cene proizvoda). Toper kupac plaća,
+          pa nije ni trošak ni zarada. Dostava pokriva gorivo i putarinu: ako je naplaćena više, razlika ide u
+          zaradu; ako je besplatna, gorivo i putarina idu u trošak.
         </div>
       </div>
 
