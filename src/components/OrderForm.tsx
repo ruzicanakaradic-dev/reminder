@@ -8,6 +8,7 @@ import { STATUS_LABEL, STATUS_ORDER, type AppSettings, type Order, type Status }
 import { formatRSD, toISODate } from "@/lib/format";
 import { razumljivaPoruka } from "@/lib/greske";
 import { DEFAULT_SETTINGS, obracunajTransport, predlozenaKm, predlozenaPutarina } from "@/lib/transport";
+import { BESPLATNA_DOSTAVA_OD, besplatnaDostavaPoPravilu } from "@/lib/costs";
 
 type CustomerLite = { ime: string; telefon: string | null; grad: string | null; adresa: string | null };
 
@@ -52,14 +53,19 @@ export function OrderForm({
   // Transport / dostava
   const [km, setKm] = useState(order?.transport_km?.toString() ?? "");
   const [transportCena, setTransportCena] = useState(order?.transport_cena?.toString() ?? "");
-  // Besplatna dostava: cena = 0, polja zaključana. Pri izmeni postojeće
-  // porudžbine izvodi se iz sačuvanog stanja (cena 0 uz postojeću kilometražu).
-  const [besplatna, setBesplatna] = useState<boolean>(
-    () => !!order && order.transport_cena === 0 && (order.transport_km ?? 0) > 0
+  // Besplatna dostava: cena = 0, polja zaključana. Može ručno (čekiranjem) ili
+  // automatski po pravilu od 15.000 RSD (vidi `besplatna` niže). Pri izmeni
+  // postojeće porudžbine ručna se izvodi iz sačuvanog stanja (cena 0 uz
+  // kilometražu), osim kad je besplatna bila po pravilu.
+  const sacuvanaBesplatna = !!order && order.transport_cena === 0 && (order.transport_km ?? 0) > 0;
+  const [besplatnaRucno, setBesplatnaRucno] = useState<boolean>(
+    () => sacuvanaBesplatna && !besplatnaDostavaPoPravilu(order?.total, order?.dekoracija_cena)
   );
   // Postojeća porudžbina: poštuj sačuvane vrednosti (ne prepisuj automatski).
+  // Izuzetak: sačuvana besplatna dostava nema cenu (0), pa se predlog računa
+  // iznova — da se pojavi ako dostava prestane da bude besplatna.
   const kmTouched = useRef<boolean>(!!order);
-  const cenaTouched = useRef<boolean>(!!order);
+  const cenaTouched = useRef<boolean>(!!order && !sacuvanaBesplatna);
   // Status automatskog računanja rastojanja (mapa): "" | "racuna" | "auto" | "greska"
   const [autoKm, setAutoKm] = useState<{ stanje: "racuna" | "auto" | "greska"; tekst?: string } | null>(null);
   // Procenjena povratna putarina sa mape (kad grad NIJE u tabeli rastojanja).
@@ -151,6 +157,9 @@ export function OrderForm({
   );
   // Ukupno za naplatu = proizvodi + dekoracija + dostava
   const dekoracijaIznos = Math.max(0, num(dekoracija) ?? 0);
+  // Od 15.000 RSD (proizvodi + dekoracija) dostava je automatski besplatna
+  const besplatnaAuto = besplatnaDostavaPoPravilu(proizvodiTotal, dekoracijaIznos);
+  const besplatna = besplatnaAuto || besplatnaRucno;
   const dostavaIznos = besplatna ? 0 : Math.max(0, num(transportCena) ?? 0);
   const ukupno = proizvodiTotal + dekoracijaIznos + dostavaIznos;
 
@@ -292,8 +301,9 @@ export function OrderForm({
           Polazak: Inđija, Jug Bogdana 17 · povratna vožnja (tamo-nazad). Kilometražu možeš ručno da izmeniš.
         </p>
 
-        {/* Besplatna dostava — cena 0 RSD, polja zaključana */}
-        <label className="flex items-center gap-2.5 cursor-pointer rounded-[10px] px-3 py-2.5"
+        {/* Besplatna dostava — cena 0 RSD, polja zaključana. Od 15.000 RSD
+            uključuje se sama i ne može da se isključi. */}
+        <label className={`flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 ${besplatnaAuto ? "cursor-default" : "cursor-pointer"}`}
           style={{
             background: besplatna ? "var(--accent-100)" : "var(--surface)",
             border: `1px solid ${besplatna ? "var(--accent-300)" : "var(--divider)"}`,
@@ -302,11 +312,19 @@ export function OrderForm({
             type="checkbox"
             name="transport_besplatna"
             checked={besplatna}
-            onChange={(e) => setBesplatna(e.target.checked)}
-            className="w-4 h-4 shrink-0 accent-[var(--accent)]"
+            // Ne `disabled` — taj ga oboji u sivo kao da je isključen.
+            // Kad je uključen po pravilu, klik se samo ignoriše.
+            aria-disabled={besplatnaAuto}
+            onChange={(e) => { if (!besplatnaAuto) setBesplatnaRucno(e.target.checked); }}
+            className={`w-4 h-4 shrink-0 accent-[var(--accent)] ${besplatnaAuto ? "cursor-default" : ""}`}
           />
           <span className="text-[12px] font-bold" style={{ color: besplatna ? "var(--accent-800)" : "var(--ink)" }}>
             Besplatna dostava (0 RSD)
+            {besplatnaAuto && (
+              <span className="block font-normal text-[11px] leading-snug">
+                Automatski — porudžbina je {formatRSD(BESPLATNA_DOSTAVA_OD)} ili više.
+              </span>
+            )}
           </span>
         </label>
 
@@ -362,7 +380,7 @@ export function OrderForm({
             />
             <p className="text-[11px] leading-snug text-muted mt-1">
               {besplatna
-                ? <>Dostava je besplatna. {racun && <>Preporučeno bi bilo <b>{formatRSD(racun.predlog)}</b>.</>}</>
+                ? <>Dostava je besplatna{besplatnaAuto && <> (porudžbina od {formatRSD(BESPLATNA_DOSTAVA_OD)})</>}. {racun && <>Preporučeno bi bilo <b>{formatRSD(racun.predlog)}</b>.</>}</>
                 : racun
                   ? <>Preporučeno: <b style={{ color: "var(--accent)" }}>{formatRSD(racun.predlog)}</b> — možeš da izmeniš.</>
                   : "Unesi km da bi dobila predlog."}

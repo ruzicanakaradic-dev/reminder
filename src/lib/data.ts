@@ -7,7 +7,7 @@ import {
   predlozenaKm,
   predlozenaPutarina,
 } from "@/lib/transport";
-import { ukupnaCena } from "@/lib/costs";
+import { besplatnaDostavaPoPravilu, ukupnaCena } from "@/lib/costs";
 import { KorisnickaGreska } from "@/lib/greske";
 
 // ── Pomoćne funkcije ───────────────────────────────────────────────
@@ -304,10 +304,15 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
   const t = kmPovratno && kmPovratno > 0
     ? obracunajTransport(kmPovratno, putarinaPovratno, settings)
     : null;
-  const transportCena =
+  const dekoracijaCena =
+    input.dekoracija_cena != null && input.dekoracija_cena > 0 ? input.dekoracija_cena : null;
+  const unetaCena =
     input.transport_cena != null && !isNaN(input.transport_cena)
       ? input.transport_cena
       : (t?.predlog ?? null);
+  // Od 15.000 RSD dostava je besplatna (samo ako dostave uopšte ima)
+  const transportCena =
+    unetaCena != null && besplatnaDostavaPoPravilu(grandTotal, dekoracijaCena) ? 0 : unetaCena;
 
   const row = {
     customer_id: customerId,
@@ -326,8 +331,7 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     adresa,
     grad,
     // Prazno ili 0 = nema dekoracije
-    dekoracija_cena:
-      input.dekoracija_cena != null && input.dekoracija_cena > 0 ? input.dekoracija_cena : null,
+    dekoracija_cena: dekoracijaCena,
     transport_km: t?.km ?? null,
     transport_litara: t?.litara ?? null,
     transport_gorivo: t?.gorivo ?? null,
