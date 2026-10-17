@@ -59,7 +59,7 @@ export function OrderForm({
   // kilometražu), osim kad je besplatna bila po pravilu.
   const sacuvanaBesplatna = !!order && order.transport_cena === 0 && (order.transport_km ?? 0) > 0;
   const [besplatnaRucno, setBesplatnaRucno] = useState<boolean>(
-    () => sacuvanaBesplatna && !besplatnaDostavaPoPravilu(order?.total, order?.dekoracija_cena)
+    () => sacuvanaBesplatna && !besplatnaDostavaPoPravilu(order?.total)
   );
   // Postojeća porudžbina: poštuj sačuvane vrednosti (ne prepisuj automatski).
   // Izuzetak: sačuvana besplatna dostava nema cenu (0), pa se predlog računa
@@ -157,8 +157,8 @@ export function OrderForm({
   );
   // Ukupno za naplatu = proizvodi + dekoracija + dostava
   const dekoracijaIznos = Math.max(0, num(dekoracija) ?? 0);
-  // Od 15.000 RSD (proizvodi + dekoracija) dostava je automatski besplatna
-  const besplatnaAuto = besplatnaDostavaPoPravilu(proizvodiTotal, dekoracijaIznos);
+  // Torte/kolači od 15.000 RSD → dostava je automatski besplatna (toper se ne računa)
+  const besplatnaAuto = besplatnaDostavaPoPravilu(proizvodiTotal);
   const besplatna = besplatnaAuto || besplatnaRucno;
   const dostavaIznos = besplatna ? 0 : Math.max(0, num(transportCena) ?? 0);
   const ukupno = proizvodiTotal + dekoracijaIznos + dostavaIznos;
@@ -322,7 +322,7 @@ export function OrderForm({
             Besplatna dostava (0 RSD)
             {besplatnaAuto && (
               <span className="block font-normal text-[11px] leading-snug">
-                Automatski — porudžbina je {formatRSD(BESPLATNA_DOSTAVA_OD)} ili više.
+                Automatski — torte/kolači su {formatRSD(BESPLATNA_DOSTAVA_OD)} ili više (bez topera).
               </span>
             )}
           </span>
@@ -380,7 +380,7 @@ export function OrderForm({
             />
             <p className="text-[11px] leading-snug text-muted mt-1">
               {besplatna
-                ? <>Dostava je besplatna{besplatnaAuto && <> (porudžbina od {formatRSD(BESPLATNA_DOSTAVA_OD)})</>}. {racun && <>Preporučeno bi bilo <b>{formatRSD(racun.predlog)}</b>.</>}</>
+                ? <>Dostava je besplatna{besplatnaAuto && <> (torte/kolači od {formatRSD(BESPLATNA_DOSTAVA_OD)})</>}. {racun && <>Preporučeno bi bilo <b>{formatRSD(racun.predlog)}</b>.</>}</>
                 : racun
                   ? <>Preporučeno: <b style={{ color: "var(--accent)" }}>{formatRSD(racun.predlog)}</b> — možeš da izmeniš.</>
                   : "Unesi km da bi dobila predlog."}

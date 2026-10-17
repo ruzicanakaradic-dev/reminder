@@ -14,12 +14,12 @@ import type { Order } from "@/lib/types";
 export const COST_RATE = 0.3;
 
 // Porudžbina od 15.000 RSD naviše ima besplatnu dostavu, automatski.
-// Prag se gleda na vrednost porudžbine BEZ dostave (proizvodi + dekoracija),
-// inače bi se pravilo vrtelo u krug: besplatna dostava bi spustila cenu ispod praga.
+// Prag se gleda SAMO na torte/kolače (`orders.total`, zbir stavki): toper,
+// dekoracija i dostava se ne računaju (pravilo korisnika).
 export const BESPLATNA_DOSTAVA_OD = 15000;
 
-export function besplatnaDostavaPoPravilu(proizvodi: number | null | undefined, dekoracija?: number | null): boolean {
-  return (proizvodi ?? 0) + Math.max(0, dekoracija ?? 0) >= BESPLATNA_DOSTAVA_OD;
+export function besplatnaDostavaPoPravilu(proizvodi: number | null | undefined): boolean {
+  return (proizvodi ?? 0) >= BESPLATNA_DOSTAVA_OD;
 }
 
 // Sastojci za proizvodnju — grubo 30% od cene proizvoda

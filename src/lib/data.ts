@@ -310,9 +310,10 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     input.transport_cena != null && !isNaN(input.transport_cena)
       ? input.transport_cena
       : (t?.predlog ?? null);
-  // Od 15.000 RSD dostava je besplatna (samo ako dostave uopšte ima)
+  // Torte/kolači od 15.000 RSD (bez topera/dekoracije) → dostava je besplatna
+  // (samo ako dostave uopšte ima)
   const transportCena =
-    unetaCena != null && besplatnaDostavaPoPravilu(grandTotal, dekoracijaCena) ? 0 : unetaCena;
+    unetaCena != null && besplatnaDostavaPoPravilu(grandTotal) ? 0 : unetaCena;
 
   const row = {
     customer_id: customerId,
