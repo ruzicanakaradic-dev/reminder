@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Pencil, Truck } from "lucide-react";
+import { ArrowLeft, Pencil, Truck, Home } from "lucide-react";
 import { supabaseConfigured } from "@/lib/supabase/admin";
 import { getOrder, getCustomer } from "@/lib/data";
 import { SetupNotice } from "@/components/SetupNotice";
@@ -24,9 +24,10 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
   const dana = danaDo(order.datum_isporuke);
   const hitno = order.status !== "isporuceno" && dana <= 2;
   const dekoracija = order.dekoracija_cena ?? 0;
+  const licno = order.licno_preuzimanje === true;
   const prevoz = trosakPrevoza(order);
   const naDostavi = zaradaOdDostave(order);
-  const imaDostavu = order.transport_cena != null;
+  const imaDostavu = !licno && order.transport_cena != null;
 
   return (
     <div className="space-y-4 animate-in max-w-2xl">
@@ -112,11 +113,13 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
 
       <div className="card p-0 overflow-hidden" style={{ background: "var(--accent-100)", borderColor: "var(--accent-300)" }}>
         {/* Šta ulazi u cenu: proizvodi + dekoracija + dostava */}
-        {(dekoracija > 0 || imaDostavu) && (
+        {(dekoracija > 0 || imaDostavu || licno) && (
           <div className="px-5 pt-4 space-y-1.5">
             <Stavka label="Proizvodi" value={formatRSD(order.total)} />
             {dekoracija > 0 && <Stavka label="Dekoracija / toper" value={formatRSD(dekoracija)} />}
-            {imaDostavu && (
+            {licno ? (
+              <Stavka label="Dostava" value="lično preuzimanje" />
+            ) : imaDostavu && (
               <Stavka label="Dostava" value={order.transport_cena === 0 ? "besplatna" : formatRSD(order.transport_cena)} />
             )}
           </div>
@@ -171,7 +174,17 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
         </div>
       </div>
 
-      {(order.transport_km != null || order.transport_cena != null) && (
+      {licno && (
+        <div className="card p-4 flex items-center gap-2.5">
+          <Home size={16} style={{ color: "var(--accent)" }} />
+          <div className="text-sm">
+            <b style={{ color: "var(--accent-800)" }}>Lično preuzimanje</b>{" "}
+            <span className="text-muted">— kupac preuzima kod nas, bez dostave.</span>
+          </div>
+        </div>
+      )}
+
+      {!licno && (order.transport_km != null || order.transport_cena != null) && (
         <div className="card p-5">
           <div className="flex items-center gap-2 mb-3">
             <Truck size={16} style={{ color: "var(--accent)" }} />
