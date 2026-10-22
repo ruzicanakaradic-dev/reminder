@@ -27,6 +27,10 @@ function num(v: FormDataEntryValue | null): number | null {
 function str(v: FormDataEntryValue | null): string {
   return v == null ? "" : String(v).trim();
 }
+function bool(v: FormDataEntryValue | null): boolean {
+  const s = String(v ?? "").toLowerCase();
+  return s === "1" || s === "true" || s === "on";
+}
 
 function parseItems(v: FormDataEntryValue | null): OrderItemInput[] {
   if (v == null) return [];
@@ -64,6 +68,7 @@ export async function saveOrderAction(formData: FormData): Promise<Rezultat<{ id
       adresa: str(formData.get("adresa")) || null,
       grad: str(formData.get("grad")) || null,
       dekoracija_cena: num(formData.get("dekoracija_cena")),
+      licno_preuzimanje: bool(formData.get("licno_preuzimanje")),
       transport_km: num(formData.get("transport_km")),
       transport_putarina: num(formData.get("transport_putarina")),
       transport_cena: num(formData.get("transport_cena")),

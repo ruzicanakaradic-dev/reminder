@@ -284,6 +284,10 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
   const zbirTezina = items.reduce((s, i) => s + (i.tezina_kg ?? 0), 0) || null;
   const proizvodSummary = items.map((i) => i.naziv).join(", ");
 
+  // Lično preuzimanje: kupac dolazi kod nas → prevoza nema. Sva polja prevoza
+  // ostaju prazna (čak i ako su ranije bila popunjena kao "besplatna dostava").
+  const licnoPreuzimanje = input.licno_preuzimanje === true;
+
   // Transport: km iz forme (ručno) ili iz tabele rastojanja po gradu.
   // Trošak se "zaključava" na porudžbini po TRENUTNIM podešavanjima, da bi
   // istorijska statistika ostala tačna i posle promene cene dizela.
@@ -301,7 +305,8 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
       : input.transport_putarina != null && !isNaN(input.transport_putarina)
         ? input.transport_putarina
         : 0;
-  const t = kmPovratno && kmPovratno > 0
+  // Kod ličnog preuzimanja ne računamo prevoz uopšte.
+  const t = !licnoPreuzimanje && kmPovratno && kmPovratno > 0
     ? obracunajTransport(kmPovratno, putarinaPovratno, settings)
     : null;
   const dekoracijaCena =
@@ -311,9 +316,12 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
       ? input.transport_cena
       : (t?.predlog ?? null);
   // Torte/kolači od 15.000 RSD (bez topera/dekoracije) → dostava je besplatna
-  // (samo ako dostave uopšte ima)
-  const transportCena =
-    unetaCena != null && besplatnaDostavaPoPravilu(grandTotal) ? 0 : unetaCena;
+  // (samo ako dostave uopšte ima). Lično preuzimanje → nema dostave (null).
+  const transportCena = licnoPreuzimanje
+    ? null
+    : unetaCena != null && besplatnaDostavaPoPravilu(grandTotal)
+      ? 0
+      : unetaCena;
 
   const row = {
     customer_id: customerId,
@@ -333,6 +341,7 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     grad,
     // Prazno ili 0 = nema dekoracije
     dekoracija_cena: dekoracijaCena,
+    licno_preuzimanje: licnoPreuzimanje,
     transport_km: t?.km ?? null,
     transport_litara: t?.litara ?? null,
     transport_gorivo: t?.gorivo ?? null,
@@ -348,19 +357,29 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
       ? sb.from("orders").update(r).eq("id", input.id).select("*").single()
       : sb.from("orders").insert(r).select("*").single();
 
-  let { data, error } = await write(row);
-  // Kolona dekoracija_cena stiže sa migracijom 7. Dok migracija nije pokrenuta,
-  // porudžbina BEZ dekoracije se i dalje čuva (bez te kolone); sa dekoracijom
-  // pucamo jasno, da se cena ne izgubi tiho.
-  if (error && nedostajeKolona(error, "dekoracija_cena")) {
-    if (row.dekoracija_cena != null) {
-      throw new KorisnickaGreska(
-        "Cena dekoracije ne može da se sačuva dok se ne pokrene migracija 7 (supabase/migration_7_dekoracija.sql)."
-      );
+  // Kolone dekoracija_cena (migracija 7) i licno_preuzimanje (migracija 8) stižu
+  // kasnije. Dok migracija nije pokrenuta, porudžbina se i dalje čuva bez te
+  // kolone — ali ako je korisnik baš upisao tu vrednost, pucamo jasno da se
+  // podatak ne izgubi tiho.
+  const payload: Record<string, unknown> = { ...row };
+  let { data, error } = await write(payload);
+  while (error && (nedostajeKolona(error, "dekoracija_cena") || nedostajeKolona(error, "licno_preuzimanje"))) {
+    if (nedostajeKolona(error, "dekoracija_cena")) {
+      if (payload.dekoracija_cena != null) {
+        throw new KorisnickaGreska(
+          "Cena dekoracije ne može da se sačuva dok se ne pokrene migracija 7 (supabase/migration_7_dekoracija.sql)."
+        );
+      }
+      delete payload.dekoracija_cena;
+    } else {
+      if (payload.licno_preuzimanje === true) {
+        throw new KorisnickaGreska(
+          "Lično preuzimanje ne može da se sačuva dok se ne pokrene migracija 8 (supabase/migration_8_licno_preuzimanje.sql)."
+        );
+      }
+      delete payload.licno_preuzimanje;
     }
-    const bezDekoracije: Record<string, unknown> = { ...row };
-    delete bezDekoracije.dekoracija_cena;
-    ({ data, error } = await write(bezDekoracije));
+    ({ data, error } = await write(payload));
   }
   if (error) throw error;
   const saved = data as Order;

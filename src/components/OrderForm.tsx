@@ -50,6 +50,10 @@ export function OrderForm({
   // Dekoracija / toper — Ružica sama upisuje cenu (prazno = nema)
   const [dekoracija, setDekoracija] = useState(order?.dekoracija_cena?.toString() ?? "");
 
+  // Način isporuke: dostava ili lično preuzimanje (kupac dolazi kod nas).
+  // Kod ličnog preuzimanja nema prevoza — ni troška, ni naplaćene dostave.
+  const [licno, setLicno] = useState<boolean>(order?.licno_preuzimanje ?? false);
+
   // Transport / dostava
   const [km, setKm] = useState(order?.transport_km?.toString() ?? "");
   const [transportCena, setTransportCena] = useState(order?.transport_cena?.toString() ?? "");
@@ -158,9 +162,10 @@ export function OrderForm({
   // Ukupno za naplatu = proizvodi + dekoracija + dostava
   const dekoracijaIznos = Math.max(0, num(dekoracija) ?? 0);
   // Torte/kolači od 15.000 RSD → dostava je automatski besplatna (toper se ne računa)
-  const besplatnaAuto = besplatnaDostavaPoPravilu(proizvodiTotal);
+  const besplatnaAuto = !licno && besplatnaDostavaPoPravilu(proizvodiTotal);
   const besplatna = besplatnaAuto || besplatnaRucno;
-  const dostavaIznos = besplatna ? 0 : Math.max(0, num(transportCena) ?? 0);
+  // Lično preuzimanje → nema dostave uopšte
+  const dostavaIznos = licno || besplatna ? 0 : Math.max(0, num(transportCena) ?? 0);
   const ukupno = proizvodiTotal + dekoracijaIznos + dostavaIznos;
 
   // Jedinstveni kupci (bez duplikata po imenu) za padajuću listu / "imenik"
@@ -291,13 +296,48 @@ export function OrderForm({
         </div>
       </div>
 
-      {/* Transport / dostava */}
+      {/* Način isporuke: dostava ili lično preuzimanje */}
       <div className="card p-4 space-y-3">
         <div className="flex items-center gap-1.5">
           <Truck size={15} style={{ color: "var(--accent)" }} />
-          <label className="label !mb-0" style={{ fontSize: 11 }}>Transport / dostava</label>
+          <label className="label !mb-0" style={{ fontSize: 11 }}>Način isporuke</label>
         </div>
-        <p className="text-[11px] leading-snug text-muted -mt-2">
+
+        {/* Server čita ovo polje: 1 = lično preuzimanje (bez dostave) */}
+        <input type="hidden" name="licno_preuzimanje" value={licno ? "1" : "0"} />
+
+        {/* Prebacivanje: dostava ↔ lično preuzimanje */}
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => setLicno(false)}
+            className="rounded-[10px] px-3 py-3 text-[13px] font-bold transition-colors"
+            style={{
+              background: !licno ? "var(--accent-100)" : "var(--surface)",
+              border: `1px solid ${!licno ? "var(--accent-300)" : "var(--divider)"}`,
+              color: !licno ? "var(--accent-800)" : "var(--ink)",
+            }}>
+            🚗 Dostava
+          </button>
+          <button type="button" onClick={() => setLicno(true)}
+            className="rounded-[10px] px-3 py-3 text-[13px] font-bold transition-colors"
+            style={{
+              background: licno ? "var(--accent-100)" : "var(--surface)",
+              border: `1px solid ${licno ? "var(--accent-300)" : "var(--divider)"}`,
+              color: licno ? "var(--accent-800)" : "var(--ink)",
+            }}>
+            🏠 Lično preuzimanje
+          </button>
+        </div>
+
+        {licno && (
+          <p className="text-[12px] leading-snug rounded-[10px] px-3 py-2.5"
+            style={{ background: "var(--accent-100)", border: "1px solid var(--accent-300)", color: "var(--accent-800)" }}>
+            Kupac preuzima kod nas (Inđija, Jug Bogdana 17). Nema dostave — ni troška prevoza, ni naplate dostave.
+          </p>
+        )}
+
+        {!licno && (
+        <>
+        <p className="text-[11px] leading-snug text-muted">
           Polazak: Inđija, Jug Bogdana 17 · povratna vožnja (tamo-nazad). Kilometražu možeš ručno da izmeniš.
         </p>
 
@@ -401,6 +441,8 @@ export function OrderForm({
             <span className="text-[13px] font-extrabold tabular-nums">{formatRSD(racun.ukupno)}</span>
           </div>
         )}
+        </>
+        )}
       </div>
 
       {/* Datumi + status */}
@@ -496,12 +538,14 @@ export function OrderForm({
 
         <div className="rounded-[12px] px-4 py-3"
           style={{ background: "var(--accent-100)", border: "1px solid var(--accent-300)" }}>
-          {(dekoracijaIznos > 0 || dostavaIznos > 0 || besplatna) && (
+          {(dekoracijaIznos > 0 || dostavaIznos > 0 || besplatna || licno) && (
             <div className="space-y-1 pb-2 mb-2 border-b text-[13px]"
               style={{ borderColor: "var(--accent-300)", color: "var(--accent-800)" }}>
               <ZbirRed label="Proizvodi" value={formatRSD(proizvodiTotal)} />
               {dekoracijaIznos > 0 && <ZbirRed label="Dekoracija / toper" value={formatRSD(dekoracijaIznos)} />}
-              {(dostavaIznos > 0 || besplatna) && (
+              {licno ? (
+                <ZbirRed label="Dostava" value="lično preuzimanje" />
+              ) : (dostavaIznos > 0 || besplatna) && (
                 <ZbirRed label="Dostava" value={besplatna ? "besplatna" : formatRSD(dostavaIznos)} />
               )}
             </div>

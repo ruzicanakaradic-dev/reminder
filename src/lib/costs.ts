@@ -8,6 +8,10 @@
 // Toper kupac plaća, a time pokriva kupljeni toper — nije ni trošak ni zarada.
 // Dostava pokriva gorivo i putarinu: ako je naplaćena više, razlika ide u
 // zaradu; ako je besplatna, gorivo i putarina padaju na nas (trošak).
+//
+// Lično preuzimanje (kupac dolazi kod nas): prevoza NEMA, pa dostava ne ulazi
+// ni u cenu, ni u trošak, ni u zaradu — čak i ako su stara polja prevoza ostala
+// zabeležena iz vremena kada se pisala "besplatna dostava".
 
 import type { Order } from "@/lib/types";
 
@@ -32,17 +36,22 @@ export function proizvodnaCena(total: number | null | undefined): number | null 
 // opciono jer kolona postoji tek posle migracije 7.
 export type FinPolja = Pick<Order, "total" | "transport_cena" | "transport_gorivo" | "transport_putarina"> & {
   dekoracija_cena?: number | null;
+  licno_preuzimanje?: boolean | null;
 };
 
 // Ukupna cena za naplatu: proizvodi + dekoracija + dostava
+// (kod ličnog preuzimanja dostave nema, pa ne ulazi)
 export function ukupnaCena(o: FinPolja): number {
-  return (o.total ?? 0) + (o.dekoracija_cena ?? 0) + (o.transport_cena ?? 0);
+  const dostava = o.licno_preuzimanje ? 0 : (o.transport_cena ?? 0);
+  return (o.total ?? 0) + (o.dekoracija_cena ?? 0) + dostava;
 }
 
 // Naplaćena dostava − stvarni trošak puta (gorivo + putarina; amortizacija se
 // ne računa — vidi transport.ts). Pozitivno = zarada na dostavi, negativno =
-// dostava ne pokriva put (npr. besplatna dostava).
+// dostava ne pokriva put (npr. besplatna dostava). Kod ličnog preuzimanja
+// prevoza nema → 0 (ni trošak, ni zarada), bez obzira na stara polja.
 export function razlikaDostave(o: FinPolja): number {
+  if (o.licno_preuzimanje) return 0;
   return (o.transport_cena ?? 0) - (o.transport_gorivo ?? 0) - (o.transport_putarina ?? 0);
 }
 
