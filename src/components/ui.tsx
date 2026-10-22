@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { FitText } from "@/components/FitText";
 
 // Naslov strane je već u topbaru; ovde prikazujemo opcioni podnaslov + akciju.
 export function PageHeader({
@@ -55,11 +56,17 @@ export function EmptyState({
   );
 }
 
-export function Kpi({ label, value, sm }: { label: string; value: string; sm?: boolean }) {
+export function Kpi({ label, value, sm, fit }: { label: string; value: string; sm?: boolean; fit?: boolean }) {
   return (
     <div className={`kpi${sm ? " kpi-sm" : ""}`}>
       <div className="kpi-label">{label}</div>
-      <div className="kpi-value">{value}</div>
+      {fit ? (
+        <FitText className="kpi-value" max={sm ? 20 : 34} min={sm ? 11 : 13}>
+          {value}
+        </FitText>
+      ) : (
+        <div className="kpi-value">{value}</div>
+      )}
     </div>
   );
 }
