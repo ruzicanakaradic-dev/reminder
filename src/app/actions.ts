@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { saveOrder, updateStatus, deleteOrder, getSettings, updateSettings } from "@/lib/data";
-import type { AppSettings, OrderInput, OrderItemInput, Status } from "@/lib/types";
+import { saveOrder, updateStatus, deleteOrder, getSettings, updateSettings, updateCustomer } from "@/lib/data";
+import type { AppSettings, CustomerInput, OrderInput, OrderItemInput, Status } from "@/lib/types";
 import { KorisnickaGreska, razumljivaPoruka, type Rezultat } from "@/lib/greske";
 
 // Izvrši akciju i vrati Rezultat umesto bacanja greške — u produkciji Next.js
@@ -87,6 +87,31 @@ export async function saveOrderAction(formData: FormData): Promise<Rezultat<{ id
     revalidatePath("/kupci");
     revalidatePath("/statistika");
     return { id: order.id };
+  });
+}
+
+export async function updateCustomerAction(formData: FormData): Promise<Rezultat<{ id: string }>> {
+  return pokusaj("updateCustomer", async () => {
+    const input: CustomerInput = {
+      id: str(formData.get("id")),
+      ime: str(formData.get("ime")),
+      telefon: str(formData.get("telefon")) || null,
+      grad: str(formData.get("grad")) || null,
+      adresa: str(formData.get("adresa")) || null,
+      napomena: str(formData.get("napomena")) || null,
+      primeni_adresu_na_porudzbine: bool(formData.get("primeni_adresu_na_porudzbine")),
+    };
+    if (!input.id) throw new KorisnickaGreska("Nedostaje ID kupca.");
+    if (!input.ime) throw new KorisnickaGreska("Ime kupca je obavezno.");
+
+    const kupac = await updateCustomer(input);
+    revalidatePath("/kupci");
+    revalidatePath(`/kupci/${input.id}`);
+    revalidatePath("/");
+    revalidatePath("/porudzbine");
+    revalidatePath("/kalendar");
+    revalidatePath("/statistika");
+    return { id: kupac.id };
   });
 }
 

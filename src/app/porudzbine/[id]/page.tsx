@@ -229,7 +229,7 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
         <div className="card p-3">
           <div className="kicker mb-2">Slika primera</div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={order.slika} alt="Primer" className="w-full rounded-[10px] grayscale" />
+          <img src={order.slika} alt="Primer" className="w-full rounded-[10px]" />
         </div>
       )}
 

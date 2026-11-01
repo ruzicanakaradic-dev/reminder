@@ -25,6 +25,19 @@ export type Customer = {
   created_at: string;
 };
 
+// Izmena postojećeg kupca (ispravka greške u unosu)
+export type CustomerInput = {
+  id: string;
+  ime: string;
+  telefon?: string | null;
+  grad?: string | null;
+  adresa?: string | null;
+  napomena?: string | null;
+  // Primeni ispravljeni grad i adresu i na sve ranije porudžbine ovog kupca.
+  // Isključiti ako su pojedine porudžbine imale namerno različite adrese.
+  primeni_adresu_na_porudzbine?: boolean;
+};
+
 export type OrderItem = {
   id: string;
   order_id: string;

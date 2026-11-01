@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, Pencil } from "lucide-react";
 import { supabaseConfigured } from "@/lib/supabase/admin";
 import { getCustomer, getOrders } from "@/lib/data";
 import { SetupNotice } from "@/components/SetupNotice";
@@ -26,9 +26,14 @@ export default async function KupacDetalj({ params }: { params: Promise<{ id: st
 
   return (
     <div className="space-y-5 animate-in max-w-2xl">
-      <Link href="/kupci" className="btn btn-ghost text-sm !px-2">
-        <ArrowLeft size={16} /> Svi kupci
-      </Link>
+      <div className="flex items-center justify-between gap-2">
+        <Link href="/kupci" className="btn btn-ghost text-sm !px-2">
+          <ArrowLeft size={16} /> Svi kupci
+        </Link>
+        <Link href={`/kupci/${kupac.id}/izmena`} className="btn btn-secondary text-sm">
+          <Pencil size={16} /> Izmeni
+        </Link>
+      </div>
 
       <div className="card p-5" style={{ borderWidth: 2 }}>
         <div className="kicker" style={{ color: "var(--accent)" }}>

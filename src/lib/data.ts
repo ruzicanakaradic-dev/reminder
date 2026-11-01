@@ -1,6 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import type { AppSettings, Customer, Order, OrderInput, OrderItem, Status } from "@/lib/types";
+import type { AppSettings, Customer, CustomerInput, Order, OrderInput, OrderItem, Status } from "@/lib/types";
 import {
   DEFAULT_SETTINGS,
   obracunajTransport,
@@ -125,6 +125,89 @@ export async function getCustomer(id: string): Promise<Customer | null> {
   const { data, error } = await sb.from("customers").select("*").eq("id", id).maybeSingle();
   if (error) throw error;
   return data as Customer | null;
+}
+
+// Izmena postojećeg kupca (ručna ispravka greške). Ista normalizacija kao pri
+// čuvanju porudžbine (title-case ime/grad/adresa, +381 telefon). Ispravka imena
+// i telefona uvek se propagira na snapshot u porudžbinama tog kupca. Ako je
+// uključeno `primeni_adresu_na_porudzbine`, i ispravljeni grad i adresa prelaze
+// na sve porudžbine kupca (uz preračun dostave kad se grad promeni).
+// Polja prevoza za zadati grad (podrazumevana tabela rastojanja + trenutna
+// podešavanja). Koristi se kad se grad kupca ispravi, da dostava na porudžbini
+// odgovara ispravljenom gradu. Lično preuzimanje = bez prevoza.
+function transportFieldsZaGrad(
+  grad: string | null,
+  licnoPreuzimanje: boolean,
+  total: number | null,
+  settings: AppSettings
+) {
+  if (licnoPreuzimanje) {
+    return {
+      transport_km: null, transport_litara: null, transport_gorivo: null,
+      transport_amortizacija: null, transport_putarina: null,
+      transport_predlog: null, transport_cena: null,
+    };
+  }
+  const km = predlozenaKm(grad);
+  const putarina = predlozenaPutarina(grad);
+  const t = km && km > 0 ? obracunajTransport(km, putarina, settings) : null;
+  const predlog = t?.predlog ?? null;
+  const cena = predlog != null && besplatnaDostavaPoPravilu(total) ? 0 : predlog;
+  return {
+    transport_km: t?.km ?? null,
+    transport_litara: t?.litara ?? null,
+    transport_gorivo: t?.gorivo ?? null,
+    transport_amortizacija: t?.amortizacija ?? null,
+    transport_putarina: t?.putarina ?? null,
+    transport_predlog: predlog,
+    transport_cena: cena,
+  };
+}
+
+export async function updateCustomer(input: CustomerInput): Promise<Customer> {
+  const sb = supabaseAdmin();
+  const ime = toTitleCase(input.ime);
+  if (!ime) throw new KorisnickaGreska("Ime kupca je obavezno.");
+  const telefon = normalizePhone(input.telefon);
+  const grad = toTitleCaseOrNull(input.grad);
+  const adresa = toTitleCaseOrNull(input.adresa);
+  const napomena = toSentenceCaseOrNull(input.napomena);
+
+  const { data, error } = await sb
+    .from("customers")
+    .update({ ime, telefon, grad, adresa, napomena })
+    .eq("id", input.id)
+    .select("*")
+    .single();
+  if (error) throw error;
+
+  if (!input.primeni_adresu_na_porudzbine) {
+    // Samo uskladi snapshot imena/telefona na svim porudžbinama ovog kupca.
+    await sb
+      .from("orders")
+      .update({ kupac_ime: ime, kupac_telefon: telefon })
+      .eq("customer_id", input.id);
+  } else {
+    // Dodatno primeni ispravljeni grad i adresu na sve porudžbine kupca.
+    // Kad se grad promenio, preračunaj dostavu po ispravljenom gradu.
+    const { data: orders, error: ordErr } = await sb
+      .from("orders")
+      .select("id, grad, total, licno_preuzimanje")
+      .eq("customer_id", input.id);
+    if (ordErr) throw ordErr;
+
+    const settings = await getSettings();
+    for (const o of (orders ?? []) as { id: string; grad: string | null; total: number | null; licno_preuzimanje: boolean }[]) {
+      const patch: Record<string, unknown> = { kupac_ime: ime, kupac_telefon: telefon, grad, adresa };
+      if ((o.grad ?? null) !== (grad ?? null)) {
+        Object.assign(patch, transportFieldsZaGrad(grad, o.licno_preuzimanje === true, o.total ?? null, settings));
+      }
+      const { error: upErr } = await sb.from("orders").update(patch).eq("id", o.id);
+      if (upErr) throw upErr;
+    }
+  }
+
+  return data as Customer;
 }
 
 // Pronađi ili napravi kupca po imenu; osveži kontakt/grad/adresu

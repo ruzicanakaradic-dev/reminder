@@ -217,7 +217,10 @@ export function OrderForm({
           canvas.height = Math.round(img.height * scale);
           const ctx = canvas.getContext("2d")!;
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL("image/jpeg", 0.82));
+          // WebP je znatno manji; Safari (iPhone) ne podržava uvek WebP
+          // enkodiranje preko canvas-a — tada vrati JPEG kao rezervu.
+          const webp = canvas.toDataURL("image/webp", 0.82);
+          resolve(webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/jpeg", 0.82));
         };
         img.onerror = reject;
         img.src = reader.result as string;
@@ -576,7 +579,7 @@ export function OrderForm({
           {slika ? (
             <div className="relative inline-block">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={slika} alt="Primer" className="max-h-48 rounded-[10px] grayscale border border-[var(--divider)]" />
+              <img src={slika} alt="Primer" className="max-h-48 rounded-[10px] border border-[var(--divider)]" />
               <button type="button" onClick={() => setSlika(null)}
                 className="absolute -top-2 -right-2 grid place-items-center w-7 h-7 rounded-full btn-primary">
                 <X size={15} />
