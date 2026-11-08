@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { TrustLogo } from "@/components/TrustLogo";
@@ -97,6 +98,13 @@ function PrijavaForm() {
             {loading ? <Loader2 size={18} className="animate-spin" /> : null}
             Uđi
           </button>
+
+          <p className="text-sm text-center text-muted">
+            Nemaš nalog?{" "}
+            <Link href="/registracija" className="font-bold" style={{ color: "var(--brand-plum)" }}>
+              Napravi besplatno
+            </Link>
+          </p>
         </form>
       </div>
     </div>

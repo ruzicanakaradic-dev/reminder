@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { saveOrder, updateStatus, deleteOrder, getSettings, getBrendKorisnice, updateSettings, updateCustomer } from "@/lib/data";
+import { pbUserOrNull } from "@/lib/pb/server";
 import type { AppSettings, CustomerInput, OrderInput, OrderItemInput, Status } from "@/lib/types";
 import { KorisnickaGreska, razumljivaPoruka, type Rezultat } from "@/lib/greske";
 
@@ -134,6 +135,31 @@ export async function getSettingsAction(): Promise<AppSettings> {
 // Brend korisnice (nivo 2) — boja/naziv/logo za radni prostor.
 export async function getBrendAction() {
   return getBrendKorisnice();
+}
+
+// Status probnog perioda za baner u aplikaciji (faza 4). Čita sopstveni red
+// (korisnica sme da vidi sebe). paid (Ružica) → bez banera.
+export async function getTrialStatusAction(): Promise<{
+  trial: boolean;
+  danaLeft: number;
+  istice_danas: boolean;
+}> {
+  const prazno = { trial: false, danaLeft: 0, istice_danas: false };
+  const ctx = await pbUserOrNull();
+  if (!ctx) return prazno;
+  try {
+    const u = await ctx.pb.collection("users").getOne(ctx.userId, { fields: "plan,trial_do" });
+    const rec = u as unknown as { plan?: string; trial_do?: string };
+    if (rec.plan === "paid" || !rec.trial_do) return prazno;
+    const danas = new Date();
+    danas.setHours(0, 0, 0, 0);
+    const kraj = new Date(`${rec.trial_do}T00:00:00`);
+    const diff = Math.floor((kraj.getTime() - danas.getTime()) / 86_400_000);
+    if (diff < 0) return { trial: true, danaLeft: 0, istice_danas: true };
+    return { trial: true, danaLeft: diff, istice_danas: diff === 0 };
+  } catch {
+    return prazno;
+  }
 }
 
 export async function saveSettingsAction(patch: Partial<AppSettings>): Promise<Rezultat<AppSettings>> {

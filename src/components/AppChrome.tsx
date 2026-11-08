@@ -6,6 +6,7 @@ import { CalendarDays, Home, Users, BarChart3, ClipboardList, Plus, Settings } f
 import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { PushSetup } from "@/components/PushSetup";
 import { BrandProvider, useBrend } from "@/components/BrandStyle";
+import { TrialBanner } from "@/components/TrialBanner";
 
 const NAV = [
   { href: "/", label: "Danas", icon: Home },
@@ -54,7 +55,17 @@ function BrendZnak() {
 
 export function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  if (pathname === "/prijava") return <>{children}</>;
+  // Samostalne rute bez autentifikovanog chrome-a (sidebar, brend, trial, push):
+  // javne (prijava/registracija/proba) i admin (ima svoj superuser kontekst).
+  // Ovde se NE sme zvati getBrendAction/getTrialStatusAction jer koriste pbUser()
+  // koji redirektuje na /prijava — pa bi javne stranice odskakale na prijavu.
+  const samostalna =
+    pathname === "/prijava" ||
+    pathname === "/registracija" ||
+    pathname === "/proba-shadcn" ||
+    pathname === "/nalog-neaktivan" ||
+    pathname.startsWith("/admin");
+  if (samostalna) return <>{children}</>;
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -103,6 +114,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="flex-1 w-full max-w-[1120px] px-4 min-[861px]:px-6 py-5 pb-28 min-[861px]:pb-10">
+          <TrialBanner />
           {children}
         </main>
       </div>

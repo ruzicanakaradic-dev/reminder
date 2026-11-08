@@ -55,6 +55,21 @@ Aplikacija za vođenje porudžbina domaćih kolača: porudžbine, kupci, kalenda
 - Trial enforcement: `pbUser()` proverava status; blokiran/istekao trial →
   redirect na `/nalog-neaktivan`. paid (Ružica) prolazi bez provere.
 
+## Registracija (self-signup + 5 dana trial)
+- `/registracija` — javni ekran (Trust identitet, isti čist stil kao `/prijava`):
+  naziv biznisa + email + lozinka. Izuzet iz middleware-a.
+- `/api/registracija` → `registrujNalog()` u `src/lib/signup.ts`: pravi nalog
+  preko **env superusera** (`pbAdmin()`), jer je `users` Create = samo superuser
+  (javno direktno kreiranje ostaje isključeno). Nova korisnica → `plan=free`,
+  `trial_do` = danas + `TRIAL_DANA` (5), `blokiran=false`, `ime_biznisa`.
+- Posle kreiranja ruta radi **auto-login** (isti kolačić kao `/api/prijava`), pa
+  korisnica odmah ulazi u aplikaciju.
+- Trial baner: `TrialBanner` (vrh `main` u `AppChrome`) čita `getTrialStatusAction()`
+  (preostali dani); paid nalog ga ne vidi.
+- `AppChrome` renderuje **gole** samostalne rute (prijava, registracija,
+  proba-shadcn, nalog-neaktivan, `/admin/*`) — tamo se NE sme zvati
+  `getBrendAction`/`getTrialStatusAction` (koriste `pbUser()` koji redirektuje).
+
 ## Komande
 - `npm run dev` · `npm run build`
 
