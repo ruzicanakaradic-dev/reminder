@@ -50,7 +50,7 @@ export function TransportSettings() {
   return (
     <div className="card p-5 space-y-4">
       <div className="flex items-center gap-2 text-ink font-semibold">
-        <Fuel size={18} className="text-[var(--accent)]" /> Troškovi prevoza
+        <Fuel size={18} className="text-[var(--brand)]" /> Troškovi prevoza
       </div>
       <p className="text-sm text-muted -mt-2">
         Cena dizela se menja skoro svake nedelje (petkom) — ovde je ažuriraj. Trošak na već sačuvanim
@@ -79,7 +79,7 @@ export function TransportSettings() {
           </button>
 
           {msg && (
-            <div className={`text-sm font-medium flex items-start gap-1.5 ${tone === "warn" ? "text-red-600" : "text-[var(--accent)]"}`}>
+            <div className={`text-sm font-medium flex items-start gap-1.5 ${tone === "warn" ? "text-red-600" : "text-[var(--brand)]"}`}>
               {tone === "warn" ? <AlertTriangle size={15} className="mt-0.5 shrink-0" /> : <Check size={15} className="mt-0.5 shrink-0" />}
               <span>{msg}</span>
             </div>

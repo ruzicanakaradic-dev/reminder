@@ -189,7 +189,7 @@ export default async function StatistikaPage({
       </div>
 
       <MonthFinanceList title="Po mesecu — promet, trošak i zarada" rows={mesecniFin} />
-      <BarList title={`Promet po mesecu (poslednjih ${chartN})`} rows={mesecni} color="var(--accent)" money />
+      <BarList title={`Promet po mesecu (poslednjih ${chartN})`} rows={mesecni} color="var(--brand)" money />
       <BarList title="Najbolji kupci" rows={kupci} color="var(--ink)" money />
       <BarList title="Po gradu / mestu" rows={gradovi} color="var(--neutral-600)" money />
       <BarList title="Najprodavaniji proizvod" rows={proizvodi} color="var(--gold)" suffix=" kom" />
@@ -237,7 +237,7 @@ function FinCell({ label, value, strong, accent }: {
       <div className="kicker" style={{ fontSize: 10 }}>{label}</div>
       <div
         className={`mt-0.5 tabular-nums ${strong || accent ? "font-extrabold" : "font-bold"}`}
-        style={{ fontSize: 14, color: accent ? "var(--accent)" : "var(--ink)" }}
+        style={{ fontSize: 14, color: accent ? "var(--brand)" : "var(--ink)" }}
       >
         {formatRSD(value)}
       </div>

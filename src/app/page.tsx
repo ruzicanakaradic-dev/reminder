@@ -114,7 +114,7 @@ function MonthStat({ label, value, strong, accent }: {
       <div className="kicker" style={{ fontSize: 10 }}>{label}</div>
       <div
         className={`mt-0.5 tabular-nums ${strong || accent ? "font-extrabold" : "font-bold"}`}
-        style={{ fontSize: 15, color: accent ? "var(--accent)" : "var(--ink)" }}
+        style={{ fontSize: 15, color: accent ? "var(--brand)" : "var(--ink)" }}
       >
         {formatRSD(value)}
       </div>

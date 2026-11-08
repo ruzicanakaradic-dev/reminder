@@ -36,7 +36,7 @@ export default async function KupacDetalj({ params }: { params: Promise<{ id: st
       </div>
 
       <div className="card p-5" style={{ borderWidth: 2 }}>
-        <div className="kicker" style={{ color: "var(--accent)" }}>
+        <div className="kicker" style={{ color: "var(--brand)" }}>
           {customerCode(kupac.redni_broj)} · redni br. {kupac.redni_broj}
         </div>
         <h2 className="text-2xl mt-1">{kupac.ime}</h2>

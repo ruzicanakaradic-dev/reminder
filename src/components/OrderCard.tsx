@@ -33,7 +33,7 @@ export function OrderCard({ order }: { order: Order }) {
         </span>
         {order.grad && <span>{order.grad}</span>}
       </div>
-      <div className="text-[12px]" style={{ color: hitno ? "var(--accent)" : "var(--neutral-600)" }}>
+      <div className="text-[12px]" style={{ color: hitno ? "var(--brand)" : "var(--neutral-600)" }}>
         Isporuka {relativnoDana(dana)}
         {order.vreme_isporuke ? ` · ${order.vreme_isporuke}` : ""} · #{order.redni_broj}
       </div>

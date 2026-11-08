@@ -63,7 +63,7 @@ export function CustomerForm({ customer }: { customer: Customer }) {
         <label className="flex items-start gap-3 cursor-pointer select-none rounded-[12px] p-3"
           style={{ border: "1px solid var(--divider)", background: "var(--surface)" }}>
           <input type="checkbox" name="primeni_adresu_na_porudzbine" defaultChecked
-            className="mt-0.5 w-5 h-5 shrink-0" style={{ accentColor: "var(--accent)" }} />
+            className="mt-0.5 w-5 h-5 shrink-0" style={{ accentColor: "var(--brand)" }} />
           <span className="text-sm">
             <span className="font-bold">Ispravi adresu i na ranijim porudžbinama</span>
             <span className="block text-muted text-xs mt-0.5">
@@ -78,7 +78,7 @@ export function CustomerForm({ customer }: { customer: Customer }) {
         </p>
       </div>
 
-      {error && <div className="card p-3 text-sm font-bold" style={{ color: "var(--accent)" }}>{error}</div>}
+      {error && <div className="card p-3 text-sm font-bold" style={{ color: "var(--brand)" }}>{error}</div>}
 
       <div className="flex gap-3">
         <button type="submit" disabled={pending} className="btn btn-primary flex-1">

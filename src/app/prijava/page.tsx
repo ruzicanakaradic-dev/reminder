@@ -82,7 +82,7 @@ function PrijavaForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 grid place-items-center w-8 h-8 rounded-[8px] text-[var(--neutral-600)] hover:text-[var(--accent)]"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 grid place-items-center w-8 h-8 rounded-[8px] text-[var(--neutral-600)] hover:text-[var(--brand-plum)]"
                 aria-label={showPassword ? "Sakrij lozinku" : "Prikaži lozinku"}
                 tabIndex={-1}
               >
@@ -91,7 +91,7 @@ function PrijavaForm() {
             </div>
           </div>
 
-          {error && <div className="text-sm font-bold" style={{ color: "var(--accent)" }}>{error}</div>}
+          {error && <div className="text-sm font-bold" style={{ color: "var(--brand-plum)" }}>{error}</div>}
 
           <button type="submit" disabled={loading} className="btn btn-primary btn-block">
             {loading ? <Loader2 size={18} className="animate-spin" /> : null}

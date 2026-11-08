@@ -54,10 +54,10 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
       </div>
 
       {hitno && (
-        <div className="card p-4 flex items-center gap-3" style={{ borderColor: "var(--accent)", borderWidth: 2 }}>
+        <div className="card p-4 flex items-center gap-3" style={{ borderColor: "var(--brand)", borderWidth: 2 }}>
           <span className="text-2xl">⏰</span>
           <div className="text-sm">
-            <b style={{ color: "var(--accent)" }}>Isporuka {relativnoDana(dana)}!</b>{" "}
+            <b style={{ color: "var(--brand)" }}>Isporuka {relativnoDana(dana)}!</b>{" "}
             <span className="text-muted">Vreme je za pripremu.</span>
           </div>
         </div>
@@ -176,7 +176,7 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
 
       {licno && (
         <div className="card p-4 flex items-center gap-2.5">
-          <Home size={16} style={{ color: "var(--accent)" }} />
+          <Home size={16} style={{ color: "var(--brand)" }} />
           <div className="text-sm">
             <b style={{ color: "var(--accent-800)" }}>Lično preuzimanje</b>{" "}
             <span className="text-muted">— kupac preuzima kod nas, bez dostave.</span>
@@ -187,7 +187,7 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
       {!licno && (order.transport_km != null || order.transport_cena != null) && (
         <div className="card p-5">
           <div className="flex items-center gap-2 mb-3">
-            <Truck size={16} style={{ color: "var(--accent)" }} />
+            <Truck size={16} style={{ color: "var(--brand)" }} />
             <div className="kicker !mb-0">Transport / dostava</div>
           </div>
 
@@ -219,7 +219,7 @@ export default async function PorudzbinaDetalj({ params }: { params: Promise<{ i
       )}
 
       {order.napomena && (
-        <div className="card p-4" style={{ borderLeft: "4px solid var(--accent)" }}>
+        <div className="card p-4" style={{ borderLeft: "4px solid var(--brand)" }}>
           <div className="kicker mb-1">Posebna želja / napomena</div>
           <p className="text-sm whitespace-pre-wrap">{order.napomena}</p>
         </div>

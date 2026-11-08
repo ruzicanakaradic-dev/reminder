@@ -137,7 +137,7 @@ export function ReminderWatcher() {
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-3 sm:p-6 bg-ink/40 backdrop-blur-sm animate-in">
       <div className="card w-full max-w-md overflow-hidden">
-        <div className="text-white px-5 py-4 flex items-center gap-3" style={{ background: "var(--accent)" }}>
+        <div className="text-white px-5 py-4 flex items-center gap-3" style={{ background: "var(--brand)" }}>
           <span className="grid place-items-center w-11 h-11 rounded-[12px] bg-white/20 pulse-ring">
             <BellRing size={22} />
           </span>
@@ -159,7 +159,7 @@ export function ReminderWatcher() {
                   <div className="mt-1 text-sm">
                     <span
                       className="font-bold"
-                      style={{ color: "var(--accent)" }}
+                      style={{ color: "var(--brand)" }}
                     >
                       Isporuka {relativnoDana(it.dana)}
                     </span>{" "}
@@ -184,7 +184,7 @@ export function ReminderWatcher() {
                   href={`/porudzbine/${it.id}`}
                   onClick={() => potvrdi(it)}
                   className="text-sm font-bold underline underline-offset-2"
-                  style={{ color: "var(--accent)" }}
+                  style={{ color: "var(--brand)" }}
                 >
                   Otvori porudžbinu →
                 </Link>

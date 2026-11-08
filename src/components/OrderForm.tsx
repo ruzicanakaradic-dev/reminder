@@ -303,7 +303,7 @@ export function OrderForm({
       {/* Način isporuke: dostava ili lično preuzimanje */}
       <div className="card p-4 space-y-3">
         <div className="flex items-center gap-1.5">
-          <Truck size={15} style={{ color: "var(--accent)" }} />
+          <Truck size={15} style={{ color: "var(--brand)" }} />
           <label className="label !mb-0" style={{ fontSize: 11 }}>Način isporuke</label>
         </div>
 
@@ -360,7 +360,7 @@ export function OrderForm({
             // Kad je uključen po pravilu, klik se samo ignoriše.
             aria-disabled={besplatnaAuto}
             onChange={(e) => { if (!besplatnaAuto) setBesplatnaRucno(e.target.checked); }}
-            className={`w-4 h-4 shrink-0 accent-[var(--accent)] ${besplatnaAuto ? "cursor-default" : ""}`}
+            className={`w-4 h-4 shrink-0 accent-[var(--brand)] ${besplatnaAuto ? "cursor-default" : ""}`}
           />
           <span className="text-[12px] font-bold" style={{ color: besplatna ? "var(--accent-800)" : "var(--ink)" }}>
             Besplatna dostava (0 RSD)
@@ -402,7 +402,7 @@ export function OrderForm({
               </p>
             )}
             {!besplatna && autoKm?.stanje === "auto" && (
-              <p className="text-[11px] leading-snug mt-1" style={{ color: "var(--accent)" }}>
+              <p className="text-[11px] leading-snug mt-1" style={{ color: "var(--brand)" }}>
                 Automatski sa mape ({autoKm.tekst}). Možeš da izmeniš.
               </p>
             )}
@@ -426,7 +426,7 @@ export function OrderForm({
               {besplatna
                 ? <>Dostava je besplatna{besplatnaAuto && <> (torte/kolači od {formatRSD(BESPLATNA_DOSTAVA_OD)})</>}. {racun && <>Preporučeno bi bilo <b>{formatRSD(racun.predlog)}</b>.</>}</>
                 : racun
-                  ? <>Preporučeno: <b style={{ color: "var(--accent)" }}>{formatRSD(racun.predlog)}</b> — možeš da izmeniš.</>
+                  ? <>Preporučeno: <b style={{ color: "var(--brand)" }}>{formatRSD(racun.predlog)}</b> — možeš da izmeniš.</>
                   : "Unesi km da bi dobila predlog."}
             </p>
           </div>
@@ -596,7 +596,7 @@ export function OrderForm({
 
       {error && (
         <div role="alert" className="card p-3 text-sm flex items-start gap-2"
-          style={{ color: "var(--accent)", borderColor: "var(--accent)" }}>
+          style={{ color: "var(--brand)", borderColor: "var(--brand)" }}>
           <AlertTriangle size={16} className="mt-0.5 shrink-0" />
           <div><b>Nije sačuvano.</b> {error}</div>
         </div>

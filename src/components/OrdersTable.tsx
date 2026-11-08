@@ -39,7 +39,7 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
               <td className="whitespace-nowrap">{formatKg(o.tezina_kg)}</td>
               <td className="whitespace-nowrap font-extrabold">{formatRSD(ukupnaCena(o))}</td>
               <td className="whitespace-nowrap text-muted">{formatRSD(trosak(o))}</td>
-              <td className="whitespace-nowrap font-extrabold" style={{ color: "var(--accent)" }}>{formatRSD(zarada(o))}</td>
+              <td className="whitespace-nowrap font-extrabold" style={{ color: "var(--brand)" }}>{formatRSD(zarada(o))}</td>
               <td>
                 <StatusBadge status={o.status} />
               </td>

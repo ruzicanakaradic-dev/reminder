@@ -11,7 +11,7 @@ export default function Error({ error, reset }: { error: Error; reset: () => voi
           <code className="bg-[var(--surface)] px-1 rounded">pocketbase/pb_schema.json</code> uvezen.
         </p>
         {error?.message && (
-          <p className="text-xs text-[var(--accent)] mt-3 bg-[var(--accent-100)] rounded-lg p-2 break-words">
+          <p className="text-xs text-[var(--brand-plum)] mt-3 bg-[var(--accent-100)] rounded-lg p-2 break-words">
             {error.message}
           </p>
         )}

@@ -30,7 +30,7 @@ export function DeleteOrderButton({ id }: { id: string }) {
   };
 
   return (
-    <button onClick={onClick} disabled={pending} className="btn btn-ghost text-[var(--accent)]">
+    <button onClick={onClick} disabled={pending} className="btn btn-ghost text-[var(--brand)]">
       {pending ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
       Obriši
     </button>

@@ -175,7 +175,7 @@ export default function PodesavanjaPage() {
     unsupported: { text: "Nije podržano na ovom uređaju", cls: "text-muted" },
     denied: { text: "Blokirano u podešavanjima telefona", cls: "text-red-600" },
     off: { text: "Isključeno", cls: "text-muted" },
-    on: { text: "✓ Uključeno", cls: "text-[var(--accent)]" },
+    on: { text: "✓ Uključeno", cls: "text-[var(--brand)]" },
   }[status];
 
   return (
@@ -187,7 +187,7 @@ export default function PodesavanjaPage() {
       <div className="card p-5 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-ink font-semibold">
-            <Bell size={18} className="text-[var(--accent)]" /> Notifikacije
+            <Bell size={18} className="text-[var(--brand)]" /> Notifikacije
           </div>
           <span className={`text-sm font-semibold ${statusBadge.cls}`}>{statusBadge.text}</span>
         </div>
@@ -213,7 +213,7 @@ export default function PodesavanjaPage() {
         {msg && (
           <div
             className={`text-sm font-medium flex items-start gap-1.5 ${
-              tone === "warn" ? "text-red-600" : "text-[var(--accent)]"
+              tone === "warn" ? "text-red-600" : "text-[var(--brand)]"
             }`}
           >
             {tone === "warn" ? <AlertTriangle size={15} className="mt-0.5 shrink-0" /> : <Check size={15} className="mt-0.5 shrink-0" />}
@@ -224,7 +224,7 @@ export default function PodesavanjaPage() {
 
       <TransportSettings />
 
-      <div className="card p-5 space-y-2" style={{ borderLeft: "4px solid var(--accent)" }}>
+      <div className="card p-5 space-y-2" style={{ borderLeft: "4px solid var(--brand)" }}>
         <div className="text-ink font-semibold">📣 Kako da testiraš zaključan ekran</div>
         <ol className="text-sm text-muted list-decimal pl-5 space-y-1">
           <li>Pritisni <b>„Uključi notifikacije"</b> i dozvoli obaveštenja.</li>
@@ -250,7 +250,7 @@ export default function PodesavanjaPage() {
         </ul>
       </div>
 
-      <button onClick={logout} className="btn btn-ghost text-[var(--accent)] w-full">
+      <button onClick={logout} className="btn btn-ghost text-[var(--brand)] w-full">
         <LogOut size={18} /> Odjavi se
       </button>
     </div>

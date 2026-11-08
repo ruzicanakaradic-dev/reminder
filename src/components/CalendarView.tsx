@@ -158,12 +158,12 @@ function MonthGrid({ cursor, byDay, selected, onPick, onSelect }: {
             className="min-h-[92px] max-[860px]:min-h-[58px] p-1.5 flex flex-col gap-1 text-left max-[860px]:items-center"
             style={{
               background: "var(--bg)", opacity: inMonth ? 1 : 0.4,
-              outline: isSel ? "2px solid var(--accent)" : "none", outlineOffset: "-2px",
+              outline: isSel ? "2px solid var(--brand)" : "none", outlineOffset: "-2px",
             }}
           >
             <span className="inline-flex items-center justify-center w-[22px] h-[22px] rounded-[6px] text-[13px] font-extrabold"
               style={{
-                background: isToday ? "var(--accent)" : "transparent",
+                background: isToday ? "var(--brand)" : "transparent",
                 color: isToday ? "var(--bg)" : "var(--ink)",
               }}>
               {d.getDate()}
@@ -218,7 +218,7 @@ function WeekGrid({ cursor, byDay, onPick }: {
               <span className="text-[11px] uppercase font-extrabold" style={{ color: "var(--neutral-600)" }}>
                 {DANI_KRATKO[d.getDay()]}
               </span>
-              <span className="text-[18px] font-extrabold" style={{ color: isToday ? "var(--accent)" : "var(--ink)" }}>
+              <span className="text-[18px] font-extrabold" style={{ color: isToday ? "var(--brand)" : "var(--ink)" }}>
                 {d.getDate()}
               </span>
             </div>
@@ -245,7 +245,7 @@ function DayList({ datum, orders }: { datum: string; orders: Order[] }) {
     <div>
       <div className="flex items-center justify-between mb-3 mt-2">
         <h3 className="text-lg capitalize">{danUNedelji(d)}, {d.getDate()}. {MESECI[d.getMonth()]}</h3>
-        {orders.length > 0 && <span className="text-sm font-extrabold" style={{ color: "var(--accent)" }}>{formatRSD(prihod)}</span>}
+        {orders.length > 0 && <span className="text-sm font-extrabold" style={{ color: "var(--brand)" }}>{formatRSD(prihod)}</span>}
       </div>
       {orders.length === 0 ? (
         <div className="card p-6 text-center text-muted">Nema porudžbina za ovaj dan.</div>
@@ -266,7 +266,7 @@ function PeriodStat({ label, value, strong, accent, sub }: {
       <div className="kicker" style={{ fontSize: 10 }}>{label}</div>
       <div
         className={`mt-0.5 tabular-nums ${strong || accent ? "font-extrabold" : "font-bold"}`}
-        style={{ fontSize: 15, color: accent ? "var(--accent)" : "var(--ink)" }}
+        style={{ fontSize: 15, color: accent ? "var(--brand)" : "var(--ink)" }}
       >
         {formatRSD(value)}
       </div>
