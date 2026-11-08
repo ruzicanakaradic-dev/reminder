@@ -178,16 +178,15 @@ h1, h2, h3, h4, h5, .display {
 }
 .kpi-value {
   font-weight: 800;
-  font-size: clamp(20px, 5.6vw, 34px); /* fluidno da duže cifre (npr. "12.000 RSD") ne izlaze iz boksa */
+  font-size: 17px; /* JEDINSTVENA veličina za sve iznose; FitText smanji samo ako baš mora */
   line-height: 1.12;
   margin-top: auto; /* vrednost prijanja uz dno — sve kartice u redu deluju ujednačeno */
   padding-top: 2px;
-  overflow-wrap: break-word; /* prelom po razmaku (12.000 / RSD), reč se lomi tek ako baš mora */
+  white-space: nowrap; /* nikad u dva reda */
 }
-/* Kompaktna varijanta (npr. Troškovi prevoza) — manja vrednost, kao „Po mesecu" karte */
+/* Kompaktna varijanta (npr. Troškovi prevoza) — isti font, samo tešnji padding */
 .kpi.kpi-sm { padding: 14px; }
 .kpi.kpi-sm .kpi-label { min-height: 2.4em; }
-.kpi.kpi-sm .kpi-value { font-size: clamp(16px, 4.2vw, 20px); }
 
 /* ── Dugmad ────────────────────────────────────────────────── */
 .btn {
