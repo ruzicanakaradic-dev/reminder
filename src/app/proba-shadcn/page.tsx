@@ -14,6 +14,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { StatusControl } from "@/components/StatusControl";
+import {
+  AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 
 export default function ProbaShadcnPage() {
   const [loading, setLoading] = useState(false);
@@ -114,6 +119,34 @@ export default function ProbaShadcnPage() {
             <StatusControl id="demo2" status="u_radu" />
             <StatusControl id="demo3" status="zavrseno" />
             <StatusControl id="demo4" status="isporuceno" />
+          </CardContent>
+        </Card>
+
+        {/* AlertDialog — zamena native confirm() (provera izgleda u dark) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">AlertDialog (potvrda brisanja)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AlertDialog>
+              <AlertDialogTrigger
+                render={
+                  <button className="btn btn-ghost text-[var(--brand)]">
+                    <Trash2 size={18} /> Obriši
+                  </button>
+                }
+              />
+              <AlertDialogContent>
+                <AlertDialogTitle>Obriši porudžbinu?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Ova porudžbina će biti trajno obrisana. Ovo se ne može poništiti.
+                </AlertDialogDescription>
+                <AlertDialogFooter>
+                  <AlertDialogCancel render={<button className="btn btn-secondary">Otkaži</button>} />
+                  <AlertDialogCancel render={<button className="btn btn-primary"><Trash2 size={18} /> Obriši</button>} />
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardContent>
         </Card>
 
