@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo } from "next/font/google";
+import { Archivo, Geist } from "next/font/google";
 import "./globals.css";
 import { AppChrome } from "@/components/AppChrome";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const archivo = Archivo({
   subsets: ["latin", "latin-ext"],
@@ -36,7 +39,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="sr">
+    <html lang="sr" className={cn("font-sans", geist.variable)}>
       <body className={archivo.variable}>
         <AppChrome>{children}</AppChrome>
       </body>

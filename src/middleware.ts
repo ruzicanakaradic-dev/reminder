@@ -54,6 +54,6 @@ export async function middleware(req: NextRequest) {
 export const config = {
   // izuzmi: login, api (cron/push imaju svoju zaštitu), _next, statiku, sw, manifest, ikonice
   matcher: [
-    "/((?!prijava|api|_next/static|_next/image|favicon.ico|icon.png|logo.png|sw.js|manifest.webmanifest|icons|apple-touch-icon.png|offline).*)",
+    "/((?!prijava|proba-shadcn|api|_next/static|_next/image|favicon.ico|icon.png|logo.png|sw.js|manifest.webmanifest|icons|apple-touch-icon.png|offline).*)",
   ],
 };
