@@ -964,20 +964,22 @@
         "onlyInt": false
       },
       {
-        "id": "number0000065",
-        "name": "dizel_cena_rsd",
-        "type": "number",
+        "id": "select0000065",
+        "name": "tip_goriva",
+        "type": "select",
         "system": false,
         "hidden": false,
         "presentable": false,
         "required": false,
-        "min": 0,
-        "max": null,
-        "onlyInt": false
+        "values": [
+          "dizel",
+          "benzin"
+        ],
+        "maxSelect": 1
       },
       {
         "id": "number0000066",
-        "name": "potrosnja_l_100km",
+        "name": "gorivo_cena_rsd",
         "type": "number",
         "system": false,
         "hidden": false,
@@ -989,7 +991,7 @@
       },
       {
         "id": "number0000067",
-        "name": "amortizacija_rsd_km",
+        "name": "potrosnja_l_100km",
         "type": "number",
         "system": false,
         "hidden": false,
@@ -1001,6 +1003,18 @@
       },
       {
         "id": "number0000068",
+        "name": "amortizacija_rsd_km",
+        "type": "number",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "required": false,
+        "min": 0,
+        "max": null,
+        "onlyInt": false
+      },
+      {
+        "id": "number0000069",
         "name": "besplatna_dostava_od",
         "type": "number",
         "system": false,
@@ -1012,7 +1026,7 @@
         "onlyInt": false
       },
       {
-        "id": "autodate0000069",
+        "id": "autodate0000070",
         "name": "created",
         "type": "autodate",
         "system": false,
@@ -1023,7 +1037,7 @@
         "onUpdate": false
       },
       {
-        "id": "autodate0000070",
+        "id": "autodate0000071",
         "name": "updated",
         "type": "autodate",
         "system": false,

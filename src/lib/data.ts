@@ -5,6 +5,7 @@ import { pbUser } from "@/lib/pb/server";
 import type { AppSettings, Customer, CustomerInput, Order, OrderInput, OrderItem, Status } from "@/lib/types";
 import {
   DEFAULT_SETTINGS,
+  jePolazisteIndjija,
   obracunajTransport,
   predlozenaKm,
   predlozenaPutarina,
@@ -197,6 +198,11 @@ function slikaPatch(slika: string | null | undefined, isUpdate: boolean): Record
 // Brend-default polja (nivo 2) — prazno dok korisnica ne postavi svoje.
 const BREND_DEFAULT = { naziv_biznisa: "", brend_boja: "", brend_logo: "" };
 
+// Tip goriva iz baze → sigurna vrednost ("dizel" default).
+function tipGoriva(v: unknown): AppSettings["tip_goriva"] {
+  return v === "benzin" ? "benzin" : "dizel";
+}
+
 // Podešavanja ove korisnice; prazna polja → podrazumevane vrednosti.
 export async function getSettings(): Promise<AppSettings> {
   const { pb } = await pbUser();
@@ -205,9 +211,14 @@ export async function getSettings(): Promise<AppSettings> {
     const r = res.items[0] as Rec | undefined;
     if (!r) return { ...DEFAULT_SETTINGS, ...BREND_DEFAULT };
     return {
-      dizel_cena_rsd: n(r.dizel_cena_rsd) ?? DEFAULT_SETTINGS.dizel_cena_rsd,
+      polaziste_adresa: s(r.polaziste_adresa) ?? DEFAULT_SETTINGS.polaziste_adresa,
+      polaziste_lat: n(r.polaziste_lat) ?? DEFAULT_SETTINGS.polaziste_lat,
+      polaziste_lon: n(r.polaziste_lon) ?? DEFAULT_SETTINGS.polaziste_lon,
+      tip_goriva: tipGoriva(r.tip_goriva),
+      gorivo_cena_rsd: n(r.gorivo_cena_rsd) ?? DEFAULT_SETTINGS.gorivo_cena_rsd,
       potrosnja_l_100km: n(r.potrosnja_l_100km) ?? DEFAULT_SETTINGS.potrosnja_l_100km,
       amortizacija_rsd_km: n(r.amortizacija_rsd_km) ?? DEFAULT_SETTINGS.amortizacija_rsd_km,
+      besplatna_dostava_od: n(r.besplatna_dostava_od) ?? DEFAULT_SETTINGS.besplatna_dostava_od,
       naziv_biznisa: s(r.naziv_biznisa) ?? "",
       brend_boja: s(r.brend_boja) ?? "",
       brend_logo: s(r.brend_logo) ?? "",
@@ -260,15 +271,29 @@ export async function removeBrendLogo(): Promise<import("@/lib/types").BrendKori
   return getBrendKorisnice();
 }
 
-const TEKST_POLJA = new Set(["naziv_biznisa", "brend_boja", "brend_logo"]);
+// Tekstualna polja (ne smeju kroz brojčani filter) i numerička polja (≥0).
+// Brend tekst-polja (naziv_biznisa, brend_boja) idu ovuda; brend_logo je fajl
+// (ide kroz uploadBrendLogo), pa nije ovde.
+const TEXT_SETTINGS = new Set(["polaziste_adresa", "tip_goriva", "naziv_biznisa", "brend_boja"]);
+const NUM_SETTINGS = new Set([
+  "polaziste_lat",
+  "polaziste_lon",
+  "gorivo_cena_rsd",
+  "potrosnja_l_100km",
+  "amortizacija_rsd_km",
+  "besplatna_dostava_od",
+]);
 
 export async function updateSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
   const { pb, userId } = await pbUser();
   const clean: Record<string, number | string> = {};
   for (const [k, v] of Object.entries(patch)) {
     if (v == null) continue;
-    if (TEKST_POLJA.has(k)) clean[k] = String(v).trim();
-    else if (!isNaN(Number(v)) && Number(v) >= 0) clean[k] = Number(v);
+    if (TEXT_SETTINGS.has(k)) {
+      clean[k] = k === "tip_goriva" ? (v === "benzin" ? "benzin" : "dizel") : String(v).trim();
+    } else if (NUM_SETTINGS.has(k) && !isNaN(Number(v)) && Number(v) >= 0) {
+      clean[k] = Number(v);
+    }
   }
   const res = await pb.collection("app_settings").getList(1, 1);
   const existing = res.items[0] as Rec | undefined;
@@ -314,11 +339,15 @@ function transportFieldsZaGrad(
       transport_predlog: null, transport_cena: null,
     };
   }
-  const km = predlozenaKm(grad);
-  const putarina = predlozenaPutarina(grad);
+  // Tabela rastojanja važi samo za Ružicino polazište (Inđija). Za druge
+  // korisnice ostaje prazno — dostava se preračuna u formi (auto-ruta).
+  const indjija = jePolazisteIndjija(settings.polaziste_lat, settings.polaziste_lon);
+  const km = indjija ? predlozenaKm(grad) : null;
+  const putarina = indjija ? predlozenaPutarina(grad) : 0;
   const t = km && km > 0 ? obracunajTransport(km, putarina, settings) : null;
   const predlog = t?.predlog ?? null;
-  const cena = predlog != null && besplatnaDostavaPoPravilu(total) ? 0 : predlog;
+  const cena =
+    predlog != null && besplatnaDostavaPoPravilu(total, settings.besplatna_dostava_od) ? 0 : predlog;
   return {
     transport_km: t?.km ?? null,
     transport_litara: t?.litara ?? null,
@@ -528,13 +557,19 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
   // Trošak se "zaključava" na porudžbini po TRENUTNIM podešavanjima, da bi
   // istorijska statistika ostala tačna i posle promene cene dizela.
   const settings = await getSettings();
+  // Ružicina ugrađena tabela rastojanja važi SAMO kad je polazište Inđija.
+  // Nove korisnice sa drugim polazištem koriste vrednosti iz forme (auto-ruta
+  // i auto-putarina iz /api/rastojanje), ne Ružicinu tabelu.
+  const indjija = jePolazisteIndjija(settings.polaziste_lat, settings.polaziste_lon);
   const kmPovratno =
     input.transport_km != null && !isNaN(input.transport_km)
       ? input.transport_km
-      : predlozenaKm(grad);
-  // Putarina: tabela ima prednost za poznata mesta; inače procena sa mape
-  // (prosleđena iz forme). Fallback 0.
-  const tablicna = predlozenaPutarina(grad);
+      : indjija
+        ? predlozenaKm(grad)
+        : null;
+  // Putarina: za Inđiju tabela ima prednost za poznata mesta; inače (i za nove
+  // korisnice) procena/auto-putarina prosleđena iz forme. Fallback 0.
+  const tablicna = indjija ? predlozenaPutarina(grad) : 0;
   const putarinaPovratno =
     tablicna > 0
       ? tablicna
@@ -555,7 +590,7 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
   // dostava je besplatna (samo ako dostave uopšte ima). Lično preuzimanje → nema dostave.
   const transportCena = licnoPreuzimanje
     ? null
-    : unetaCena != null && besplatnaDostavaPoPravilu(grandTotal)
+    : unetaCena != null && besplatnaDostavaPoPravilu(grandTotal, settings.besplatna_dostava_od)
       ? 0
       : unetaCena;
 

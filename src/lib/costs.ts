@@ -17,13 +17,20 @@ import type { Order } from "@/lib/types";
 
 export const COST_RATE = 0.3;
 
-// Porudžbina od 15.000 RSD naviše ima besplatnu dostavu, automatski.
+// Podrazumevani prag besplatne dostave (RSD) — fallback kad korisnica nema
+// podešavanje. Svaka korisnica ga menja u app_settings (`besplatna_dostava_od`).
 // Prag se gleda SAMO na torte/kolače (`orders.total`, zbir stavki): toper,
 // dekoracija i dostava se ne računaju (pravilo korisnika).
 export const BESPLATNA_DOSTAVA_OD = 15000;
 
-export function besplatnaDostavaPoPravilu(proizvodi: number | null | undefined): boolean {
-  return (proizvodi ?? 0) >= BESPLATNA_DOSTAVA_OD;
+// Da li porudžbina ispunjava prag besplatne dostave. `prag` dolazi iz
+// podešavanja korisnice; 0 (ili neuneto) znači da besplatne dostave nema.
+export function besplatnaDostavaPoPravilu(
+  proizvodi: number | null | undefined,
+  prag: number = BESPLATNA_DOSTAVA_OD
+): boolean {
+  if (!prag || prag <= 0) return false;
+  return (proizvodi ?? 0) >= prag;
 }
 
 // Sastojci za proizvodnju — grubo 30% od cene proizvoda

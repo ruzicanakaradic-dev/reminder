@@ -102,10 +102,10 @@ export function AdminKonzola({ pocetne }: { pocetne: AdminUser[] }) {
       {/* Zaglavlje */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 text-ink">
-          <ShieldCheck size={22} className="text-[var(--accent)]" />
+          <ShieldCheck size={22} className="text-[var(--brand-plum)]" />
           <h1 className="text-xl font-bold">Admin konzola</h1>
         </div>
-        <button onClick={odjava} className="btn btn-ghost text-sm text-[var(--accent)]">
+        <button onClick={odjava} className="btn btn-ghost text-sm text-[var(--brand-plum)]">
           <LogOut size={16} /> Odjava
         </button>
       </div>
@@ -136,7 +136,7 @@ export function AdminKonzola({ pocetne }: { pocetne: AdminUser[] }) {
       {msg && (
         <div
           className={`text-sm font-medium flex items-start gap-1.5 ${
-            msg.tone === "warn" ? "text-red-600" : "text-[var(--accent)]"
+            msg.tone === "warn" ? "text-red-600" : "text-[var(--brand-plum)]"
           }`}
         >
           {msg.tone === "warn" ? (
@@ -224,7 +224,7 @@ export function AdminKonzola({ pocetne }: { pocetne: AdminUser[] }) {
                               {u.blokiran ? (
                                 <button
                                   onClick={() => blok(u, false)}
-                                  className="btn btn-ghost text-xs px-2 py-1 text-[var(--accent)]"
+                                  className="btn btn-ghost text-xs px-2 py-1 text-[var(--brand-plum)]"
                                 >
                                   <CheckCircle2 size={13} /> Odblokiraj
                                 </button>
@@ -274,7 +274,7 @@ function SazetakKartica({
 }) {
   return (
     <div className="card p-4 flex items-center gap-3">
-      <Icon size={20} className="text-[var(--accent)] shrink-0" />
+      <Icon size={20} className="text-[var(--brand-plum)] shrink-0" />
       <div>
         <div className="text-xl font-bold text-ink tabular-nums">{broj}</div>
         <div className="text-xs text-muted">{oznaka}</div>
@@ -324,7 +324,7 @@ function NoviNalogModal({
       <div className="card p-5 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-ink font-semibold">
-            <UserPlus size={18} className="text-[var(--accent)]" /> Novi nalog
+            <UserPlus size={18} className="text-[var(--brand-plum)]" /> Novi nalog
           </div>
           <button onClick={onClose} className="text-muted hover:text-ink" aria-label="Zatvori">
             <X size={18} />

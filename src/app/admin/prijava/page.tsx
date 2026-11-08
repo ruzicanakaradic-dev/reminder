@@ -41,12 +41,12 @@ export default function AdminPrijavaPage() {
     <div className="min-h-dvh grid place-items-center px-5 py-10">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6 flex flex-col items-center gap-2">
-          <ShieldCheck size={36} className="text-[var(--accent)]" />
+          <ShieldCheck size={36} className="text-[var(--brand-plum)]" />
           <div className="text-ink font-semibold text-lg">Admin konzola</div>
         </div>
 
         <form onSubmit={onSubmit} className="card p-6 space-y-4">
-          <div className="kicker text-center" style={{ color: "var(--accent)" }}>
+          <div className="kicker text-center" style={{ color: "var(--brand-plum)" }}>
             Upravljanje korisnicama
           </div>
           <div>

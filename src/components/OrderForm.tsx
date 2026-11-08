@@ -8,8 +8,8 @@ import { STATUS_LABEL, STATUS_ORDER, type Order, type Status } from "@/lib/types
 import type { TransportSettings } from "@/lib/transport";
 import { formatRSD, toISODate } from "@/lib/format";
 import { razumljivaPoruka } from "@/lib/greske";
-import { DEFAULT_SETTINGS, obracunajTransport, predlozenaKm, predlozenaPutarina } from "@/lib/transport";
-import { BESPLATNA_DOSTAVA_OD, besplatnaDostavaPoPravilu } from "@/lib/costs";
+import { DEFAULT_SETTINGS, jePolazisteIndjija, obracunajTransport, predlozenaKm, predlozenaPutarina } from "@/lib/transport";
+import { besplatnaDostavaPoPravilu } from "@/lib/costs";
 
 type CustomerLite = { ime: string; telefon: string | null; grad: string | null; adresa: string | null };
 
@@ -43,6 +43,11 @@ export function OrderForm({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const today = toISODate(new Date());
+  // Polazište korisnice (iz podešavanja) za prikaz u tekstovima dostave.
+  const polazisteOpis = settings.polaziste_adresa?.trim() || DEFAULT_SETTINGS.polaziste_adresa;
+  // Ružicina ugrađena tabela rastojanja važi samo za polazište Inđija; druge
+  // korisnice uvek idu na auto-rutu (/api/rastojanje) i auto-putarinu.
+  const polazisteIndjija = jePolazisteIndjija(settings.polaziste_lat, settings.polaziste_lon);
   const [ime, setIme] = useState(order?.kupac_ime ?? "");
   const [telefon, setTelefon] = useState(order?.kupac_telefon ?? "");
   const [grad, setGrad] = useState(order?.grad ?? "");
@@ -64,7 +69,7 @@ export function OrderForm({
   // kilometražu), osim kad je besplatna bila po pravilu.
   const sacuvanaBesplatna = !!order && order.transport_cena === 0 && (order.transport_km ?? 0) > 0;
   const [besplatnaRucno, setBesplatnaRucno] = useState<boolean>(
-    () => sacuvanaBesplatna && !besplatnaDostavaPoPravilu(order?.total)
+    () => sacuvanaBesplatna && !besplatnaDostavaPoPravilu(order?.total, settings.besplatna_dostava_od)
   );
   // Postojeća porudžbina: poštuj sačuvane vrednosti (ne prepisuj automatski).
   // Izuzetak: sačuvana besplatna dostava nema cenu (0), pa se predlog računa
@@ -82,8 +87,9 @@ export function OrderForm({
   useEffect(() => {
     if (kmTouched.current) return;
 
-    // 1) Poznato mesto iz tabele — trenutno, bez interneta.
-    const pk = predlozenaKm(grad);
+    // 1) Poznato mesto iz tabele — trenutno, bez interneta. Samo za Inđiju;
+    //    druge korisnice preskaču tabelu i idu na auto-rutu niže.
+    const pk = polazisteIndjija ? predlozenaKm(grad) : null;
     if (pk != null) {
       setKm(String(pk));
       setAutoKm(null);
@@ -125,16 +131,17 @@ export function OrderForm({
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [grad, adresa]);
+  }, [grad, adresa, polazisteIndjija]);
 
   const racun = useMemo(() => {
     const kmVal = num(km);
     if (kmVal == null || kmVal <= 0) return null;
-    // Putarina: tabela ima prednost; za mesta van tabele — procena sa mape.
-    const tablicna = predlozenaPutarina(grad);
+    // Putarina: za Inđiju tabela ima prednost; druge korisnice (i mesta van
+    // tabele) — auto-putarina sa mape.
+    const tablicna = polazisteIndjija ? predlozenaPutarina(grad) : 0;
     const putarina = tablicna > 0 ? tablicna : (autoPutarina ?? 0);
     return obracunajTransport(kmVal, putarina, settings);
-  }, [km, grad, settings, autoPutarina]);
+  }, [km, grad, settings, autoPutarina, polazisteIndjija]);
 
   // Predloži cenu dostave dok je korisnik ručno ne promeni
   useEffect(() => {
@@ -163,7 +170,7 @@ export function OrderForm({
   // Ukupno za naplatu = proizvodi + dekoracija + dostava
   const dekoracijaIznos = Math.max(0, num(dekoracija) ?? 0);
   // Torte/kolači od 15.000 RSD → dostava je automatski besplatna (toper se ne računa)
-  const besplatnaAuto = !licno && besplatnaDostavaPoPravilu(proizvodiTotal);
+  const besplatnaAuto = !licno && besplatnaDostavaPoPravilu(proizvodiTotal, settings.besplatna_dostava_od);
   const besplatna = besplatnaAuto || besplatnaRucno;
   // Lično preuzimanje → nema dostave uopšte
   const dostavaIznos = licno || besplatna ? 0 : Math.max(0, num(transportCena) ?? 0);
@@ -335,14 +342,14 @@ export function OrderForm({
         {licno && (
           <p className="text-[12px] leading-snug rounded-[10px] px-3 py-2.5"
             style={{ background: "var(--accent-100)", border: "1px solid var(--accent-300)", color: "var(--accent-800)" }}>
-            Kupac preuzima kod nas (Inđija, Jug Bogdana 17). Nema dostave — ni troška prevoza, ni naplate dostave.
+            Kupac preuzima kod nas ({polazisteOpis}). Nema dostave — ni troška prevoza, ni naplate dostave.
           </p>
         )}
 
         {!licno && (
         <>
         <p className="text-[11px] leading-snug text-muted">
-          Polazak: Inđija, Jug Bogdana 17 · povratna vožnja (tamo-nazad). Kilometražu možeš ručno da izmeniš.
+          Polazak: {polazisteOpis} · povratna vožnja (tamo-nazad). Kilometražu možeš ručno da izmeniš.
         </p>
 
         {/* Besplatna dostava — cena 0 RSD, polja zaključana. Od 15.000 RSD
@@ -366,7 +373,7 @@ export function OrderForm({
             Besplatna dostava (0 RSD)
             {besplatnaAuto && (
               <span className="block font-normal text-[11px] leading-snug">
-                Automatski — torte/kolači su {formatRSD(BESPLATNA_DOSTAVA_OD)} ili više (bez topera).
+                Automatski — torte/kolači su {formatRSD(settings.besplatna_dostava_od)} ili više (bez topera).
               </span>
             )}
           </span>
@@ -424,7 +431,7 @@ export function OrderForm({
             />
             <p className="text-[11px] leading-snug text-muted mt-1">
               {besplatna
-                ? <>Dostava je besplatna{besplatnaAuto && <> (torte/kolači od {formatRSD(BESPLATNA_DOSTAVA_OD)})</>}. {racun && <>Preporučeno bi bilo <b>{formatRSD(racun.predlog)}</b>.</>}</>
+                ? <>Dostava je besplatna{besplatnaAuto && <> (torte/kolači od {formatRSD(settings.besplatna_dostava_od)})</>}. {racun && <>Preporučeno bi bilo <b>{formatRSD(racun.predlog)}</b>.</>}</>
                 : racun
                   ? <>Preporučeno: <b style={{ color: "var(--brand)" }}>{formatRSD(racun.predlog)}</b> — možeš da izmeniš.</>
                   : "Unesi km da bi dobila predlog."}

@@ -7,25 +7,45 @@
 
 // Podrazumevane vrednosti — poklapaju se sa app_settings u bazi.
 // Služe kao fallback kad baza/tabela nije dostupna (da app ne pukne).
-export type TransportSettings = {
-  dizel_cena_rsd: number; // RSD / litar
-  potrosnja_l_100km: number; // l / 100km
-  amortizacija_rsd_km: number; // RSD / km (linearna amortizacija vozila)
-};
+// AppSettings (types.ts) je nadskup ovoga; obračunu treba samo ovaj podskup.
+import type { AppSettings } from "@/lib/types";
 
-export const DEFAULT_SETTINGS: TransportSettings = {
-  dizel_cena_rsd: 234,
+export type TransportSettings = Pick<
+  AppSettings,
+  | "polaziste_adresa"
+  | "polaziste_lat"
+  | "polaziste_lon"
+  | "tip_goriva"
+  | "gorivo_cena_rsd"
+  | "potrosnja_l_100km"
+  | "amortizacija_rsd_km"
+  | "besplatna_dostava_od"
+>;
+
+// Podrazumevano = Ružicine vrednosti (postojeći fallback, ništa se ne menja za
+// nju). Nove korisnice dobijaju svoje vrednosti iz app_settings.
+export const DEFAULT_SETTINGS: AppSettings = {
+  polaziste_adresa: "Inđija, Jug Bogdana 17",
+  polaziste_lat: 45.0476342,
+  polaziste_lon: 20.0845384,
+  tip_goriva: "dizel",
+  gorivo_cena_rsd: 234,
   potrosnja_l_100km: 6.5,
   amortizacija_rsd_km: 8,
+  besplatna_dostava_od: 15000,
+  // Brend KORISNICE (nivo 2) — prazno po defaultu (pada na Trust plum + inicijal).
+  naziv_biznisa: "",
+  brend_boja: "",
+  brend_logo: "",
 };
 
 // Polazna tačka (Inđija, Jug Bogdana 17) — koordinate iz OpenStreetMap-a.
-// Koristi se kao ishodište za automatsko računanje vozačke kilometraže
-// (OSRM ruta) kad mesto nije u tabeli RASTOJANJA ispod.
+// Zadržano kao Ružicin fallback kad korisnica nema geokodirano polazište.
+// Nove korisnice koriste polaziste_lat/lon iz svojih podešavanja.
 export const POLAZISTE = {
-  lat: 45.0476342,
-  lon: 20.0845384,
-  opis: "Inđija, Jug Bogdana 17",
+  lat: DEFAULT_SETTINGS.polaziste_lat,
+  lon: DEFAULT_SETTINGS.polaziste_lon,
+  opis: DEFAULT_SETTINGS.polaziste_adresa,
 } as const;
 
 // ── Tabela rastojanja od Inđije (jedan pravac, u km) ──────────────────
@@ -81,6 +101,16 @@ export const RASTOJANJA: Record<string, MestoInfo> = {
   "futog": { km: 46, putarina: 240 },
   "veternik": { km: 44, putarina: 240 },
 };
+
+// Da li je polazište korisnice Ružicino (Inđija)? Samo tada važi ugrađena
+// tabela RASTOJANJA (ručno pravljena za Inđiju). Nove korisnice sa drugim
+// polazištem koriste auto-km (OSRM ruta) i auto-putarinu (tabela stanica).
+export function jePolazisteIndjija(lat: number, lon: number): boolean {
+  if (!lat || !lon) return true; // bez koordinata → Ružicin fallback (Inđija)
+  const dLat = Math.abs(lat - POLAZISTE.lat);
+  const dLon = Math.abs(lon - POLAZISTE.lon);
+  return dLat < 0.05 && dLon < 0.05; // ~5 km tolerancija
+}
 
 // Normalizuje naziv mesta u ključ tabele: mala slova, bez srpskih kvačica.
 export function normGrad(grad: string | null | undefined): string {
@@ -180,7 +210,7 @@ export function obracunajTransport(
   const km = Math.max(0, kmPovratno || 0);
   const put = Math.max(0, putarina || 0);
   const litara = (km / 100) * s.potrosnja_l_100km;
-  const gorivo = litara * s.dizel_cena_rsd;
+  const gorivo = litara * s.gorivo_cena_rsd;
   const amortizacija = km * s.amortizacija_rsd_km;
   // Amortizacija se trenutno NE prikazuje niti naplaćuje (naš interni trošak).
   // Ostaje izračunata i sačuvana u bazi da je lako vratimo kasnije.

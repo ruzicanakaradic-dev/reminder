@@ -35,7 +35,7 @@ function Sadrzaj() {
             ? "Pristup ovom nalogu je trenutno onemogućen. Za više informacija kontaktiraj podršku."
             : "Tvoj probni period je istekao. Da nastaviš da koristiš aplikaciju, javi se za aktivaciju naloga."}
         </p>
-        <button onClick={odjava} className="btn btn-ghost w-full text-[var(--accent)]">
+        <button onClick={odjava} className="btn btn-ghost w-full text-[var(--brand-plum)]">
           <LogOut size={18} /> Odjavi se
         </button>
       </div>
