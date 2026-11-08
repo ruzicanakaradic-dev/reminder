@@ -345,6 +345,35 @@ input.input[type="date"], input.input[type="time"] {
   --sidebar-accent-foreground:        oklch(0.985 0 0);
   --sidebar-border:        oklch(1 0 0 / 10%);
   --sidebar-ring:        oklch(0.556 0 0);
+
+  /* ── Brend/custom tokeni za DARK (stare .card/.btn/.input/.kpi klase) ── */
+  --bg:        #121014;   /* app pozadina (tamna, tračak topline) */
+  --surface:   #1c1920;   /* kartice */
+  --track:     #272430;   /* žleb segmentne kontrole */
+  --ink:       #f3f1f5;   /* primarni tekst */
+  --divider:   #332f3a;   /* ivica */
+  --divider-1: #28242e;   /* tanja ivica (redovi) */
+  --neutral-600: #a79daa; /* muted tekst (svetliji na tamnom) */
+  --neutral-700: #bcb3bf;
+  /* plum tintovi (čip pozadine) — tamni; tekst na njima je svetli plum */
+  --accent-100: #241b2d;
+  --accent-200: #342545;
+  --accent-300: #48345d;
+  --accent-600: #9a5bb0;  /* hover primarnog dugmeta — svetliji na tamnom */
+  --accent-700: #ab6cc0;
+  --accent-800: #e7d3ef;  /* tekst na tamnom plum čipu — svetli plum */
+  /* zlatna za dark */
+  --gold-100:  #3a3320;
+  --gold-600:  #d9b86a;
+  --gold-800:  #e8d9a8;
+  /* primarna akcija ostaje plum i u dark-u (shadcn gore ga postavi na sivo) */
+  --primary: var(--brand-plum);
+  --ring: var(--brand-plum);
+  /* status čipovi za dark (tamna pozadina + svetli tekst) */
+  --st-primljena-dot:#9a8fa0; --st-primljena-bg:#2a2630; --st-primljena-fg:#d3c9d6;
+  --st-u_radu-dot:#b06bc4;    --st-u_radu-bg:#36284a;    --st-u_radu-fg:#e7d3ef;
+  --st-zavrseno-dot:#c9a24a;  --st-zavrseno-bg:#3a3320;  --st-zavrseno-fg:#e8d9a8;
+  --st-isporuceno-dot:#cbb3d6;--st-isporuceno-bg:#463a50;--st-isporuceno-fg:#f0e4d0;
 }
 
 @layer base {

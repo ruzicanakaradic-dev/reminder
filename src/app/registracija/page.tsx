@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, Mail, Eye, EyeOff, Store, Sparkles } from "lucide-react";
 import { TrustLogo } from "@/components/TrustLogo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function RegistracijaPage() {
   const router = useRouter();
@@ -42,6 +43,9 @@ export default function RegistracijaPage() {
 
   return (
     <div className="min-h-dvh grid place-items-center px-5 py-10">
+      <div className="fixed top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-sm">
         <div className="mb-6 flex justify-center">
           <TrustLogo markSize={60} />

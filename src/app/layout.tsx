@@ -40,7 +40,16 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="sr" className={cn("font-sans", geist.variable, bricolage.variable)}>
+    <html lang="sr" className={cn("font-sans", geist.variable, bricolage.variable)} suppressHydrationWarning>
+      <head>
+        {/* Postavi temu pre prvog iscrtavanja (bez treperenja). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('tema');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}",
+          }}
+        />
+      </head>
       <body>
         <AppChrome>{children}</AppChrome>
       </body>
