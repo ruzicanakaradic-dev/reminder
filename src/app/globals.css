@@ -44,47 +44,35 @@
   --st-u_radu-dot:#7a3785;    --st-u_radu-bg:#e8d8ec;    --st-u_radu-fg:#3f1c48;
   --st-zavrseno-dot:#977128;  --st-zavrseno-bg:#f7efd8;  --st-zavrseno-fg:#574117;
   --st-isporuceno-dot:#34233b;--st-isporuceno-bg:#34233b;--st-isporuceno-fg:#f7ecd4;--background:        oklch(1 0 0);--foreground:        oklch(0.145 0 0);--card:        oklch(1 0 0);--card-foreground:        oklch(0.145 0 0);--popover:        oklch(1 0 0);--popover-foreground:        oklch(0.145 0 0);--primary:        oklch(0.205 0 0);--primary-foreground:        oklch(0.985 0 0);--secondary:        oklch(0.97 0 0);--secondary-foreground:        oklch(0.205 0 0);--muted:        oklch(0.97 0 0);--muted-foreground:        oklch(0.556 0 0);--accent-foreground:        oklch(0.205 0 0);--destructive:        oklch(0.577 0.245 27.325);--border:        oklch(0.922 0 0);--input:        oklch(0.922 0 0);--ring:        oklch(0.708 0 0);--chart-1:        oklch(0.87 0 0);--chart-2:        oklch(0.556 0 0);--chart-3:        oklch(0.439 0 0);--chart-4:        oklch(0.371 0 0);--chart-5:        oklch(0.269 0 0);--radius:        0.625rem;--sidebar:        oklch(0.985 0 0);--sidebar-foreground:        oklch(0.145 0 0);--sidebar-primary:        oklch(0.205 0 0);--sidebar-primary-foreground:        oklch(0.985 0 0);--sidebar-accent:        oklch(0.97 0 0);--sidebar-accent-foreground:        oklch(0.205 0 0);--sidebar-border:        oklch(0.922 0 0);--sidebar-ring:        oklch(0.708 0 0);
-
-  /* ── Brend override shadcn tokena (plum + krem) ──────────────────
-     Mapira shadcn semantičke tokene na postojeće brend boje. Ovde je
-     i tačka za "boje po klijentu" (faza 4): ove vrednosti se po korisnici
-     menjaju runtime-om (wrapper klasa ili style.setProperty). */
-  --background: var(--bg);              /* krem */
-  --foreground: var(--ink);             /* plum-ink tekst */
-  --card: var(--surface);
-  --card-foreground: var(--ink);
-  --popover: var(--surface);
-  --popover-foreground: var(--ink);
-  --primary: var(--accent);             /* plum — primarne akcije */
-  --primary-foreground: var(--bg);      /* krem tekst na plumu */
-  --secondary: var(--accent-100);
-  --secondary-foreground: var(--accent-800);
-  --muted: var(--accent-100);
-  --muted-foreground: var(--neutral-600);
-  /* NAPOMENA: brend već koristi --accent kao plum (primarna boja), a shadcn
-     očekuje --accent kao svetlu hover površinu. Ne diramo --accent da ne
-     polomimo postojeće .btn klase; shadcn accent-foreground mapiramo odvojeno.
-     Pravo rešenje (u planu): preimenovati brend --accent → --brand-plum pri
-     punoj migraciji, pa osloboditi --accent za shadcn. */
-  --accent-foreground: var(--accent-800);
-  --border: var(--divider-1);
-  --input: var(--divider);
+  /* Samo primarnu akciju bojimo brend plumom (sa belim tekstom za kontrast);
+     sve ostalo ostaje ČIST shadcn (bela pozadina, neutralni tokeni). Krem se
+     NE nameće — boje po klijentu (faza 4) dolaze kao zaseban sloj, ne gaženjem
+     shadcn osnove. */
+  --primary: var(--accent);             /* plum — primarna akcija */
+  --primary-foreground: oklch(0.985 0 0); /* skoro belo — dobar kontrast na plumu */
   --ring: var(--accent);
-  --radius: 10px;                       /* = postojeći --radius-md */
 }
 
 @theme inline {
-  --color-background: var(--bg);
-  --color-foreground: var(--ink);
+  /* shadcn utility (bg-background, text-foreground, bg-muted…) → ČISTI shadcn
+     tokeni (bela/neutralna). Brend boje ostaju dostupne kroz zasebne utility
+     (bg-bg, text-ink, bg-surface…) koje postojeće .card/.btn klase i stare
+     stranice koriste — pa Ružicin krem izgled ostaje netaknut, a shadcn je čist. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  /* `text-muted` na 25 starih stranica = sivi tekst (--neutral-600); ostaje
+     dok se te stranice ne migriraju u fazi 3. shadcn koristi
+     `text-muted-foreground` / `bg-secondary`, pa se ne sudara s ovim. */
+  --color-muted: var(--neutral-600);
+  /* Brend tokeni — zadržani za postojeće stranice (ne diraju shadcn): */
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-ink: var(--ink);
-  --color-accent: var(--accent);
+  --color-brand: var(--accent);
   --color-accent-100: var(--accent-100);
   --color-accent-200: var(--accent-200);
   --color-gold: var(--gold);
   --color-gold-100: var(--gold-100);
-  --color-muted: var(--neutral-600);
   --color-divider: var(--divider);
   --font-sans:        var(--font-sans);
   --font-heading:        var(--font-sans);

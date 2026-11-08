@@ -17,7 +17,8 @@ export default function ProbaShadcnPage() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <div className="min-h-dvh grid place-items-center px-5 py-10">
+    // bg-background text-foreground = ČIST shadcn (gazi krem body sa stare teme)
+    <div className="min-h-dvh bg-background text-foreground grid place-items-center px-5 py-10">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-1">
           <div className="text-xs font-bold uppercase tracking-widest text-primary">
@@ -70,18 +71,18 @@ export default function ProbaShadcnPage() {
           <CardContent className="grid grid-cols-2 gap-2">
             <Uzorak klasa="bg-primary text-primary-foreground" ime="primary (plum)" />
             <Uzorak klasa="bg-secondary text-secondary-foreground" ime="secondary" />
-            <Uzorak klasa="bg-muted text-muted-foreground" ime="muted" />
+            <Uzorak klasa="bg-accent text-accent-foreground" ime="accent" />
             <Uzorak klasa="bg-card text-card-foreground border" ime="card" />
             <Uzorak klasa="bg-destructive text-white" ime="destructive" />
             <Uzorak klasa="bg-background text-foreground border" ime="background" />
           </CardContent>
         </Card>
 
-        <div className="flex gap-2">
-          <Button variant="default" size="sm">Default</Button>
-          <Button variant="secondary" size="sm">Secondary</Button>
-          <Button variant="outline" size="sm">Outline</Button>
-          <Button variant="ghost" size="sm">Ghost</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button>Default</Button>
+          <Button variant="secondary">Secondary</Button>
+          <Button variant="outline">Outline</Button>
+          <Button variant="ghost">Ghost</Button>
         </div>
       </div>
     </div>
