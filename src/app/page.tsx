@@ -5,6 +5,7 @@ import { getOrders } from "@/lib/data";
 import { OrderCard } from "@/components/OrderCard";
 import { SetupNotice } from "@/components/SetupNotice";
 import { Kpi, SectionLabel } from "@/components/ui";
+import { FitText } from "@/components/FitText";
 import { danaDo, toISODate, formatRSD, MESECI } from "@/lib/format";
 import { trosak, ukupnaCena, zarada } from "@/lib/costs";
 
@@ -114,9 +115,9 @@ function MonthStat({ label, value, strong, accent }: {
       <div className="kicker" style={{ fontSize: 10 }}>{label}</div>
       <div
         className={`mt-0.5 tabular-nums ${strong || accent ? "font-extrabold" : "font-bold"}`}
-        style={{ fontSize: 15, color: accent ? "var(--brand)" : "var(--ink)" }}
+        style={{ color: accent ? "var(--brand)" : "var(--ink)" }}
       >
-        {formatRSD(value)}
+        <FitText max={18} min={12}>{formatRSD(value)}</FitText>
       </div>
     </div>
   );

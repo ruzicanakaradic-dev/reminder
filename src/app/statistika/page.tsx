@@ -4,6 +4,7 @@ import { SetupNotice } from "@/components/SetupNotice";
 import { MonthSelect } from "@/components/MonthSelect";
 import { PeriodSelect } from "@/components/PeriodSelect";
 import { EmptyState, Kpi } from "@/components/ui";
+import { FitText } from "@/components/FitText";
 import { formatRSD, formatNum, MESECI } from "@/lib/format";
 import { trosak, ukupnaCena, zarada } from "@/lib/costs";
 
@@ -237,9 +238,9 @@ function FinCell({ label, value, strong, accent }: {
       <div className="kicker" style={{ fontSize: 10 }}>{label}</div>
       <div
         className={`mt-0.5 tabular-nums ${strong || accent ? "font-extrabold" : "font-bold"}`}
-        style={{ fontSize: 14, color: accent ? "var(--brand)" : "var(--ink)" }}
+        style={{ color: accent ? "var(--brand)" : "var(--ink)" }}
       >
-        {formatRSD(value)}
+        <FitText max={18} min={12}>{formatRSD(value)}</FitText>
       </div>
     </div>
   );
