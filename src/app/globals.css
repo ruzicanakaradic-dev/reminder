@@ -63,6 +63,9 @@
   /* Boja brenda KORISNICE (nivo 2). Default = Trust plum dok korisnica ne
      postavi svoju; BrandStyle je runtime menja na njenom radnom prostoru. */
   --brand: var(--brand-plum);
+  /* Tekst na brend podlozi (dugme/tag). Default belo; BrandStyle ga u runtime-u
+     prebaci na crno kad je korisnicina boja svetla, radi čitljivosti. */
+  --brand-foreground: #ffffff;
 }
 
 @theme inline {
@@ -198,7 +201,7 @@ h1, h2, h3, h4, h5, .display {
 .btn:active { transform: translateY(1px); }
 .btn-block { width: 100%; }
 
-.btn-primary { background: var(--brand); color: #ffffff; }
+.btn-primary { background: var(--brand); color: var(--brand-foreground); }
 .btn-primary:hover { background: var(--accent-600); }
 .btn-primary:active { background: var(--accent-700); }
 
@@ -257,7 +260,7 @@ input.input[type="date"], input.input[type="time"] {
 .tag { display: inline-flex; align-items: center; gap: .4rem; padding: .38rem .7rem;
   border-radius: var(--radius-sm); font-size: 12px; font-weight: 800; cursor: pointer;
   border: 1px solid var(--divider); background: var(--surface); color: var(--ink); }
-.tag-active { background: var(--brand); color: #ffffff; border-color: var(--brand); }
+.tag-active { background: var(--brand); color: var(--brand-foreground); border-color: var(--brand); }
 
 /* ── Segmented control ─────────────────────────────────────── */
 .seg { display: inline-flex; background: var(--track); border: 1px solid var(--divider);
