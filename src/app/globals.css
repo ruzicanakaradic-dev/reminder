@@ -359,3 +359,12 @@ input.input[type="date"], input.input[type="time"] {
     @apply font-sans;
   }
 }
+/* Brend primarna akcija (plum) MORA da pobedi shadcn --primary (crn) u svetlom
+   režimu. Zavisno od redosleda Tailwind v4 kompilacije, :root override iznad ume
+   da izgubi od shadcn CLI bloka, pa je ovde viša specifičnost na kraju fajla.
+   Scope-ovano na svetli režim — .dark blok ostaje netaknut. */
+:root:not(.dark) {
+  --primary: var(--brand-plum);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: var(--brand-plum);
+}

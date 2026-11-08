@@ -38,10 +38,14 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const val = normalizeHex(brend.boja);
     const root = document.documentElement;
-    if (val) root.style.setProperty("--brand", val);
-    else root.style.removeProperty("--brand"); // pada na default (Trust plum)
+    // shadcn komponente (Button/Input focus…) koriste --primary/--ring. U radnom
+    // prostoru = boja korisnice (nivo 2), pa i shadcn i stare .btn klase nose
+    // istu boju. Bez boje → ukloni (pada na Trust plum iz globals.css).
+    const brandProps = ["--brand", "--primary", "--ring"];
+    if (val) brandProps.forEach((p) => root.style.setProperty(p, val));
+    else brandProps.forEach((p) => root.style.removeProperty(p));
     return () => {
-      root.style.removeProperty("--brand");
+      brandProps.forEach((p) => root.style.removeProperty(p));
     };
   }, [brend.boja]);
 
