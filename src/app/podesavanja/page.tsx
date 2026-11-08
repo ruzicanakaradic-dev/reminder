@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Bell, LogOut, Loader2, BellRing, Check, Lock, Volume2, AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/components/ui";
 import { TransportSettings } from "@/components/TransportSettings";
+import { MojBrend } from "@/components/MojBrend";
 import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
 
 type Status = "loading" | "unsupported" | "denied" | "off" | "on";
@@ -180,6 +181,8 @@ export default function PodesavanjaPage() {
   return (
     <div className="space-y-5">
       <PageHeader title="Podešavanja" />
+
+      <MojBrend />
 
       <div className="card p-5 space-y-3">
         <div className="flex items-center justify-between gap-2">
