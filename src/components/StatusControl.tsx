@@ -5,11 +5,12 @@ import { STATUS_LABEL, STATUS_ORDER, type Status } from "@/lib/types";
 import { setStatusAction } from "@/app/actions";
 import { razumljivaPoruka } from "@/lib/greske";
 
+// Boje aktivnog pila idu preko CSS varijabli da prate temu (svetlo/tamno).
 const ACTIVE: Record<Status, { bg: string; fg: string }> = {
-  primljena: { bg: "#9a8fa0", fg: "#fff" },
-  u_radu: { bg: "#7a3785", fg: "#f7ecd4" },
-  zavrseno: { bg: "#977128", fg: "#f7ecd4" },
-  isporuceno: { bg: "#34233b", fg: "#f7ecd4" },
+  primljena: { bg: "var(--stp-primljena-bg)", fg: "var(--stp-primljena-fg)" },
+  u_radu: { bg: "var(--stp-u_radu-bg)", fg: "var(--stp-u_radu-fg)" },
+  zavrseno: { bg: "var(--stp-zavrseno-bg)", fg: "var(--stp-zavrseno-fg)" },
+  isporuceno: { bg: "var(--stp-isporuceno-bg)", fg: "var(--stp-isporuceno-fg)" },
 };
 
 export function StatusControl({

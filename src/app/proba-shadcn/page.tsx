@@ -1,8 +1,8 @@
 "use client";
 
-// PROBNI EKRAN za fazu 3 (shadcn migracija). Nije deo pravog toka — služi da
-// Igor uživo vidi shadcn komponente obojene brend bojama (plum + krem) pre
-// nego što se odluči na punu migraciju. Briše se kad migracija krene za ozbiljno.
+// GALERIJA KOMPONENTI (shadcn migracija). Nije deo pravog toka — živi pregled
+// shadcn komponenti u obe teme i sa brend bojama, radi provere tokom migracije
+// ekrana. Javna ruta (samostalna u AppChrome), nije u navigaciji.
 
 import { useState } from "react";
 import { Loader2, Lock, Mail, ShieldCheck } from "lucide-react";
@@ -12,9 +12,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { StatusControl } from "@/components/StatusControl";
 
 export default function ProbaShadcnPage() {
   const [loading, setLoading] = useState(false);
+  const [mesec, setMesec] = useState("2026-11");
 
   return (
     // bg-background text-foreground = ČIST shadcn (gazi krem body sa stare teme)
@@ -75,6 +78,42 @@ export default function ProbaShadcnPage() {
             <Uzorak klasa="bg-card text-card-foreground border" ime="card" />
             <Uzorak klasa="bg-destructive text-white" ime="destructive" />
             <Uzorak klasa="bg-background text-foreground border" ime="background" />
+          </CardContent>
+        </Card>
+
+        {/* Select — zamena native <select> (OS lista u dark temi je svetla) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Select (padajući meni)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select
+              value={mesec}
+              items={{ "2026-11": "Novembar 2026.", "2026-10": "Oktobar 2026.", "2026-09": "Septembar 2026." }}
+              onValueChange={(v) => setMesec(String(v))}
+            >
+              <SelectTrigger className="text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2026-11">Novembar 2026.</SelectItem>
+                <SelectItem value="2026-10">Oktobar 2026.</SelectItem>
+                <SelectItem value="2026-09">Septembar 2026.</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+
+        {/* StatusControl — aktivni pil po statusu (provera dark boja) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Status pil (aktivni po statusu)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <StatusControl id="demo1" status="primljena" />
+            <StatusControl id="demo2" status="u_radu" />
+            <StatusControl id="demo3" status="zavrseno" />
+            <StatusControl id="demo4" status="isporuceno" />
           </CardContent>
         </Card>
 
