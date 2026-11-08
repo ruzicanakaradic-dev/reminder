@@ -11,6 +11,7 @@ import {
   blokirajAction, kreirajNalogAction, planAction, produziTrialAction,
 } from "@/app/admin/actions";
 import { razumljivaPoruka } from "@/lib/greske";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 // Stanje naloga (isto pravilo kao na serveru u admin.ts) za bedž.
 function stanje(u: AdminUser): StanjeNaloga {
@@ -364,14 +365,19 @@ function NoviNalogModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">Plan</label>
-              <select
-                className="input"
+              <Select
                 value={plan}
-                onChange={(e) => setPlan(e.target.value === "paid" ? "paid" : "free")}
+                items={{ free: "Trial", paid: "Plaćen" }}
+                onValueChange={(v) => setPlan(v === "paid" ? "paid" : "free")}
               >
-                <option value="free">Trial</option>
-                <option value="paid">Plaćen</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Trial</SelectItem>
+                  <SelectItem value="paid">Plaćen</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {plan === "free" && (
               <div>

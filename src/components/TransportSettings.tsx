@@ -5,6 +5,7 @@ import { Fuel, Loader2, Check, AlertTriangle, Save, MapPin, Truck } from "lucide
 import { getSettingsAction, saveSettingsAction } from "@/app/actions";
 import type { AppSettings } from "@/lib/types";
 import { razumljivaPoruka } from "@/lib/greske";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 // Podešavanja prevoza po korisnici: polazište (odakle kreće dostava), gorivo
 // (tip + cena), potrošnja i prag besplatne dostave. Trošak se zaključava na
@@ -136,16 +137,21 @@ export function TransportSettings() {
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">Tip goriva</label>
-                <select
-                  className="input"
+                <Select
                   value={s.tip_goriva}
-                  onChange={(e) =>
-                    setS({ ...s, tip_goriva: e.target.value === "benzin" ? "benzin" : "dizel" })
+                  items={{ dizel: "Dizel", benzin: "Benzin" }}
+                  onValueChange={(v) =>
+                    setS({ ...s, tip_goriva: v === "benzin" ? "benzin" : "dizel" })
                   }
                 >
-                  <option value="dizel">Dizel</option>
-                  <option value="benzin">Benzin</option>
-                </select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dizel">Dizel</SelectItem>
+                    <SelectItem value="benzin">Benzin</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="label">Cena goriva (RSD / l)</label>
