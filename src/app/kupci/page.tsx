@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Phone, MapPin } from "lucide-react";
-import { supabaseConfigured } from "@/lib/supabase/admin";
+import { pocketbaseConfigured } from "@/lib/pb/server";
 import { getCustomers, getOrders } from "@/lib/data";
 import { SetupNotice } from "@/components/SetupNotice";
 import { EmptyState } from "@/components/ui";
@@ -11,7 +11,7 @@ import { ukupnaCena } from "@/lib/costs";
 export const dynamic = "force-dynamic";
 
 export default async function KupciPage() {
-  if (!supabaseConfigured()) return <SetupNotice />;
+  if (!pocketbaseConfigured()) return <SetupNotice />;
   const [customers, orders] = await Promise.all([getCustomers(), getOrders()]);
 
   const agg = new Map<string, { broj: number; prihod: number }>();

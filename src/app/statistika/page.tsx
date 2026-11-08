@@ -1,4 +1,4 @@
-import { supabaseConfigured } from "@/lib/supabase/admin";
+import { pocketbaseConfigured } from "@/lib/pb/server";
 import { getOrders, getCustomers } from "@/lib/data";
 import { SetupNotice } from "@/components/SetupNotice";
 import { MonthSelect } from "@/components/MonthSelect";
@@ -19,7 +19,7 @@ export default async function StatistikaPage({
 }: {
   searchParams: Promise<{ mesec?: string; period?: string }>;
 }) {
-  if (!supabaseConfigured()) return <SetupNotice />;
+  if (!pocketbaseConfigured()) return <SetupNotice />;
   const [orders, customers, sp] = await Promise.all([getOrders(), getCustomers(), searchParams]);
 
   if (orders.length === 0) {

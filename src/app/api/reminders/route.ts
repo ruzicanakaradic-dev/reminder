@@ -1,19 +1,15 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { SESSION_COOKIE, isValidToken } from "@/lib/auth";
 import { getOrders } from "@/lib/data";
-import { supabaseConfigured } from "@/lib/supabase/admin";
+import { pbUserOrNull, pocketbaseConfigured } from "@/lib/pb/server";
 import { danaDo, toISODate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  if (!(await isValidToken(token))) {
+  if (!pocketbaseConfigured()) return NextResponse.json({ items: [] });
+  if (!(await pbUserOrNull())) {
     return NextResponse.json({ error: "Neautorizovano" }, { status: 401 });
   }
-
-  if (!supabaseConfigured()) return NextResponse.json({ items: [] });
 
   const today = new Date();
   const to = new Date();

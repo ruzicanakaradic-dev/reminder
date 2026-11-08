@@ -17,9 +17,9 @@ export class KorisnickaGreska extends Error {
 
 export type Rezultat<T> = { ok: true; data: T } | { ok: false; greska: string };
 
-const MIGRACIJA = "Treba pokrenuti najnoviju migraciju iz foldera supabase/.";
+const MIGRACIJA = "Treba uvesti najnoviju šemu (pocketbase/pb_schema.json) u PocketBase.";
 
-// Pretvara bilo koju grešku (validacija, Supabase/Postgres, mreža) u poruku
+// Pretvara bilo koju grešku (validacija, PocketBase, mreža) u poruku
 // koja kaže šta je problem. Kod greške baze ostaje na kraju, radi lakše dijagnoze.
 export function razumljivaPoruka(e: unknown): string {
   if (e instanceof KorisnickaGreska) return e.message;
@@ -36,11 +36,28 @@ export function razumljivaPoruka(e: unknown): string {
   if (/body exceeded|too large|payload/i.test(poruka)) {
     return "Podaci su preveliki za slanje (verovatno slika). Probaj sa manjom slikom.";
   }
-  if (/invalid api key|jwt/i.test(poruka)) {
-    return "Server nema pristup bazi — Supabase ključ nije ispravan (proveri env promenljive na Vercelu).";
+  if (/nedostaje pocketbase_url|nedostaju pocketbase_admin/i.test(poruka)) {
+    return "Server nije povezan sa bazom — nedostaju PocketBase env promenljive (proveri Vercel).";
   }
-  if (/nedostaju supabase env/i.test(poruka)) {
-    return "Server nije povezan sa bazom — nedostaju Supabase env promenljive.";
+
+  // Greške PocketBase API-ja (ClientResponseError: status + response.data po polju)
+  const status = typeof (e as { status?: unknown })?.status === "number" ? (e as { status: number }).status : -1;
+  if (status === 0 || (e as { isAbort?: boolean })?.isAbort) {
+    return "Nema veze sa bazom. Proveri internet i pokušaj ponovo.";
+  }
+  if (status === 401 || status === 403) {
+    return "Prijava je istekla ili nemaš pristup ovom zapisu. Prijavi se ponovo.";
+  }
+  if (status === 404) {
+    return "Zapis nije pronađen — možda je u međuvremenu obrisan. Osveži stranicu.";
+  }
+  if (status === 400 || status === 413) {
+    const polja = (e as { response?: { data?: Record<string, { message?: string }> } })?.response?.data ?? {};
+    const detalji = Object.entries(polja)
+      .map(([polje, v]) => `${polje}: ${v?.message ?? "neispravno"}`)
+      .join("; ");
+    if (status === 413) return "Podaci su preveliki za slanje (verovatno slika). Probaj sa manjom slikom.";
+    return detalji ? `Podaci nisu prihvaćeni — ${detalji}` : `Podaci nisu prihvaćeni. ${poruka}`.trim();
   }
 
   // Greške baze (Postgres / PostgREST kodovi)

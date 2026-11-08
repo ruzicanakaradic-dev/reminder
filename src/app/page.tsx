@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { supabaseConfigured } from "@/lib/supabase/admin";
+import { pocketbaseConfigured } from "@/lib/pb/server";
 import { getOrders } from "@/lib/data";
 import { OrderCard } from "@/components/OrderCard";
 import { SetupNotice } from "@/components/SetupNotice";
@@ -11,7 +11,7 @@ import { trosak, ukupnaCena, zarada } from "@/lib/costs";
 export const dynamic = "force-dynamic";
 
 export default async function DanasPage() {
-  if (!supabaseConfigured()) return <SetupNotice />;
+  if (!pocketbaseConfigured()) return <SetupNotice />;
 
   const orders = await getOrders();
   const aktivne = orders.filter((o) => o.status !== "isporuceno");

@@ -1,8 +1,22 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
-import { sendPushToAll } from "@/lib/push";
+import { pbAdmin } from "@/lib/pb/server";
+import { sendPushToUser, type PushPayload } from "@/lib/push";
 import { formatDatum } from "@/lib/format";
-import type { Order } from "@/lib/types";
+
+// Polja porudžbine koja cron koristi (direktno iz PocketBase-a, preko svih korisnica)
+type CronOrder = {
+  id: string;
+  user: string;
+  kupac_ime: string;
+  proizvod: string;
+  grad: string;
+  datum_isporuke: string;
+  vreme_isporuke: string;
+  reminded_2d: boolean;
+  reminded_1d: boolean;
+  reminded_0d: boolean;
+  reminded_2h: boolean;
+};
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +70,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Neautorizovano" }, { status: 401 });
   }
 
-  const sb = supabaseAdmin();
+  const pb = await pbAdmin();
   const now = new Date();
   const bnow = belgradeParts(now);
   const localHour = bnow.h;
@@ -66,14 +80,16 @@ export async function GET(req: Request) {
   const upper = new Date(todayUTC + 2 * 86400000);
   const upperStr = `${upper.getUTCFullYear()}-${pad(upper.getUTCMonth() + 1)}-${pad(upper.getUTCDate())}`;
 
-  const { data, error } = await sb
-    .from("orders")
-    .select("*")
-    .neq("status", "isporuceno")
-    .lte("datum_isporuke", upperStr);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  const orders = (data ?? []) as Order[];
+  let orders: CronOrder[];
+  try {
+    orders = (await pb.collection("orders").getFullList({
+      filter: pb.filter("status != 'isporuceno' && datum_isporuke <= {:upper}", { upper: upperStr }),
+      fields:
+        "id,user,kupac_ime,proizvod,grad,datum_isporuke,vreme_isporuke,reminded_2d,reminded_1d,reminded_0d,reminded_2h",
+    })) as unknown as CronOrder[];
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Greška" }, { status: 500 });
+  }
   let poslato = 0;
 
   for (const o of orders) {
@@ -81,13 +97,15 @@ export async function GET(req: Request) {
     const delUTC = Date.UTC(dy, dmo - 1, dd);
     const dana = Math.round((delUTC - todayUTC) / 86400000);
 
-    const patch: Partial<Order> = {};
+    const patch: Partial<CronOrder> = {};
+    // Notifikacija ide samo na uređaje vlasnice porudžbine.
+    const posalji = (p: PushPayload) => sendPushToUser(o.user, p);
     const vremeSuffix = o.vreme_isporuke ? ` u ${o.vreme_isporuke}` : "";
 
     // ── Podsetnici po danu — šalju se ujutru (od 07:00 po beogradskom vremenu) ──
     if (localHour >= 7) {
       if (dana === 2 && !o.reminded_2d) {
-        await sendPushToAll({
+        await posalji({
           title: `🌹 Isporuka za 2 dana: ${o.kupac_ime}`,
           body: `${o.proizvod}${o.grad ? " · " + o.grad : ""} — ${formatDatum(o.datum_isporuke)}${vremeSuffix}`,
           url: `/porudzbine/${o.id}`,
@@ -96,7 +114,7 @@ export async function GET(req: Request) {
         patch.reminded_2d = true;
         poslato++;
       } else if (dana === 1 && !o.reminded_1d) {
-        await sendPushToAll({
+        await posalji({
           title: `🌹 Isporuka sutra: ${o.kupac_ime}`,
           body: `${o.proizvod}${o.grad ? " · " + o.grad : ""} — ${formatDatum(o.datum_isporuke)}${vremeSuffix}`,
           url: `/porudzbine/${o.id}`,
@@ -105,7 +123,7 @@ export async function GET(req: Request) {
         patch.reminded_1d = true;
         poslato++;
       } else if (dana === 0 && !o.reminded_0d) {
-        await sendPushToAll({
+        await posalji({
           title: `🌹 Isporuka DANAS: ${o.kupac_ime}`,
           body: `${o.proizvod}${o.grad ? " · " + o.grad : ""}${vremeSuffix}`,
           url: `/porudzbine/${o.id}`,
@@ -122,7 +140,7 @@ export async function GET(req: Request) {
       const minutesUntil = (del.getTime() - now.getTime()) / 60000;
       // Okini kad je do isporuke ostalo 2h ili manje (ali još nije prošlo)
       if (minutesUntil > 0 && minutesUntil <= 120) {
-        await sendPushToAll({
+        await posalji({
           title: `⏰ Isporuka za ~2 sata: ${o.kupac_ime}`,
           body: `${o.proizvod}${o.grad ? " · " + o.grad : ""} — danas u ${o.vreme_isporuke}`,
           url: `/porudzbine/${o.id}`,
@@ -134,7 +152,7 @@ export async function GET(req: Request) {
     }
 
     if (Object.keys(patch).length > 0) {
-      await sb.from("orders").update(patch).eq("id", o.id);
+      await pb.collection("orders").update(o.id, patch);
     }
   }
 

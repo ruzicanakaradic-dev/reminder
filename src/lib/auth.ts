@@ -1,26 +1,52 @@
-// Jednostavna zaštita: jedna zajednička lozinka (APP_PASSWORD).
-// Kolačić čuva token izveden iz lozinke — ne može se pogoditi bez nje.
-// Koristi Web Crypto (radi i na Edge i u Node.js).
+// Prijava: svaka korisnica ima svoj nalog u PocketBase-u (kolekcija `users`).
+// Kolačić čuva PocketBase auth token (JWT). Potpis tokena proverava PocketBase
+// pri svakom upitu; ovde samo čitamo rok važenja i id korisnice.
+// Bez Node API-ja — radi i u middleware-u (Edge) i na serveru.
 
 export const SESSION_COOKIE = "rdk_session";
 
-export async function computeToken(password: string): Promise<string> {
-  const data = new TextEncoder().encode(`${password}::ruzini-kolaci-v1`);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+// Koliko dugo kolačić živi u browseru (token se osvežava pre isteka).
+export const COOKIE_MAX_AGE = 60 * 60 * 24 * 180; // 180 dana
+
+type TokenPayload = { id?: string; exp?: number; type?: string; collectionId?: string };
+
+function base64UrlDecode(s: string): string {
+  const b64 = s.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(s.length / 4) * 4, "=");
+  return atob(b64);
 }
 
-export async function expectedToken(): Promise<string | null> {
-  const pw = process.env.APP_PASSWORD;
-  if (!pw) return null;
-  return computeToken(pw);
+export function decodeToken(token: string | undefined | null): TokenPayload | null {
+  if (!token) return null;
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  try {
+    return JSON.parse(base64UrlDecode(parts[1])) as TokenPayload;
+  } catch {
+    return null;
+  }
 }
 
-export async function isValidToken(token: string | undefined | null): Promise<boolean> {
-  if (!token) return false;
-  const expected = await expectedToken();
-  if (!expected) return false;
-  return token === expected;
+// Sekunde do isteka tokena (negativno = istekao). null = neispravan token.
+export function secondsUntilExpiry(token: string | undefined | null): number | null {
+  const p = decodeToken(token);
+  if (!p?.exp) return null;
+  return p.exp - Math.floor(Date.now() / 1000);
+}
+
+// Token korisnice (ne superusera), sa id-jem i neistekao.
+export function isUsableUserToken(token: string | undefined | null): boolean {
+  const p = decodeToken(token);
+  if (!p?.id || p.type !== "auth") return false;
+  const left = secondsUntilExpiry(token);
+  return left != null && left > 0;
+}
+
+export function cookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: COOKIE_MAX_AGE,
+  };
 }
