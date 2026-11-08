@@ -40,6 +40,21 @@ Aplikacija za vođenje porudžbina domaćih kolača: porudžbine, kupci, kalenda
 - Procena putarine (`procenaPutarinaSmer`, putevi iz Inđije) i tabela rastojanja
 - Prag besplatne dostave (`BESPLATNA_DOSTAVA_OD` = 15000 u `src/lib/costs.ts`)
 
+## Admin konzola (SaaS upravljanje korisnicama)
+- `/admin` — pregled korisnica (plan, trial, status, broj porudžbina),
+  kreiranje naloga, blok/odblok, free↔paid. `/admin/prijava` — superuser login.
+- Auth: PocketBase **superuser** (`_superusers`), zaseban kolačić `rdk_admin`
+  (`ADMIN_COOKIE`), server gate `pbAdminSession()` u `pb/server.ts`. Odvojeno od
+  korisničkog `rdk_session`. `/admin` je izuzet iz korisničkog middleware-a.
+- Data sloj: `src/lib/admin.ts` (preko superuser sesije), akcije u
+  `src/app/admin/actions.ts`, UI `src/components/AdminKonzola.tsx`.
+- `users` SaaS polja (`plan` free/paid, `trial_do`, `blokiran`, `ime_biznisa`)
+  dodaju se skriptom `pocketbase/setup_saas_polja.py` (NE kroz pb_schema.json —
+  `users` je sistemska auth kolekcija). Postojeći nalozi → `paid` (Ružica ostaje
+  aktivna). Nove korisnice (faza 4) → `free` + `trial_do`.
+- Trial enforcement: `pbUser()` proverava status; blokiran/istekao trial →
+  redirect na `/nalog-neaktivan`. paid (Ružica) prolazi bez provere.
+
 ## Komande
 - `npm run dev` · `npm run build`
 

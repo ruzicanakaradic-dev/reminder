@@ -127,3 +127,22 @@ export type AppSettings = {
   potrosnja_l_100km: number;
   amortizacija_rsd_km: number;
 };
+
+// ── Admin konzola (SaaS upravljanje korisnicama) ───────────────────
+// Plan korisnice: free (trial) ili paid (plaćena pretplata).
+export type Plan = "free" | "paid";
+
+// Red u admin pregledu — jedna poslastičarka (nalog u `users`) sa statusom.
+export type AdminUser = {
+  id: string;
+  email: string;
+  ime_biznisa: string | null;
+  plan: Plan;
+  trial_do: string | null; // YYYY-MM-DD; null = bez trial roka
+  blokiran: boolean;
+  broj_porudzbina: number;
+  kreiran: string | null; // created (YYYY-MM-DD)
+};
+
+// Status naloga za prikaz/kontrolu pristupa.
+export type StanjeNaloga = "aktivan" | "trial" | "trial_istekao" | "blokiran";
