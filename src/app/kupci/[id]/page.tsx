@@ -48,10 +48,13 @@ export default async function KupacDetalj({ params }: { params: Promise<{ id: st
             </span>
           )}
         </div>
-        <div className="grid grid-cols-3 gap-3 mt-4">
-          <Kpi label="Porudžbina" value={String(orders.length)} />
+        {/* Bočne kolone (broj porudžbina, težina) se skupljaju na svoju labelu;
+            cena (Potrošeno) uzima ostatak — iznos ima jednak razmak levo i desno,
+            valuta ne sedi uz ivicu. */}
+        <div className="grid gap-2.5 mt-4" style={{ gridTemplateColumns: "auto 1fr auto" }}>
+          <Kpi label="Porudžbe" value={String(orders.length)} />
           <Kpi label="Potrošeno" value={formatRSD(prihod)} />
-          <Kpi label="Ukupno kg" value={formatKg(kg)} />
+          <Kpi label="Težina" value={formatKg(kg)} />
         </div>
       </div>
 

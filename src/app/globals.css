@@ -167,7 +167,7 @@ h1, h2, h3, h4, h5, .display {
   flex-direction: column;
   border: 2px solid var(--divider);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 16px 12px; /* jednak razmak levo/desno; uži horizontalno da iznos ima vazduha */
   background: transparent;
   min-width: 0; /* dozvoli ćeliji da se skupi u gridu (bez isticanja vrednosti) */
 }
