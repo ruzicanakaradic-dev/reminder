@@ -121,9 +121,23 @@ export type OrderInput = {
   items?: OrderItemInput[]; // više vrsta kolača u jednoj porudžbini
 };
 
-// Podešavanja troškova prevoza (tabela app_settings)
+// Tip goriva — utiče samo na labelu i koju cenu korisnica unosi; obračun je
+// identičan (cena/litar × potrošnja), gorivo je neutralno u formulama.
+export type TipGoriva = "dizel" | "benzin";
+
+// Podešavanja po korisnici (tabela app_settings, jedan red po poslastičarki).
+// Polja koja su ranije bila zakucana za Ružicu (polazište, prag besplatne
+// dostave) ovde su podesiva za svaku korisnicu.
 export type AppSettings = {
-  dizel_cena_rsd: number;
-  potrosnja_l_100km: number;
-  amortizacija_rsd_km: number;
+  // Polazište za kilometražu i auto-putarinu (ranije zakucano: Inđija).
+  polaziste_adresa: string; // npr. "Inđija, Jug Bogdana 17"
+  polaziste_lat: number; // 0 = nije geokodirano
+  polaziste_lon: number; // 0 = nije geokodirano
+  // Gorivo — tip je informativan, cena ulazi u obračun.
+  tip_goriva: TipGoriva;
+  gorivo_cena_rsd: number; // RSD / litar
+  potrosnja_l_100km: number; // l / 100km
+  amortizacija_rsd_km: number; // RSD / km (interni trošak, ne naplaćuje se)
+  // Prag besplatne dostave (RSD, gleda se na zbir torti/kolača); 0 = nema.
+  besplatna_dostava_od: number;
 };

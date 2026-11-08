@@ -211,7 +211,8 @@ app_settings = collection(C_SETTINGS, "app_settings", [
     text("polaziste_adresa"),  # npr. "Inđija, Jug Bogdana 17"
     number("polaziste_lat"),
     number("polaziste_lon"),
-    number("dizel_cena_rsd", min_val=0),
+    select("tip_goriva", ["dizel", "benzin"]),  # informativno; obračun je isti
+    number("gorivo_cena_rsd", min_val=0),  # RSD/l (ranije dizel_cena_rsd)
     number("potrosnja_l_100km", min_val=0),
     number("amortizacija_rsd_km", min_val=0),
     number("besplatna_dostava_od", min_val=0),  # RSD; 0 = nema besplatne dostave
