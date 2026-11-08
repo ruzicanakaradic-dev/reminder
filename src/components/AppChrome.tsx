@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { CalendarDays, Home, Users, BarChart3, ClipboardList, Plus, Settings } from "lucide-react";
 import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { PushSetup } from "@/components/PushSetup";
+import { BrandProvider } from "@/components/BrandStyle";
 
 const NAV = [
   { href: "/", label: "Danas", icon: Home },
@@ -35,6 +36,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
+    <BrandProvider>
     <div className="flex min-h-dvh">
       {/* ── Sidebar (desktop) ── */}
       <aside className="hidden min-[861px]:flex w-[230px] flex-none flex-col gap-2 border-r-2 border-[var(--divider)] p-4 sticky top-0 h-dvh overflow-auto">
@@ -106,5 +108,6 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
       <ReminderWatcher />
       <PushSetup />
     </div>
+    </BrandProvider>
   );
 }

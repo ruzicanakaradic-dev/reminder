@@ -194,29 +194,58 @@ function slikaPatch(slika: string | null | undefined, isUpdate: boolean): Record
 
 // ── Podešavanja (troškovi prevoza) ─────────────────────────────────
 
+// Brend-default polja (nivo 2) — prazno dok korisnica ne postavi svoje.
+const BREND_DEFAULT = { naziv_biznisa: "", brend_boja: "", brend_logo: "" };
+
 // Podešavanja ove korisnice; prazna polja → podrazumevane vrednosti.
 export async function getSettings(): Promise<AppSettings> {
   const { pb } = await pbUser();
   try {
     const res = await pb.collection("app_settings").getList(1, 1);
     const r = res.items[0] as Rec | undefined;
-    if (!r) return { ...DEFAULT_SETTINGS };
+    if (!r) return { ...DEFAULT_SETTINGS, ...BREND_DEFAULT };
     return {
       dizel_cena_rsd: n(r.dizel_cena_rsd) ?? DEFAULT_SETTINGS.dizel_cena_rsd,
       potrosnja_l_100km: n(r.potrosnja_l_100km) ?? DEFAULT_SETTINGS.potrosnja_l_100km,
       amortizacija_rsd_km: n(r.amortizacija_rsd_km) ?? DEFAULT_SETTINGS.amortizacija_rsd_km,
+      naziv_biznisa: s(r.naziv_biznisa) ?? "",
+      brend_boja: s(r.brend_boja) ?? "",
+      brend_logo: s(r.brend_logo) ?? "",
     };
   } catch (e) {
     if (e instanceof ClientResponseError && (e.status === 401 || e.status === 403)) throw e;
-    return { ...DEFAULT_SETTINGS };
+    return { ...DEFAULT_SETTINGS, ...BREND_DEFAULT };
   }
 }
 
+// Brend korisnice za primenu u radnom prostoru (boja + naziv + logo URL).
+export async function getBrendKorisnice(): Promise<import("@/lib/types").BrendKorisnice> {
+  const { pb } = await pbUser();
+  try {
+    const res = await pb.collection("app_settings").getList(1, 1);
+    const r = res.items[0] as Rec | undefined;
+    if (!r) return { naziv: "", boja: null, logoUrl: null };
+    const logo = s(r.brend_logo);
+    const logoUrl = logo ? pb.files.getURL(r, logo) : null;
+    return {
+      naziv: s(r.naziv_biznisa) ?? "",
+      boja: s(r.brend_boja),
+      logoUrl,
+    };
+  } catch {
+    return { naziv: "", boja: null, logoUrl: null };
+  }
+}
+
+const TEKST_POLJA = new Set(["naziv_biznisa", "brend_boja", "brend_logo"]);
+
 export async function updateSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
   const { pb, userId } = await pbUser();
-  const clean: Record<string, number> = {};
+  const clean: Record<string, number | string> = {};
   for (const [k, v] of Object.entries(patch)) {
-    if (v != null && !isNaN(Number(v)) && Number(v) >= 0) clean[k] = Number(v);
+    if (v == null) continue;
+    if (TEKST_POLJA.has(k)) clean[k] = String(v).trim();
+    else if (!isNaN(Number(v)) && Number(v) >= 0) clean[k] = Number(v);
   }
   const res = await pb.collection("app_settings").getList(1, 1);
   const existing = res.items[0] as Rec | undefined;

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { saveOrder, updateStatus, deleteOrder, getSettings, updateSettings, updateCustomer } from "@/lib/data";
+import { saveOrder, updateStatus, deleteOrder, getSettings, getBrendKorisnice, updateSettings, updateCustomer } from "@/lib/data";
 import type { AppSettings, CustomerInput, OrderInput, OrderItemInput, Status } from "@/lib/types";
 import { KorisnickaGreska, razumljivaPoruka, type Rezultat } from "@/lib/greske";
 
@@ -129,6 +129,11 @@ export async function setStatusAction(id: string, status: Status): Promise<Rezul
 // ── Podešavanja troškova prevoza ────────────────────────────────────
 export async function getSettingsAction(): Promise<AppSettings> {
   return getSettings();
+}
+
+// Brend korisnice (nivo 2) — boja/naziv/logo za radni prostor.
+export async function getBrendAction() {
+  return getBrendKorisnice();
 }
 
 export async function saveSettingsAction(patch: Partial<AppSettings>): Promise<Rezultat<AppSettings>> {

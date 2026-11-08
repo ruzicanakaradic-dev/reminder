@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save, ImagePlus, X, Plus, Trash2, Truck, AlertTriangle } from "lucide-react";
 import { saveOrderAction } from "@/app/actions";
-import { STATUS_LABEL, STATUS_ORDER, type AppSettings, type Order, type Status } from "@/lib/types";
+import { STATUS_LABEL, STATUS_ORDER, type Order, type Status } from "@/lib/types";
+import type { TransportSettings } from "@/lib/transport";
 import { formatRSD, toISODate } from "@/lib/format";
 import { razumljivaPoruka } from "@/lib/greske";
 import { DEFAULT_SETTINGS, obracunajTransport, predlozenaKm, predlozenaPutarina } from "@/lib/transport";
@@ -34,7 +35,7 @@ export function OrderForm({
   order?: Order;
   customers: CustomerLite[];
   products?: string[];
-  settings?: AppSettings;
+  settings?: TransportSettings;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();

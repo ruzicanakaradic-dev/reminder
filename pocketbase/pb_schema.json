@@ -895,6 +895,38 @@
       },
       {
         "id": "text0000060",
+        "name": "brend_boja",
+        "type": "text",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "required": false,
+        "min": 0,
+        "max": 0,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "file0000061",
+        "name": "brend_logo",
+        "type": "file",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "required": false,
+        "maxSelect": 1,
+        "maxSize": 5242880,
+        "mimeTypes": [
+          "image/webp",
+          "image/jpeg",
+          "image/png"
+        ],
+        "thumbs": [],
+        "protected": false
+      },
+      {
+        "id": "text0000062",
         "name": "polaziste_adresa",
         "type": "text",
         "system": false,
@@ -908,7 +940,7 @@
         "primaryKey": false
       },
       {
-        "id": "number0000061",
+        "id": "number0000063",
         "name": "polaziste_lat",
         "type": "number",
         "system": false,
@@ -920,7 +952,7 @@
         "onlyInt": false
       },
       {
-        "id": "number0000062",
+        "id": "number0000064",
         "name": "polaziste_lon",
         "type": "number",
         "system": false,
@@ -932,7 +964,7 @@
         "onlyInt": false
       },
       {
-        "id": "number0000063",
+        "id": "number0000065",
         "name": "dizel_cena_rsd",
         "type": "number",
         "system": false,
@@ -944,7 +976,7 @@
         "onlyInt": false
       },
       {
-        "id": "number0000064",
+        "id": "number0000066",
         "name": "potrosnja_l_100km",
         "type": "number",
         "system": false,
@@ -956,7 +988,7 @@
         "onlyInt": false
       },
       {
-        "id": "number0000065",
+        "id": "number0000067",
         "name": "amortizacija_rsd_km",
         "type": "number",
         "system": false,
@@ -968,7 +1000,7 @@
         "onlyInt": false
       },
       {
-        "id": "number0000066",
+        "id": "number0000068",
         "name": "besplatna_dostava_od",
         "type": "number",
         "system": false,
@@ -980,7 +1012,7 @@
         "onlyInt": false
       },
       {
-        "id": "autodate0000067",
+        "id": "autodate0000069",
         "name": "created",
         "type": "autodate",
         "system": false,
@@ -991,7 +1023,7 @@
         "onUpdate": false
       },
       {
-        "id": "autodate0000068",
+        "id": "autodate0000070",
         "name": "updated",
         "type": "autodate",
         "system": false,

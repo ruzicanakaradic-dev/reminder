@@ -208,6 +208,13 @@ push_subscriptions = collection(C_PUSH, "push_subscriptions", [
 app_settings = collection(C_SETTINGS, "app_settings", [
     owner(),
     text("naziv_biznisa"),
+    # ── Brend korisnice (nivo 2) ─────────────────────────────────────
+    # NEZAVISNO od Trust identiteta aplikacije (nivo 1) i od transport
+    # podešavanja. Svaka poslastičarka stavlja svoj logo i bira svoju boju;
+    # pojavljuju se u NJENOM radnom prostoru (top bar, akcenti, porudžbine).
+    text("brend_boja"),   # hex, npr. "#7a3785"; prazno = podrazumevana
+    file_field("brend_logo"),  # logo korisnice (PNG/WebP/JPEG)
+    # ── Transport (nivo: generalna podešavanja) ──────────────────────
     text("polaziste_adresa"),  # npr. "Inđija, Jug Bogdana 17"
     number("polaziste_lat"),
     number("polaziste_lon"),

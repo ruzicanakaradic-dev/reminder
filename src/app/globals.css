@@ -54,9 +54,12 @@
      sve ostalo ostaje ČIST shadcn (bela pozadina, neutralni tokeni). Krem se
      NE nameće — boje po klijentu (faza 4) dolaze kao zaseban sloj, ne gaženjem
      shadcn osnove. */
-  --primary: var(--brand-plum);         /* Trust plum — primarna akcija */
+  --primary: var(--brand-plum);         /* Trust plum — primarna akcija (app) */
   --primary-foreground: oklch(0.985 0 0); /* skoro belo — dobar kontrast na plumu */
   --ring: var(--brand-plum);
+  /* Boja brenda KORISNICE (nivo 2). Default = Trust plum dok korisnica ne
+     postavi svoju; BrandStyle je runtime menja na njenom radnom prostoru. */
+  --brand: var(--brand-plum);
 }
 
 @theme inline {
@@ -74,7 +77,8 @@
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-ink: var(--ink);
-  --color-brand: var(--brand-plum);
+  --color-brand: var(--brand-plum);   /* Trust plum (app identitet) */
+  --color-brand-user: var(--brand);   /* boja korisnice (nivo 2) → bg-brand-user, text-brand-user */
   --color-accent-100: var(--accent-100);
   --color-accent-200: var(--accent-200);
   --color-gold: var(--gold);

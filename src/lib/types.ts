@@ -121,9 +121,20 @@ export type OrderInput = {
   items?: OrderItemInput[]; // više vrsta kolača u jednoj porudžbini
 };
 
-// Podešavanja troškova prevoza (tabela app_settings)
+// Podešavanja korisnice (tabela app_settings).
 export type AppSettings = {
   dizel_cena_rsd: number;
   potrosnja_l_100km: number;
   amortizacija_rsd_km: number;
+  // Brend KORISNICE (nivo 2) — njen logo i boja, nezavisno od Trust identiteta.
+  naziv_biznisa: string;
+  brend_boja: string; // hex; prazno = podrazumevana (Trust plum)
+  brend_logo: string; // ime fajla u PB (prazno = koristi inicijal)
+};
+
+// Boja + naziv + logo URL brenda korisnice, za primenu u radnom prostoru.
+export type BrendKorisnice = {
+  naziv: string;
+  boja: string | null;
+  logoUrl: string | null;
 };
