@@ -9,11 +9,14 @@
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  --bg:        #f7ecd4;   /* krem pozadina */
-  --surface:   #f1e3c7;   /* kartice, inputi */
-  --ink:       #34233b;   /* primarni tekst (plum-ink) */
-  --divider:   color-mix(in srgb, #34233b 24%, transparent);
-  --divider-1: color-mix(in srgb, #34233b 14%, transparent);
+  /* Čist shadcn: bele površine + neutralne ivice (krem uklonjen). Plum ostaje
+     samo kao akcenat/primarna akcija. --track je svetli sivi „žleb" za segmente. */
+  --bg:        #ffffff;   /* bela pozadina (app, inputi, aktivni segment) */
+  --surface:   #ffffff;   /* kartice */
+  --track:     #f4f4f5;   /* svetli žleb (segmentna kontrola, tihe površine) */
+  --ink:       #1c1a1e;   /* primarni tekst (skoro crn, tračak topline) */
+  --divider:   #e4e4e7;   /* neutralna ivica (shadcn border) */
+  --divider-1: #efeff1;   /* tanja neutralna ivica (redovi tabele) */
 
   /* Trust brend plum (identitet aplikacije). Ranije se zvao --accent, ali to
      ime sad pripada shadcn-u (svetla hover površina). Stare stranice koriste
@@ -258,7 +261,7 @@ input.input[type="date"], input.input[type="time"] {
 .tag-active { background: var(--brand); color: #ffffff; border-color: var(--brand); }
 
 /* ── Segmented control ─────────────────────────────────────── */
-.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--divider);
+.seg { display: inline-flex; background: var(--track); border: 1px solid var(--divider);
   border-radius: var(--radius-md); padding: 3px; gap: 3px; }
 .seg-opt { border: 0; background: transparent; color: var(--neutral-700); font-family: var(--font-sans);
   font-weight: 800; font-size: 13px; padding: .45rem .85rem; border-radius: var(--radius-sm); cursor: pointer; }
@@ -268,7 +271,7 @@ input.input[type="date"], input.input[type="time"] {
 .table { width: 100%; border-collapse: collapse; }
 .table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
   color: var(--neutral-600); font-weight: 800; padding: 10px 12px; border-bottom: 2px solid var(--divider);
-  background: var(--surface); white-space: nowrap; }
+  background: var(--track); white-space: nowrap; }
 .table td { padding: 11px 12px; border-bottom: 1px solid var(--divider-1); font-size: 14px; }
 .table tbody tr { cursor: pointer; }
 .table tbody tr:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
