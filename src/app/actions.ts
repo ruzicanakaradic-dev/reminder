@@ -70,6 +70,7 @@ export async function saveOrderAction(formData: FormData): Promise<Rezultat<{ id
       grad: str(formData.get("grad")) || null,
       dekoracija_cena: num(formData.get("dekoracija_cena")),
       licno_preuzimanje: bool(formData.get("licno_preuzimanje")),
+      stari_put: bool(formData.get("stari_put")),
       transport_km: num(formData.get("transport_km")),
       transport_putarina: num(formData.get("transport_putarina")),
       transport_cena: num(formData.get("transport_cena")),

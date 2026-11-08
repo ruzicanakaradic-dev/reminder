@@ -77,6 +77,7 @@ export type Order = {
   dekoracija_cena: number | null; // cena dekoracije/topera (RSD) — ulazi u ukupnu cenu; kupac je plaća, pa nije ni trošak ni zarada
   // Lično preuzimanje: kupac preuzima kod nas, nema dostave ni troška prevoza
   licno_preuzimanje: boolean;
+  stari_put: boolean; // true = stari put (bez putarine); false = autoput (sa putarinom)
   // Transport / dostava (snapshot troška u trenutku čuvanja)
   transport_km: number | null; // povratna kilometraža
   transport_litara: number | null; // potrošeno goriva (l)
@@ -113,6 +114,7 @@ export type OrderInput = {
   grad?: string | null;
   dekoracija_cena?: number | null; // ručno upisana cena dekoracije/topera (RSD)
   licno_preuzimanje?: boolean; // kupac preuzima kod nas → bez dostave i troška prevoza
+  stari_put?: boolean; // true = stari put (bez putarine); false = autoput (sa putarinom)
   // Transport: ako je prazno, izvodi se iz grada (tabela rastojanja).
   transport_km?: number | null; // povratna kilometraža (ručni unos ili auto)
   transport_putarina?: number | null; // povratna putarina (procena sa mape kad grad nije u tabeli)

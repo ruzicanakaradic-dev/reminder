@@ -121,6 +121,7 @@ function toOrder(pb: PocketBase, r: Rec): Order {
     grad: s(r.grad),
     dekoracija_cena: n(r.dekoracija_cena),
     licno_preuzimanje: licno,
+    stari_put: r.stari_put === true,
     transport_km: km,
     transport_litara: n(r.transport_litara),
     transport_gorivo: n(r.transport_gorivo),
@@ -567,11 +568,15 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
       : indjija
         ? predlozenaKm(grad)
         : null;
+  // Stari put (bez putarine): korisnica je za OVU porudžbinu izabrala rutu bez
+  // naplatnih stanica → putarina 0, bez obzira na tabelu/auto-procenu.
+  const stariPut = input.stari_put === true;
   // Putarina: za Inđiju tabela ima prednost za poznata mesta; inače (i za nove
   // korisnice) procena/auto-putarina prosleđena iz forme. Fallback 0.
   const tablicna = indjija ? predlozenaPutarina(grad) : 0;
-  const putarinaPovratno =
-    tablicna > 0
+  const putarinaPovratno = stariPut
+    ? 0
+    : tablicna > 0
       ? tablicna
       : input.transport_putarina != null && !isNaN(input.transport_putarina)
         ? input.transport_putarina
@@ -612,6 +617,7 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     // Prazno ili 0 = nema dekoracije
     dekoracija_cena: dekoracijaCena,
     licno_preuzimanje: licnoPreuzimanje,
+    stari_put: stariPut,
     transport_km: t?.km ?? null,
     transport_litara: t?.litara ?? null,
     transport_gorivo: t?.gorivo ?? null,

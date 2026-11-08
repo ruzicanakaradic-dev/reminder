@@ -60,6 +60,10 @@ export function OrderForm({
   // Kod ličnog preuzimanja nema prevoza — ni troška, ni naplaćene dostave.
   const [licno, setLicno] = useState<boolean>(order?.licno_preuzimanje ?? false);
 
+  // Ruta: autoput (sa putarinom) ili stari put (bez putarine). Po porudžbini —
+  // korisnica bira; „stari put" nulira putarinu bez obzira na tabelu/auto-procenu.
+  const [stariPut, setStariPut] = useState<boolean>(order?.stari_put ?? false);
+
   // Transport / dostava
   const [km, setKm] = useState(order?.transport_km?.toString() ?? "");
   const [transportCena, setTransportCena] = useState(order?.transport_cena?.toString() ?? "");
@@ -139,9 +143,10 @@ export function OrderForm({
     // Putarina: za Inđiju tabela ima prednost; druge korisnice (i mesta van
     // tabele) — auto-putarina sa mape.
     const tablicna = polazisteIndjija ? predlozenaPutarina(grad) : 0;
-    const putarina = tablicna > 0 ? tablicna : (autoPutarina ?? 0);
+    // Stari put → bez putarine, bez obzira na tabelu/auto-procenu.
+    const putarina = stariPut ? 0 : (tablicna > 0 ? tablicna : (autoPutarina ?? 0));
     return obracunajTransport(kmVal, putarina, settings);
-  }, [km, grad, settings, autoPutarina, polazisteIndjija]);
+  }, [km, grad, settings, autoPutarina, polazisteIndjija, stariPut]);
 
   // Predloži cenu dostave dok je korisnik ručno ne promeni
   useEffect(() => {
@@ -351,6 +356,37 @@ export function OrderForm({
         <p className="text-[11px] leading-snug text-muted">
           Polazak: {polazisteOpis} · povratna vožnja (tamo-nazad). Kilometražu možeš ručno da izmeniš.
         </p>
+
+        {/* Ruta: autoput (sa putarinom) ili stari put (bez putarine) */}
+        <input type="hidden" name="stari_put" value={stariPut ? "1" : "0"} />
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setStariPut(false)}
+            className="rounded-[10px] px-3 py-2.5 text-[13px] font-bold transition-colors text-left"
+            style={{
+              background: !stariPut ? "var(--accent-100)" : "var(--surface)",
+              border: `1px solid ${!stariPut ? "var(--accent-300)" : "var(--divider)"}`,
+              color: !stariPut ? "var(--accent-800)" : "var(--ink)",
+            }}
+          >
+            Autoput
+            <span className="block font-normal text-[11px] leading-snug">sa putarinom</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setStariPut(true)}
+            className="rounded-[10px] px-3 py-2.5 text-[13px] font-bold transition-colors text-left"
+            style={{
+              background: stariPut ? "var(--accent-100)" : "var(--surface)",
+              border: `1px solid ${stariPut ? "var(--accent-300)" : "var(--divider)"}`,
+              color: stariPut ? "var(--accent-800)" : "var(--ink)",
+            }}
+          >
+            Stari put
+            <span className="block font-normal text-[11px] leading-snug">bez putarine</span>
+          </button>
+        </div>
 
         {/* Besplatna dostava — cena 0 RSD, polja zaključana. Od 15.000 RSD
             uključuje se sama i ne može da se isključi. */}

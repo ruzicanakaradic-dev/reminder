@@ -171,6 +171,7 @@ orders = collection(C_ORDERS, "orders", [
     number("transport_cena"),
     number("dekoracija_cena"),
     boolean("licno_preuzimanje"),
+    boolean("stari_put"),  # true = stari put (bez putarine); false/prazno = autoput (sa putarinom)
 ], [
     "CREATE UNIQUE INDEX `idx_orders_user_rb` ON `orders` (`user`, `redni_broj`)",
     "CREATE INDEX `idx_orders_user_isporuka` ON `orders` (`user`, `datum_isporuke`)",
