@@ -1,5 +1,7 @@
 import "server-only";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import type PocketBase from "pocketbase";
+import { ClientResponseError } from "pocketbase";
+import { pbUser } from "@/lib/pb/server";
 import type { AppSettings, Customer, CustomerInput, Order, OrderInput, OrderItem, Status } from "@/lib/types";
 import {
   DEFAULT_SETTINGS,
@@ -65,73 +67,185 @@ export function normalizePhone(raw: string | null | undefined): string | null {
   return "+381" + d; // 64... → +38164...
 }
 
+// ── PocketBase ↔ tipovi aplikacije ─────────────────────────────────
+//
+// PocketBase ne čuva NULL: prazan tekst je "", prazan broj je 0. Aplikacija
+// (tipovi, obračuni, prikaz) radi sa null, pa ovde vraćamo null tamo gde
+// "prazno" znači "nije uneto". Nazivi kolona: customer → customer_id,
+// order → order_id, created/updated → created_at/updated_at.
+
+type Rec = Record<string, unknown> & { id: string; collectionId: string; collectionName: string };
+
+const s = (v: unknown): string | null => (typeof v === "string" && v !== "" ? v : null);
+const n = (v: unknown): number | null => (typeof v === "number" && v !== 0 ? v : null);
+
+function toCustomer(r: Rec): Customer {
+  return {
+    id: r.id,
+    redni_broj: Number(r.redni_broj) || 0,
+    ime: String(r.ime ?? ""),
+    telefon: s(r.telefon),
+    napomena: s(r.napomena),
+    grad: s(r.grad),
+    adresa: s(r.adresa),
+    created_at: String(r.created ?? ""),
+  };
+}
+
+function toOrder(pb: PocketBase, r: Rec): Order {
+  const licno = r.licno_preuzimanje === true;
+  const km = n(r.transport_km);
+  // Naplaćena dostava: 0 je validna vrednost ("besplatna dostava"), ali samo
+  // kad prevoza uopšte ima. Bez prevoza (lično preuzimanje ili bez km) = null.
+  const cenaRaw = typeof r.transport_cena === "number" ? r.transport_cena : 0;
+  const transportCena = licno || (km == null && cenaRaw === 0) ? null : cenaRaw;
+  const slika = s(r.slika);
+  return {
+    id: r.id,
+    redni_broj: Number(r.redni_broj) || 0,
+    customer_id: s(r.customer),
+    kupac_ime: String(r.kupac_ime ?? ""),
+    kupac_telefon: s(r.kupac_telefon),
+    datum_porudzbine: s(r.datum_porudzbine) ?? String(r.created ?? "").slice(0, 10),
+    datum_isporuke: String(r.datum_isporuke ?? ""),
+    vreme_isporuke: s(r.vreme_isporuke),
+    proizvod: String(r.proizvod ?? ""),
+    opis: s(r.opis),
+    napomena: s(r.napomena),
+    slika: slika ? pb.files.getURL(r, slika) : null,
+    tezina_kg: n(r.tezina_kg),
+    cena_po_kg: n(r.cena_po_kg),
+    total: n(r.total),
+    adresa: s(r.adresa),
+    grad: s(r.grad),
+    dekoracija_cena: n(r.dekoracija_cena),
+    licno_preuzimanje: licno,
+    transport_km: km,
+    transport_litara: n(r.transport_litara),
+    transport_gorivo: n(r.transport_gorivo),
+    transport_amortizacija: n(r.transport_amortizacija),
+    transport_putarina: n(r.transport_putarina),
+    transport_predlog: n(r.transport_predlog),
+    transport_cena: transportCena,
+    status: (s(r.status) ?? "primljena") as Status,
+    reminded_2d: r.reminded_2d === true,
+    reminded_1d: r.reminded_1d === true,
+    reminded_0d: r.reminded_0d === true,
+    reminded_2h: r.reminded_2h === true,
+    created_at: String(r.created ?? ""),
+    updated_at: String(r.updated ?? ""),
+  };
+}
+
+function toItem(r: Rec): OrderItem {
+  return {
+    id: r.id,
+    order_id: String(r.order ?? ""),
+    redosled: Number(r.redosled) || 0,
+    naziv: String(r.naziv ?? ""),
+    tezina_kg: n(r.tezina_kg),
+    cena_po_kg: n(r.cena_po_kg),
+    total: n(r.total),
+  };
+}
+
+// Sledeći redni broj za ovu korisnicu (pravila PocketBase-a već filtriraju
+// na njene redove, pa je ovo njen maksimum + 1).
+async function nextRedniBroj(pb: PocketBase, collection: "customers" | "orders"): Promise<number> {
+  const res = await pb.collection(collection).getList(1, 1, { sort: "-redni_broj", fields: "redni_broj" });
+  const max = Number((res.items[0] as Rec | undefined)?.redni_broj) || 0;
+  return max + 1;
+}
+
+// Kreiranje sa rednim brojem; ako dve porudžbine istovremeno dobiju isti broj,
+// jedinstveni indeks odbije drugu → pokušaj ponovo sa sledećim brojem.
+async function createNumbered(
+  pb: PocketBase,
+  collection: "customers" | "orders",
+  data: Record<string, unknown>
+): Promise<Rec> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const redni_broj = await nextRedniBroj(pb, collection);
+    try {
+      return (await pb.collection(collection).create({ ...data, redni_broj })) as Rec;
+    } catch (e) {
+      const dup = e instanceof ClientResponseError && e.status === 400 && attempt < 2;
+      if (!dup) throw e;
+    }
+  }
+  throw new Error("Nije uspelo dodeljivanje rednog broja.");
+}
+
+// Slika primera iz forme: data URL (nova slika) → fajl; http URL (već
+// sačuvana, nepromenjena) → ne diramo; prazno → brišemo.
+function slikaPatch(slika: string | null | undefined, isUpdate: boolean): Record<string, unknown> {
+  const v = (slika ?? "").trim();
+  if (v.startsWith("data:")) {
+    const m = v.match(/^data:([^;,]+)?(;base64)?,([\s\S]*)$/);
+    if (!m) throw new KorisnickaGreska("Slika nije ispravnog formata.");
+    const mime = m[1] || "image/webp";
+    const bytes = m[2] ? Buffer.from(m[3], "base64") : Buffer.from(decodeURIComponent(m[3]));
+    const ext = mime.split("/")[1]?.replace("jpeg", "jpg") || "webp";
+    return { slika: new File([bytes], `primer.${ext}`, { type: mime }) };
+  }
+  if (/^https?:\/\//.test(v)) return {};
+  return isUpdate ? { slika: null } : {};
+}
+
 // ── Podešavanja (troškovi prevoza) ─────────────────────────────────
 
-// Učitaj podešavanja; ako tabela/red ne postoje, vrati podrazumevane
-// (aplikacija ne sme da padne dok migracija 6 nije pokrenuta).
+// Podešavanja ove korisnice; prazna polja → podrazumevane vrednosti.
 export async function getSettings(): Promise<AppSettings> {
-  const sb = supabaseAdmin();
+  const { pb } = await pbUser();
   try {
-    const { data, error } = await sb
-      .from("app_settings")
-      .select("dizel_cena_rsd, potrosnja_l_100km, amortizacija_rsd_km")
-      .eq("id", 1)
-      .maybeSingle();
-    if (error || !data) return { ...DEFAULT_SETTINGS };
+    const res = await pb.collection("app_settings").getList(1, 1);
+    const r = res.items[0] as Rec | undefined;
+    if (!r) return { ...DEFAULT_SETTINGS };
     return {
-      dizel_cena_rsd: Number(data.dizel_cena_rsd),
-      potrosnja_l_100km: Number(data.potrosnja_l_100km),
-      amortizacija_rsd_km: Number(data.amortizacija_rsd_km),
+      dizel_cena_rsd: n(r.dizel_cena_rsd) ?? DEFAULT_SETTINGS.dizel_cena_rsd,
+      potrosnja_l_100km: n(r.potrosnja_l_100km) ?? DEFAULT_SETTINGS.potrosnja_l_100km,
+      amortizacija_rsd_km: n(r.amortizacija_rsd_km) ?? DEFAULT_SETTINGS.amortizacija_rsd_km,
     };
-  } catch {
+  } catch (e) {
+    if (e instanceof ClientResponseError && (e.status === 401 || e.status === 403)) throw e;
     return { ...DEFAULT_SETTINGS };
   }
 }
 
 export async function updateSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
-  const sb = supabaseAdmin();
+  const { pb, userId } = await pbUser();
   const clean: Record<string, number> = {};
   for (const [k, v] of Object.entries(patch)) {
     if (v != null && !isNaN(Number(v)) && Number(v) >= 0) clean[k] = Number(v);
   }
-  // upsert reda id=1 (radi i kad red još ne postoji)
-  const { data, error } = await sb
-    .from("app_settings")
-    .upsert({ id: 1, ...clean }, { onConflict: "id" })
-    .select("dizel_cena_rsd, potrosnja_l_100km, amortizacija_rsd_km")
-    .single();
-  if (error) throw error;
-  return {
-    dizel_cena_rsd: Number(data.dizel_cena_rsd),
-    potrosnja_l_100km: Number(data.potrosnja_l_100km),
-    amortizacija_rsd_km: Number(data.amortizacija_rsd_km),
-  };
+  const res = await pb.collection("app_settings").getList(1, 1);
+  const existing = res.items[0] as Rec | undefined;
+  if (existing) {
+    await pb.collection("app_settings").update(existing.id, clean);
+  } else {
+    await pb.collection("app_settings").create({ ...DEFAULT_SETTINGS, ...clean, user: userId });
+  }
+  return getSettings();
 }
 
 // ── Kupci ──────────────────────────────────────────────────────────
 
 export async function getCustomers(): Promise<Customer[]> {
-  const sb = supabaseAdmin();
-  const { data, error } = await sb
-    .from("customers")
-    .select("*")
-    .order("ime", { ascending: true });
-  if (error) throw error;
-  return data as Customer[];
+  const { pb } = await pbUser();
+  const recs = (await pb.collection("customers").getFullList({ sort: "ime" })) as Rec[];
+  return recs.map(toCustomer);
 }
 
 export async function getCustomer(id: string): Promise<Customer | null> {
-  const sb = supabaseAdmin();
-  const { data, error } = await sb.from("customers").select("*").eq("id", id).maybeSingle();
-  if (error) throw error;
-  return data as Customer | null;
+  const { pb } = await pbUser();
+  try {
+    return toCustomer((await pb.collection("customers").getOne(id)) as Rec);
+  } catch (e) {
+    if (e instanceof ClientResponseError && e.status === 404) return null;
+    throw e;
+  }
 }
 
-// Izmena postojećeg kupca (ručna ispravka greške). Ista normalizacija kao pri
-// čuvanju porudžbine (title-case ime/grad/adresa, +381 telefon). Ispravka imena
-// i telefona uvek se propagira na snapshot u porudžbinama tog kupca. Ako je
-// uključeno `primeni_adresu_na_porudzbine`, i ispravljeni grad i adresa prelaze
-// na sve porudžbine kupca (uz preračun dostave kad se grad promeni).
 // Polja prevoza za zadati grad (podrazumevana tabela rastojanja + trenutna
 // podešavanja). Koristi se kad se grad kupca ispravi, da dostava na porudžbini
 // odgovara ispravljenom gradu. Lično preuzimanje = bez prevoza.
@@ -164,8 +278,13 @@ function transportFieldsZaGrad(
   };
 }
 
+// Izmena postojećeg kupca (ručna ispravka greške). Ista normalizacija kao pri
+// čuvanju porudžbine (title-case ime/grad/adresa, +381 telefon). Ispravka imena
+// i telefona uvek se propagira na snapshot u porudžbinama tog kupca. Ako je
+// uključeno `primeni_adresu_na_porudzbine`, i ispravljeni grad i adresa prelaze
+// na sve porudžbine kupca (uz preračun dostave kad se grad promeni).
 export async function updateCustomer(input: CustomerInput): Promise<Customer> {
-  const sb = supabaseAdmin();
+  const { pb } = await pbUser();
   const ime = toTitleCase(input.ime);
   if (!ime) throw new KorisnickaGreska("Ime kupca je obavezno.");
   const telefon = normalizePhone(input.telefon);
@@ -173,85 +292,66 @@ export async function updateCustomer(input: CustomerInput): Promise<Customer> {
   const adresa = toTitleCaseOrNull(input.adresa);
   const napomena = toSentenceCaseOrNull(input.napomena);
 
-  const { data, error } = await sb
-    .from("customers")
-    .update({ ime, telefon, grad, adresa, napomena })
-    .eq("id", input.id)
-    .select("*")
-    .single();
-  if (error) throw error;
+  const saved = (await pb
+    .collection("customers")
+    .update(input.id, { ime, telefon, grad, adresa, napomena })) as Rec;
 
-  if (!input.primeni_adresu_na_porudzbine) {
-    // Samo uskladi snapshot imena/telefona na svim porudžbinama ovog kupca.
-    await sb
-      .from("orders")
-      .update({ kupac_ime: ime, kupac_telefon: telefon })
-      .eq("customer_id", input.id);
-  } else {
-    // Dodatno primeni ispravljeni grad i adresu na sve porudžbine kupca.
-    // Kad se grad promenio, preračunaj dostavu po ispravljenom gradu.
-    const { data: orders, error: ordErr } = await sb
-      .from("orders")
-      .select("id, grad, total, licno_preuzimanje")
-      .eq("customer_id", input.id);
-    if (ordErr) throw ordErr;
+  const orders = (await pb.collection("orders").getFullList({
+    filter: pb.filter("customer = {:id}", { id: input.id }),
+    fields: "id,grad,total,licno_preuzimanje",
+  })) as Rec[];
 
-    const settings = await getSettings();
-    for (const o of (orders ?? []) as { id: string; grad: string | null; total: number | null; licno_preuzimanje: boolean }[]) {
-      const patch: Record<string, unknown> = { kupac_ime: ime, kupac_telefon: telefon, grad, adresa };
-      if ((o.grad ?? null) !== (grad ?? null)) {
-        Object.assign(patch, transportFieldsZaGrad(grad, o.licno_preuzimanje === true, o.total ?? null, settings));
+  const settings = input.primeni_adresu_na_porudzbine ? await getSettings() : null;
+  for (const o of orders) {
+    const patch: Record<string, unknown> = { kupac_ime: ime, kupac_telefon: telefon };
+    if (settings) {
+      Object.assign(patch, { grad, adresa });
+      if ((s(o.grad) ?? null) !== (grad ?? null)) {
+        Object.assign(patch, transportFieldsZaGrad(grad, o.licno_preuzimanje === true, n(o.total), settings));
       }
-      const { error: upErr } = await sb.from("orders").update(patch).eq("id", o.id);
-      if (upErr) throw upErr;
     }
+    await pb.collection("orders").update(o.id, patch);
   }
 
-  return data as Customer;
+  return toCustomer(saved);
 }
 
 // Pronađi ili napravi kupca po imenu; osveži kontakt/grad/adresu
 async function ensureCustomer(
+  pb: PocketBase,
+  userId: string,
   ime: string,
   telefon: string | null,
   grad: string | null,
   adresa: string | null
 ): Promise<string> {
-  const sb = supabaseAdmin();
   const cleanIme = ime.trim();
 
-  const { data: found, error: findErr } = await sb
-    .from("customers")
-    .select("id")
-    .ilike("ime", cleanIme)
-    .limit(1);
-  if (findErr) throw findErr;
+  // "~" je LIKE (bez obzira na velika/mala slova); tačno poklapanje proveravamo ovde.
+  const candidates = (await pb.collection("customers").getFullList({
+    filter: pb.filter("ime ~ {:ime}", { ime: cleanIme }),
+    fields: "id,ime",
+  })) as Rec[];
+  const found = candidates.find((c) => String(c.ime).toLowerCase() === cleanIme.toLowerCase());
 
   const patch: Record<string, string> = {};
   if (telefon) patch.telefon = telefon;
   if (grad) patch.grad = grad;
   if (adresa) patch.adresa = adresa;
 
-  if (found && found.length > 0) {
-    if (Object.keys(patch).length) {
-      await sb.from("customers").update(patch).eq("id", found[0].id);
-    }
-    return found[0].id as string;
+  if (found) {
+    if (Object.keys(patch).length) await pb.collection("customers").update(found.id, patch);
+    return found.id;
   }
 
-  const { data: created, error: createErr } = await sb
-    .from("customers")
-    .insert({ ime: cleanIme, ...patch })
-    .select("id")
-    .single();
-  if (createErr) throw createErr;
-  return created!.id as string;
+  const created = await createNumbered(pb, "customers", { user: userId, ime: cleanIme, ...patch });
+  return created.id;
 }
 
-// Jedinstveni nazivi proizvoda koje je Ružica do sada pravila,
+// Jedinstveni nazivi proizvoda koje je korisnica do sada pravila,
 // poređani po učestalosti (najčešći prvi) — za autocomplete u formi.
 export async function getProductNames(): Promise<string[]> {
-  const sb = supabaseAdmin();
+  const { pb } = await pbUser();
   const counts = new Map<string, number>();
   const bump = (raw: string | null) => {
     const name = (raw ?? "").trim();
@@ -259,15 +359,13 @@ export async function getProductNames(): Promise<string[]> {
   };
 
   // Primarni izvor: pojedinačne stavke porudžbina
-  const { data: items, error: itemsErr } = await sb.from("order_items").select("naziv");
-  if (itemsErr) throw itemsErr;
-  for (const r of (items ?? []) as { naziv: string | null }[]) bump(r.naziv);
+  const items = (await pb.collection("order_items").getFullList({ fields: "naziv" })) as Rec[];
+  for (const r of items) bump(s(r.naziv));
 
   // Dopuna: stare porudžbine bez stavki (proizvod = zbir naziva razdvojen zarezom)
-  const { data: orders, error: ordersErr } = await sb.from("orders").select("proizvod");
-  if (ordersErr) throw ordersErr;
-  for (const r of (orders ?? []) as { proizvod: string | null }[]) {
-    for (const part of (r.proizvod ?? "").split(",")) bump(part);
+  const orders = (await pb.collection("orders").getFullList({ fields: "proizvod" })) as Rec[];
+  for (const r of orders) {
+    for (const part of String(r.proizvod ?? "").split(",")) bump(part);
   }
 
   return [...counts.entries()]
@@ -286,41 +384,44 @@ export type OrderFilter = {
 };
 
 export async function getOrders(filter: OrderFilter = {}): Promise<Order[]> {
-  const sb = supabaseAdmin();
-  let q = sb.from("orders").select("*");
+  const { pb } = await pbUser();
+  const parts: string[] = [];
+  const params: Record<string, string> = {};
 
-  if (filter.status) q = q.eq("status", filter.status);
-  if (filter.customerId) q = q.eq("customer_id", filter.customerId);
-  if (filter.from) q = q.gte("datum_isporuke", filter.from);
-  if (filter.to) q = q.lte("datum_isporuke", filter.to);
-  if (filter.search) {
-    // ukloni znakove koji bi pokvarili PostgREST "or" filter (zarez, zagrade, *)
-    const clean = filter.search.replace(/[,()*%]/g, " ").trim();
-    if (clean) {
-      const s = `%${clean}%`;
-      q = q.or(`kupac_ime.ilike.${s},proizvod.ilike.${s},grad.ilike.${s},opis.ilike.${s}`);
-    }
+  if (filter.status) { parts.push("status = {:status}"); params.status = filter.status; }
+  if (filter.customerId) { parts.push("customer = {:cid}"); params.cid = filter.customerId; }
+  // Datumi su tekst "YYYY-MM-DD", pa poređenje radi i leksički.
+  if (filter.from) { parts.push("datum_isporuke >= {:from}"); params.from = filter.from; }
+  if (filter.to) { parts.push("datum_isporuke <= {:to}"); params.to = filter.to; }
+  const q = (filter.search ?? "").trim();
+  if (q) {
+    parts.push("(kupac_ime ~ {:q} || proizvod ~ {:q} || grad ~ {:q} || opis ~ {:q})");
+    params.q = q;
   }
 
-  const { data, error } = await q.order("datum_isporuke", { ascending: true });
-  if (error) throw error;
-  return data as Order[];
+  const recs = (await pb.collection("orders").getFullList({
+    sort: "datum_isporuke",
+    filter: parts.length ? pb.filter(parts.join(" && "), params) : "",
+  })) as Rec[];
+  return recs.map((r) => toOrder(pb, r));
 }
 
 export async function getOrder(id: string): Promise<Order | null> {
-  const sb = supabaseAdmin();
-  const { data, error } = await sb.from("orders").select("*").eq("id", id).maybeSingle();
-  if (error) throw error;
-  if (!data) return null;
+  const { pb } = await pbUser();
+  let rec: Rec;
+  try {
+    rec = (await pb.collection("orders").getOne(id)) as Rec;
+  } catch (e) {
+    if (e instanceof ClientResponseError && e.status === 404) return null;
+    throw e;
+  }
 
-  const { data: items, error: itemsErr } = await sb
-    .from("order_items")
-    .select("*")
-    .eq("order_id", id)
-    .order("redosled", { ascending: true });
-  if (itemsErr) throw itemsErr;
+  const items = (await pb.collection("order_items").getFullList({
+    filter: pb.filter("order = {:id}", { id }),
+    sort: "redosled",
+  })) as Rec[];
 
-  return { ...(data as Order), items: (items ?? []) as OrderItem[] };
+  return { ...toOrder(pb, rec), items: items.map(toItem) };
 }
 
 // Normalizuje stavke iz forme: računa total svake stavke i odbacuje prazne
@@ -349,7 +450,7 @@ function normalizeItems(input: OrderInput): NormItem[] {
 }
 
 export async function saveOrder(input: OrderInput): Promise<Order> {
-  const sb = supabaseAdmin();
+  const { pb, userId } = await pbUser();
 
   // Pravilna velika slova da se u statistici ne cepaju isti kupci/gradovi
   const kupacIme = toTitleCase(input.kupac_ime);
@@ -357,14 +458,14 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
   const adresa = toTitleCaseOrNull(input.adresa);
   const telefon = normalizePhone(input.kupac_telefon);
 
-  const customerId = await ensureCustomer(kupacIme, telefon, grad, adresa);
+  const customerId = await ensureCustomer(pb, userId, kupacIme, telefon, grad, adresa);
 
   const items = normalizeItems(input);
   if (items.length === 0) throw new KorisnickaGreska("Bar jedan proizvod je obavezan.");
 
   // Zbirni podaci na nivou porudžbine (za listu, kalendar, statistiku)
-  const grandTotal = items.reduce((s, i) => s + (i.total ?? 0), 0) || null;
-  const zbirTezina = items.reduce((s, i) => s + (i.tezina_kg ?? 0), 0) || null;
+  const grandTotal = items.reduce((sum, i) => sum + (i.total ?? 0), 0) || null;
+  const zbirTezina = items.reduce((sum, i) => sum + (i.tezina_kg ?? 0), 0) || null;
   const proizvodSummary = items.map((i) => i.naziv).join(", ");
 
   // Lično preuzimanje: kupac dolazi kod nas → prevoza nema. Sva polja prevoza
@@ -398,16 +499,16 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     input.transport_cena != null && !isNaN(input.transport_cena)
       ? input.transport_cena
       : (t?.predlog ?? null);
-  // Torte/kolači od 15.000 RSD (bez topera/dekoracije) → dostava je besplatna
-  // (samo ako dostave uopšte ima). Lično preuzimanje → nema dostave (null).
+  // Torte/kolači iznad praga besplatne dostave (bez topera/dekoracije) →
+  // dostava je besplatna (samo ako dostave uopšte ima). Lično preuzimanje → nema dostave.
   const transportCena = licnoPreuzimanje
     ? null
     : unetaCena != null && besplatnaDostavaPoPravilu(grandTotal)
       ? 0
       : unetaCena;
 
-  const row = {
-    customer_id: customerId,
+  const row: Record<string, unknown> = {
+    customer: customerId,
     kupac_ime: kupacIme,
     kupac_telefon: telefon,
     datum_porudzbine: input.datum_porudzbine,
@@ -416,7 +517,6 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     proizvod: proizvodSummary,
     opis: toSentenceCaseOrNull(input.opis),
     napomena: toSentenceCaseOrNull(input.napomena),
-    slika: input.slika ?? null,
     tezina_kg: zbirTezina,
     cena_po_kg: items.length === 1 ? items[0].cena_po_kg : null,
     total: grandTotal,
@@ -433,67 +533,36 @@ export async function saveOrder(input: OrderInput): Promise<Order> {
     transport_predlog: t?.predlog ?? null,
     transport_cena: transportCena,
     status: input.status,
+    ...slikaPatch(input.slika, Boolean(input.id)),
   };
 
-  const write = (r: Record<string, unknown>) =>
-    input.id
-      ? sb.from("orders").update(r).eq("id", input.id).select("*").single()
-      : sb.from("orders").insert(r).select("*").single();
-
-  // Kolone dekoracija_cena (migracija 7) i licno_preuzimanje (migracija 8) stižu
-  // kasnije. Dok migracija nije pokrenuta, porudžbina se i dalje čuva bez te
-  // kolone — ali ako je korisnik baš upisao tu vrednost, pucamo jasno da se
-  // podatak ne izgubi tiho.
-  const payload: Record<string, unknown> = { ...row };
-  let { data, error } = await write(payload);
-  while (error && (nedostajeKolona(error, "dekoracija_cena") || nedostajeKolona(error, "licno_preuzimanje"))) {
-    if (nedostajeKolona(error, "dekoracija_cena")) {
-      if (payload.dekoracija_cena != null) {
-        throw new KorisnickaGreska(
-          "Cena dekoracije ne može da se sačuva dok se ne pokrene migracija 7 (supabase/migration_7_dekoracija.sql)."
-        );
-      }
-      delete payload.dekoracija_cena;
-    } else {
-      if (payload.licno_preuzimanje === true) {
-        throw new KorisnickaGreska(
-          "Lično preuzimanje ne može da se sačuva dok se ne pokrene migracija 8 (supabase/migration_8_licno_preuzimanje.sql)."
-        );
-      }
-      delete payload.licno_preuzimanje;
-    }
-    ({ data, error } = await write(payload));
-  }
-  if (error) throw error;
-  const saved = data as Order;
-  const orderId = input.id ?? saved.id;
+  const saved = input.id
+    ? ((await pb.collection("orders").update(input.id, row)) as Rec)
+    : await createNumbered(pb, "orders", { ...row, user: userId });
+  const orderId = saved.id;
 
   // Zameni stavke: obriši postojeće pa upiši nove (jednostavno i pouzdano)
-  const { error: delErr } = await sb.from("order_items").delete().eq("order_id", orderId);
-  if (delErr) throw delErr;
-  const { error: insErr } = await sb.from("order_items").insert(
-    items.map((i, idx) => ({ order_id: orderId, redosled: idx, ...i }))
-  );
-  if (insErr) throw insErr;
+  const old = (await pb.collection("order_items").getFullList({
+    filter: pb.filter("order = {:id}", { id: orderId }),
+    fields: "id",
+  })) as Rec[];
+  for (const o of old) await pb.collection("order_items").delete(o.id);
+  for (const [idx, i] of items.entries()) {
+    await pb.collection("order_items").create({ user: userId, order: orderId, redosled: idx, ...i });
+  }
 
-  return saved;
-}
-
-// Da li je greška nastala jer kolona još ne postoji u bazi (migracija nije pokrenuta)
-function nedostajeKolona(error: { code?: string; message?: string }, kolona: string): boolean {
-  return (error.code === "PGRST204" || error.code === "42703") && (error.message ?? "").includes(kolona);
+  return toOrder(pb, saved);
 }
 
 export async function updateStatus(id: string, status: Status): Promise<void> {
-  const sb = supabaseAdmin();
-  const { error } = await sb.from("orders").update({ status }).eq("id", id);
-  if (error) throw error;
+  const { pb } = await pbUser();
+  await pb.collection("orders").update(id, { status });
 }
 
+// Stavke se brišu automatski (cascadeDelete na relaciji order_items.order).
 export async function deleteOrder(id: string): Promise<void> {
-  const sb = supabaseAdmin();
-  const { error } = await sb.from("orders").delete().eq("id", id);
-  if (error) throw error;
+  const { pb } = await pbUser();
+  await pb.collection("orders").delete(id);
 }
 
 // ── Statistika ─────────────────────────────────────────────────────

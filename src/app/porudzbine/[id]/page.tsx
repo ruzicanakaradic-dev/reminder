@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Pencil, Truck, Home } from "lucide-react";
-import { supabaseConfigured } from "@/lib/supabase/admin";
+import { pocketbaseConfigured } from "@/lib/pb/server";
 import { getOrder, getCustomer } from "@/lib/data";
 import { SetupNotice } from "@/components/SetupNotice";
 import { StatusControl } from "@/components/StatusControl";
@@ -15,7 +15,7 @@ import { AddressActions } from "@/components/AddressActions";
 export const dynamic = "force-dynamic";
 
 export default async function PorudzbinaDetalj({ params }: { params: Promise<{ id: string }> }) {
-  if (!supabaseConfigured()) return <SetupNotice />;
+  if (!pocketbaseConfigured()) return <SetupNotice />;
   const { id } = await params;
   const order = await getOrder(id);
   if (!order) notFound();

@@ -7,8 +7,8 @@ export default function Error({ error, reset }: { error: Error; reset: () => voi
         <div className="text-4xl mb-2">🍰</div>
         <h1 className="display text-xl font-semibold text-ink">Ups, nešto je zapelo</h1>
         <p className="text-muted text-sm mt-1">
-          Najčešće je u pitanju veza sa bazom. Proveri da je Supabase povezan i da je{" "}
-          <code className="bg-[var(--surface)] px-1 rounded">supabase/schema.sql</code> pokrenut.
+          Najčešće je u pitanju veza sa bazom. Proveri da PocketBase server radi i da je{" "}
+          <code className="bg-[var(--surface)] px-1 rounded">pocketbase/pb_schema.json</code> uvezen.
         </p>
         {error?.message && (
           <p className="text-xs text-[var(--accent)] mt-3 bg-[var(--accent-100)] rounded-lg p-2 break-words">

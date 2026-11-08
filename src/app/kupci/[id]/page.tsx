@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, MapPin, Pencil } from "lucide-react";
-import { supabaseConfigured } from "@/lib/supabase/admin";
+import { pocketbaseConfigured } from "@/lib/pb/server";
 import { getCustomer, getOrders } from "@/lib/data";
 import { SetupNotice } from "@/components/SetupNotice";
 import { OrderCard } from "@/components/OrderCard";
@@ -14,7 +14,7 @@ import { ukupnaCena } from "@/lib/costs";
 export const dynamic = "force-dynamic";
 
 export default async function KupacDetalj({ params }: { params: Promise<{ id: string }> }) {
-  if (!supabaseConfigured()) return <SetupNotice />;
+  if (!pocketbaseConfigured()) return <SetupNotice />;
   const { id } = await params;
   const kupac = await getCustomer(id);
   if (!kupac) notFound();

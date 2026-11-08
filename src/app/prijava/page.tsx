@@ -2,12 +2,13 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Lock, Eye, EyeOff } from "lucide-react";
+import { Loader2, Lock, Mail, Eye, EyeOff } from "lucide-react";
 
 function PrijavaForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/";
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +22,7 @@ function PrijavaForm() {
       const res = await fetch("/api/prijava", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       });
       if (res.ok) {
         router.replace(next);
@@ -50,6 +51,23 @@ function PrijavaForm() {
             Knjiga porudžbina
           </div>
           <div>
+            <label className="label">Email</label>
+            <div className="input-wrap">
+              <Mail size={18} className="input-icon input-icon-left" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input with-icon-left"
+                placeholder="tvoj@email.com"
+                autoComplete="username"
+                inputMode="email"
+                autoCapitalize="none"
+                autoFocus
+              />
+            </div>
+          </div>
+          <div>
             <label className="label">Lozinka</label>
             <div className="input-wrap">
               <Lock size={18} className="input-icon input-icon-left" />
@@ -59,7 +77,7 @@ function PrijavaForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="input with-icon-left with-icon-right"
                 placeholder="Unesi lozinku"
-                autoFocus
+                autoComplete="current-password"
               />
               <button
                 type="button"

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { supabaseConfigured } from "@/lib/supabase/admin";
+import { pocketbaseConfigured } from "@/lib/pb/server";
 import { getOrders } from "@/lib/data";
 import { OrdersTable } from "@/components/OrdersTable";
 import { OrderFilters } from "@/components/OrderFilters";
@@ -16,7 +16,7 @@ export default async function PorudzbinePage({
 }: {
   searchParams: Promise<{ status?: string; q?: string }>;
 }) {
-  if (!supabaseConfigured()) return <SetupNotice />;
+  if (!pocketbaseConfigured()) return <SetupNotice />;
   const sp = await searchParams;
   const status = sp.status as Status | undefined;
 

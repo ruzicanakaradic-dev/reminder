@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { supabaseConfigured } from "@/lib/supabase/admin";
+import { pocketbaseConfigured } from "@/lib/pb/server";
 import { getCustomer } from "@/lib/data";
 import { CustomerForm } from "@/components/CustomerForm";
 import { SetupNotice } from "@/components/SetupNotice";
@@ -9,7 +9,7 @@ import { customerCode } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export default async function IzmenaKupcaPage({ params }: { params: Promise<{ id: string }> }) {
-  if (!supabaseConfigured()) return <SetupNotice />;
+  if (!pocketbaseConfigured()) return <SetupNotice />;
   const { id } = await params;
   const kupac = await getCustomer(id);
   if (!kupac) notFound();

@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { SESSION_COOKIE, isValidToken } from "@/lib/auth";
-import { sendPushToAll, isPushConfigured } from "@/lib/push";
+import { pbUserVerified } from "@/lib/pb/server";
+import { sendPushToUser, isPushConfigured } from "@/lib/push";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  if (!(await isValidToken(token))) {
-    return NextResponse.json({ error: "Neautorizovano" }, { status: 401 });
-  }
+  const ctx = await pbUserVerified();
+  if (!ctx) return NextResponse.json({ error: "Neautorizovano" }, { status: 401 });
 
   // VAPID ključevi ne postoje na serveru (npr. nisu dodati u Vercel produkciju)
   if (!isPushConfigured()) {
@@ -25,7 +22,7 @@ export async function POST() {
   }
 
   try {
-    const res = await sendPushToAll({
+    const res = await sendPushToUser(ctx.userId, {
       title: "🌹 Test podsetnik",
       body: "Ako ovo vidiš na zaključanom ekranu — push radi! 🎉",
       url: "/",
