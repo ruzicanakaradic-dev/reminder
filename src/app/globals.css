@@ -359,14 +359,18 @@ input.input[type="date"], input.input[type="time"] {
   --accent-100: #241b2d;
   --accent-200: #342545;
   --accent-300: #48345d;
-  --accent-600: #9a5bb0;  /* hover primarnog dugmeta — svetliji na tamnom */
-  --accent-700: #ab6cc0;
+  --accent-600: #be84d9;  /* hover primarnog dugmeta — svetliji od baze na tamnom */
+  --accent-700: #9f5bbb;  /* pritisnuto — tamnije od baze */
   --accent-800: #e7d3ef;  /* tekst na tamnom plum čipu — svetli plum */
   /* zlatna za dark */
   --gold-100:  #3a3320;
   --gold-600:  #d9b86a;
   --gold-800:  #e8d9a8;
-  /* primarna akcija ostaje plum i u dark-u (shadcn gore ga postavi na sivo) */
+  /* Plum na TAMNOJ pozadini: #7a3785 ima kontrast ~2.2 (nečitljiv), pa se u
+     dark-u diže na svetliji plum (~5.0 na kartici). Kaskadira na SVE akcente
+     jer --brand/--primary/--ring svi padaju na --brand-plum kad korisnica
+     nema svoju boju. Trust identitet i dalje "plum", samo čitljiviji na crnom. */
+  --brand-plum: #b06fcf;
   --primary: var(--brand-plum);
   --ring: var(--brand-plum);
   /* status čipovi za dark (tamna pozadina + svetli tekst) */
