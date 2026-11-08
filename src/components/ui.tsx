@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { FitText } from "@/components/FitText";
 
 // Naslov strane je već u topbaru; ovde prikazujemo opcioni podnaslov + akciju.
 export function PageHeader({
@@ -56,16 +55,14 @@ export function EmptyState({
   );
 }
 
-// Iznosi su istaknuti (20px) i uvek u jednom redu. FitText garantuje jedan red i
-// smanji font SAMO za izuzetno dug iznos u uskoj pločici (bez sečenja/lomljenja).
-// `sm`/`fit` su zadržani zbog poziva, ali više NE menjaju veličinu.
+// Iznosi su istaknuti i STROGO iste veličine (20px, CSS .kpi-value), uvek u
+// jednom redu (nowrap). Namerno BEZ per-pločica smanjivanja (FitText), da se
+// veličine nikad ne razlikuju između pločica. `sm`/`fit` zadržani zbog poziva.
 export function Kpi({ label, value, sm }: { label: string; value: string; sm?: boolean; fit?: boolean }) {
   return (
     <div className={`kpi${sm ? " kpi-sm" : ""}`}>
       <div className="kpi-label">{label}</div>
-      <FitText className="kpi-value" max={20} min={15}>
-        {value}
-      </FitText>
+      <div className="kpi-value">{value}</div>
     </div>
   );
 }

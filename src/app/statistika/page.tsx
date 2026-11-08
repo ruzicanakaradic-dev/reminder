@@ -4,7 +4,6 @@ import { SetupNotice } from "@/components/SetupNotice";
 import { MonthSelect } from "@/components/MonthSelect";
 import { PeriodSelect } from "@/components/PeriodSelect";
 import { EmptyState, Kpi } from "@/components/ui";
-import { FitText } from "@/components/FitText";
 import { formatRSD, formatNum, MESECI } from "@/lib/format";
 import { trosak, ukupnaCena, zarada } from "@/lib/costs";
 
@@ -206,7 +205,7 @@ function MonthFinanceList({ title, rows }: { title: string; rows: MonthFin[] }) 
         {rows.map((r) => (
           <div
             key={r.label}
-            className="rounded-[14px] p-3.5"
+            className="rounded-[14px] p-3"
             style={{
               background: r.tekuci ? "var(--accent-100)" : "var(--surface)",
               border: `1px solid ${r.tekuci ? "var(--accent-300)" : "var(--divider)"}`,
@@ -234,13 +233,13 @@ function FinCell({ label, value, strong, accent }: {
   label: string; value: number; strong?: boolean; accent?: boolean;
 }) {
   return (
-    <div className="rounded-[10px] py-2 px-1" style={{ background: "var(--bg)" }}>
+    <div className="rounded-[10px] py-2 px-0.5" style={{ background: "var(--bg)" }}>
       <div className="kicker" style={{ fontSize: 10 }}>{label}</div>
       <div
-        className={`mt-0.5 tabular-nums ${strong || accent ? "font-extrabold" : "font-bold"}`}
-        style={{ color: accent ? "var(--brand)" : "var(--ink)" }}
+        className={`mt-0.5 tabular-nums whitespace-nowrap ${strong || accent ? "font-extrabold" : "font-bold"}`}
+        style={{ fontSize: 14, color: accent ? "var(--brand)" : "var(--ink)" }}
       >
-        <FitText max={18} min={12}>{formatRSD(value)}</FitText>
+        {formatRSD(value)}
       </div>
     </div>
   );
