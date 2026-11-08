@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { saveOrder, updateStatus, deleteOrder, getSettings, getBrendKorisnice, updateSettings, updateCustomer } from "@/lib/data";
+import { saveOrder, updateStatus, deleteOrder, getSettings, getBrendKorisnice, updateSettings, updateCustomer, uploadBrendLogo, removeBrendLogo } from "@/lib/data";
 import { pbUserOrNull } from "@/lib/pb/server";
 import type { AppSettings, CustomerInput, OrderInput, OrderItemInput, Status } from "@/lib/types";
 import { KorisnickaGreska, razumljivaPoruka, type Rezultat } from "@/lib/greske";
@@ -135,6 +135,22 @@ export async function getSettingsAction(): Promise<AppSettings> {
 // Brend korisnice (nivo 2) — boja/naziv/logo za radni prostor.
 export async function getBrendAction() {
   return getBrendKorisnice();
+}
+
+// Upload logoa korisnice (nivo 2). Prima FormData sa poljem "logo".
+export async function uploadBrendLogoAction(formData: FormData) {
+  return pokusaj("uploadBrendLogo", async () => {
+    const file = formData.get("logo");
+    if (!(file instanceof File) || file.size === 0) throw new KorisnickaGreska("Izaberi sliku.");
+    if (!file.type.startsWith("image/")) throw new KorisnickaGreska("Dozvoljene su samo slike.");
+    if (file.size > 2 * 1024 * 1024) throw new KorisnickaGreska("Slika mora biti manja od 2 MB.");
+    return uploadBrendLogo(file);
+  });
+}
+
+// Uklanjanje logoa korisnice.
+export async function removeBrendLogoAction() {
+  return pokusaj("removeBrendLogo", () => removeBrendLogo());
 }
 
 // Status probnog perioda za baner u aplikaciji (faza 4). Čita sopstveni red

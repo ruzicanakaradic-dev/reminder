@@ -1,36 +1,61 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2, Check, AlertTriangle, Save, Palette } from "lucide-react";
-import { getSettingsAction, saveSettingsAction } from "@/app/actions";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, Check, AlertTriangle, Save, Palette, Upload, Trash2 } from "lucide-react";
+import {
+  getSettingsAction,
+  saveSettingsAction,
+  getBrendAction,
+  uploadBrendLogoAction,
+  removeBrendLogoAction,
+} from "@/app/actions";
 import { razumljivaPoruka } from "@/lib/greske";
 
-// Brend KORISNICE (nivo 2): njen naziv + boja. Nezavisno od Trust identiteta.
-// Boja se primenjuje na njen radni prostor (top bar, akcenti, porudžbine).
-// (Upload logoa dolazi kao sledeći korak — zahteva fajl endpoint.)
+// Brend KORISNICE (nivo 2): njen naziv, boja i logo. Nezavisno od Trust
+// identiteta. Primenjuje se na njen radni prostor (top bar, akcenti, porudžbine).
 
 const PALETA = ["#7a3785", "#be123c", "#c2410c", "#15803d", "#0369a1", "#1e1b4b"];
+const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+// Primeni boju korisnice na radni prostor odmah (boja + shadcn --primary/--ring).
+function primeniBoju(boja: string) {
+  const root = document.documentElement;
+  if (HEX.test(boja)) {
+    ["--brand", "--primary", "--ring"].forEach((p) => root.style.setProperty(p, boja));
+  } else {
+    ["--brand", "--primary", "--ring"].forEach((p) => root.style.removeProperty(p));
+  }
+}
 
 export function MojBrend() {
   const [naziv, setNaziv] = useState("");
   const [boja, setBoja] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [ucitano, setUcitano] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [tone, setTone] = useState<"ok" | "warn">("ok");
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    getSettingsAction()
-      .then((s) => {
-        setNaziv(s.naziv_biznisa ?? "");
-        setBoja(s.brend_boja ?? "");
-        setUcitano(true);
-      })
-      .catch(() => setUcitano(true));
+    Promise.allSettled([getSettingsAction(), getBrendAction()]).then(([s, b]) => {
+      if (s.status === "fulfilled") {
+        setNaziv(s.value.naziv_biznisa ?? "");
+        setBoja(s.value.brend_boja ?? "");
+      }
+      if (b.status === "fulfilled") setLogoUrl(b.value.logoUrl);
+      setUcitano(true);
+    });
   }, []);
 
-  const bojaZaPrikaz = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(boja) ? boja : "#7a3785";
+  const bojaZaPrikaz = HEX.test(boja) ? boja : "#7a3785";
   const inicijal = (naziv.trim()[0] ?? "B").toUpperCase();
+
+  function say(text: string, t: "ok" | "warn" = "ok") {
+    setTone(t);
+    setMsg(text);
+  }
 
   async function sacuvaj() {
     setBusy(true);
@@ -38,23 +63,56 @@ export function MojBrend() {
     try {
       const res = await saveSettingsAction({ naziv_biznisa: naziv, brend_boja: boja });
       if (res.ok) {
-        setTone("ok");
-        setMsg("✓ Sačuvano. Tvoj brend se primenjuje u aplikaciji.");
-        // Osveži boju na radnom prostoru odmah.
-        if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(boja)) {
-          document.documentElement.style.setProperty("--brand", boja);
-        } else {
-          document.documentElement.style.removeProperty("--brand");
-        }
+        say("✓ Sačuvano. Tvoj brend se primenjuje u aplikaciji.");
+        primeniBoju(boja);
       } else {
-        setTone("warn");
-        setMsg(`Nije sačuvano. ${res.greska}`);
+        say(`Nije sačuvano. ${res.greska}`, "warn");
       }
     } catch (err) {
-      setTone("warn");
-      setMsg(`Nije sačuvano. ${razumljivaPoruka(err)}`);
+      say(`Nije sačuvano. ${razumljivaPoruka(err)}`, "warn");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function onLogoPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // dozvoli ponovni izbor iste datoteke
+    if (!file) return;
+    setUploading(true);
+    setMsg(null);
+    try {
+      const fd = new FormData();
+      fd.append("logo", file);
+      const res = await uploadBrendLogoAction(fd);
+      if (res.ok) {
+        setLogoUrl(res.data.logoUrl);
+        say("✓ Logo otpremljen. Pojavljuje se u tvojoj aplikaciji.");
+      } else {
+        say(`Nije otpremljeno. ${res.greska}`, "warn");
+      }
+    } catch (err) {
+      say(`Nije otpremljeno. ${razumljivaPoruka(err)}`, "warn");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function ukloniLogo() {
+    setUploading(true);
+    setMsg(null);
+    try {
+      const res = await removeBrendLogoAction();
+      if (res.ok) {
+        setLogoUrl(null);
+        say("Logo uklonjen.");
+      } else {
+        say(`Nije uklonjeno. ${res.greska}`, "warn");
+      }
+    } catch (err) {
+      say(`Nije uklonjeno. ${razumljivaPoruka(err)}`, "warn");
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -64,7 +122,7 @@ export function MojBrend() {
         <Palette size={18} style={{ color: "var(--brand)" }} /> Moj brend
       </div>
       <p className="text-sm text-muted -mt-2">
-        Tvoj naziv i boja — pojavljuju se u <b>tvojoj</b> aplikaciji i na porudžbinama. Nezavisno od
+        Tvoj logo, naziv i boja — pojavljuju se u <b>tvojoj</b> aplikaciji i na porudžbinama. Nezavisno od
         izgleda same aplikacije.
       </p>
 
@@ -75,12 +133,23 @@ export function MojBrend() {
       ) : (
         <>
           <div className="flex items-center gap-4">
-            <div
-              className="flex items-center justify-center rounded-2xl text-white font-bold shrink-0"
-              style={{ width: 64, height: 64, background: bojaZaPrikaz, fontSize: 26 }}
-            >
-              {inicijal}
-            </div>
+            {/* Logo ili obojeni inicijal */}
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoUrl}
+                alt="Logo"
+                className="rounded-2xl object-cover shrink-0 border border-[var(--divider)]"
+                style={{ width: 64, height: 64 }}
+              />
+            ) : (
+              <div
+                className="flex items-center justify-center rounded-2xl text-white font-bold shrink-0"
+                style={{ width: 64, height: 64, background: bojaZaPrikaz, fontSize: 26 }}
+              >
+                {inicijal}
+              </div>
+            )}
             <div className="flex-1">
               <label className="label">Naziv biznisa</label>
               <input
@@ -90,6 +159,40 @@ export function MojBrend() {
                 placeholder="npr. Milkine torte"
               />
             </div>
+          </div>
+
+          {/* Logo kontrole */}
+          <div className="space-y-2">
+            <label className="label">Logo</label>
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                onChange={onLogoPick}
+                className="sr-only"
+              />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="btn btn-secondary text-sm"
+              >
+                {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                {logoUrl ? "Promeni logo" : "Otpremi logo"}
+              </button>
+              {logoUrl && (
+                <button
+                  type="button"
+                  onClick={ukloniLogo}
+                  disabled={uploading}
+                  className="btn btn-ghost text-sm text-red-600"
+                >
+                  <Trash2 size={16} /> Ukloni
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-muted">PNG ili JPG, do 2 MB. Ako nema logoa, koristi se obojeni inicijal.</p>
           </div>
 
           <div className="space-y-2">

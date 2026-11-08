@@ -237,6 +237,29 @@ export async function getBrendKorisnice(): Promise<import("@/lib/types").BrendKo
   }
 }
 
+// Upload logoa korisnice (nivo 2). brend_logo je PocketBase fajl-polje, pa ide
+// kao File (SDK sam pravi multipart), ne kao tekst. Vraća osvežen brend.
+export async function uploadBrendLogo(file: File): Promise<import("@/lib/types").BrendKorisnice> {
+  const { pb, userId } = await pbUser();
+  const res = await pb.collection("app_settings").getList(1, 1);
+  const existing = res.items[0] as Rec | undefined;
+  if (existing) {
+    await pb.collection("app_settings").update(existing.id, { brend_logo: file });
+  } else {
+    await pb.collection("app_settings").create({ ...DEFAULT_SETTINGS, brend_logo: file, user: userId });
+  }
+  return getBrendKorisnice();
+}
+
+// Uklanjanje logoa — isprazni fajl-polje.
+export async function removeBrendLogo(): Promise<import("@/lib/types").BrendKorisnice> {
+  const { pb } = await pbUser();
+  const res = await pb.collection("app_settings").getList(1, 1);
+  const existing = res.items[0] as Rec | undefined;
+  if (existing) await pb.collection("app_settings").update(existing.id, { brend_logo: null });
+  return getBrendKorisnice();
+}
+
 const TEKST_POLJA = new Set(["naziv_biznisa", "brend_boja", "brend_logo"]);
 
 export async function updateSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
