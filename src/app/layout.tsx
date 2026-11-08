@@ -1,27 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Geist } from "next/font/google";
+import { Bricolage_Grotesque, Geist } from "next/font/google";
 import "./globals.css";
 import { AppChrome } from "@/components/AppChrome";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+// Geist = telo/UI; Bricolage = Trust ime (brend font identiteta aplikacije).
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
-const archivo = Archivo({
+const bricolage = Bricolage_Grotesque({
   subsets: ["latin", "latin-ext"],
-  variable: "--font-archivo",
-  weight: ["400", "600", "800"],
+  variable: "--font-brand",
+  weight: ["600", "700", "800"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Ružini domaći kolači — Knjiga porudžbina",
-  description: "Evidencija porudžbina, kalendar, kupci, statistika i podsetnici.",
+  title: "Trust — vođenje porudžbina",
+  description: "Trust — aplikacija za vođenje porudžbina za poslastičare: porudžbine, kalendar, kupci, statistika i podsetnici.",
   manifest: "/manifest.webmanifest",
-  applicationName: "Ružini kolači",
+  applicationName: "Trust",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Ružini kolači",
+    title: "Trust",
   },
   icons: {
     icon: "/icons/icon-192.png",
@@ -39,8 +40,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="sr" className={cn("font-sans", geist.variable)}>
-      <body className={archivo.variable}>
+    <html lang="sr" className={cn("font-sans", geist.variable, bricolage.variable)}>
+      <body>
         <AppChrome>{children}</AppChrome>
       </body>
     </html>

@@ -15,13 +15,19 @@
   --divider:   color-mix(in srgb, #34233b 24%, transparent);
   --divider-1: color-mix(in srgb, #34233b 14%, transparent);
 
-  --accent:        oklch(0.97 0 0); /* plum — primarne akcije */
+  /* Trust brend plum (identitet aplikacije). Ranije se zvao --accent, ali to
+     ime sad pripada shadcn-u (svetla hover površina). Stare stranice koriste
+     --accent-100..800 kao tonove pluma dok se ne migriraju na shadcn. */
+  --brand-plum:  #7a3785;
   --accent-100:  #f4edf6;
   --accent-200:  #e8d8ec;
   --accent-300:  #d3b6db;
   --accent-600:  #6f2f7a;
   --accent-700:  #58245f;
   --accent-800:  #3f1c48;
+
+  /* Brend font (Trust ime) — Bricolage; telo = Geist (--font-sans). */
+  --font-brand: var(--font-brand), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 
   --gold:        #b28a34; /* zlatna — sekundarni akcenat */
   --gold-100:    #f7efd8;
@@ -48,9 +54,9 @@
      sve ostalo ostaje ČIST shadcn (bela pozadina, neutralni tokeni). Krem se
      NE nameće — boje po klijentu (faza 4) dolaze kao zaseban sloj, ne gaženjem
      shadcn osnove. */
-  --primary: var(--accent);             /* plum — primarna akcija */
+  --primary: var(--brand-plum);         /* Trust plum — primarna akcija */
   --primary-foreground: oklch(0.985 0 0); /* skoro belo — dobar kontrast na plumu */
-  --ring: var(--accent);
+  --ring: var(--brand-plum);
 }
 
 @theme inline {
@@ -68,7 +74,7 @@
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-ink: var(--ink);
-  --color-brand: var(--accent);
+  --color-brand: var(--brand-plum);
   --color-accent-100: var(--accent-100);
   --color-accent-200: var(--accent-200);
   --color-gold: var(--gold);
@@ -118,9 +124,11 @@ html, body { margin: 0; }
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  /* Čist shadcn osnova (bela), ne krem. Boja korisnice (brend_boja) dolazi kao
+     zaseban sloj na njenom radnom prostoru, ne na body. */
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   font-size: 15px;
@@ -128,7 +136,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, .display {
-  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-weight: 800;
   letter-spacing: -0.015em;
   line-height: 1.12;
@@ -177,14 +185,14 @@ h1, h2, h3, h4, h5, .display {
 /* ── Dugmad ────────────────────────────────────────────────── */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-  border-radius: var(--radius-md); font-family: var(--font-archivo); font-weight: 800;
+  border-radius: var(--radius-md); font-family: var(--font-sans); font-weight: 800;
   line-height: 1; padding: .68rem 1rem; font-size: 14px; cursor: pointer;
   border: 1px solid transparent; transition: background .15s, box-shadow .15s, transform .1s;
 }
 .btn:active { transform: translateY(1px); }
 .btn-block { width: 100%; }
 
-.btn-primary { background: var(--accent); color: var(--bg); }
+.btn-primary { background: var(--brand-plum); color: var(--bg); }
 .btn-primary:hover { background: var(--accent-600); }
 .btn-primary:active { background: var(--accent-700); }
 
@@ -200,11 +208,11 @@ h1, h2, h3, h4, h5, .display {
 .input, .textarea, .select {
   width: 100%; background: var(--bg); border: 1px solid var(--divider);
   border-radius: var(--radius-md); padding: .6rem .7rem; color: var(--ink);
-  font-family: var(--font-archivo); font-size: 15px; outline: none;
+  font-family: var(--font-sans); font-size: 15px; outline: none;
   transition: border .15s, box-shadow .15s;
 }
 .input:focus, .textarea:focus, .select:focus {
-  border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-200);
+  border-color: var(--brand-plum); box-shadow: 0 0 0 2px var(--accent-200);
 }
 .label { display: block; font-size: 12px; font-weight: 800; color: var(--neutral-700); margin-bottom: .3rem;
   letter-spacing: .01em; }
@@ -243,14 +251,14 @@ input.input[type="date"], input.input[type="time"] {
 .tag { display: inline-flex; align-items: center; gap: .4rem; padding: .38rem .7rem;
   border-radius: var(--radius-sm); font-size: 12px; font-weight: 800; cursor: pointer;
   border: 1px solid var(--divider); background: var(--surface); color: var(--ink); }
-.tag-active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.tag-active { background: var(--brand-plum); color: var(--bg); border-color: var(--brand-plum); }
 
 /* ── Segmented control ─────────────────────────────────────── */
 .seg { display: inline-flex; background: var(--surface); border: 1px solid var(--divider);
   border-radius: var(--radius-md); padding: 3px; gap: 3px; }
-.seg-opt { border: 0; background: transparent; color: var(--neutral-700); font-family: var(--font-archivo);
+.seg-opt { border: 0; background: transparent; color: var(--neutral-700); font-family: var(--font-sans);
   font-weight: 800; font-size: 13px; padding: .45rem .85rem; border-radius: var(--radius-sm); cursor: pointer; }
-.seg-opt.active { background: var(--bg); color: var(--accent); box-shadow: var(--sh-sm); }
+.seg-opt.active { background: var(--bg); color: var(--brand-plum); box-shadow: var(--sh-sm); }
 
 /* ── Tabela ────────────────────────────────────────────────── */
 .table { width: 100%; border-collapse: collapse; }
@@ -265,16 +273,16 @@ input.input[type="date"], input.input[type="time"] {
 /* ── App shell: sidebar + topbar + bottom nav ──────────────── */
 .navitem { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px;
   background: none; border: 0; border-left: 3px solid transparent; cursor: pointer;
-  font-family: var(--font-archivo); font-weight: 800; font-size: 14px; color: var(--ink);
+  font-family: var(--font-sans); font-weight: 800; font-size: 14px; color: var(--ink);
   text-align: left; border-radius: var(--radius-md); text-decoration: none; }
 .navitem:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
-.navitem.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-100); }
+.navitem.active { color: var(--brand-plum); border-left-color: var(--brand-plum); background: var(--accent-100); }
 .navitem svg { width: 20px; height: 20px; flex: none; }
 
 .bnav { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 0;
-  background: none; border: 0; cursor: pointer; font-family: var(--font-archivo); font-weight: 800;
+  background: none; border: 0; cursor: pointer; font-family: var(--font-sans); font-weight: 800;
   font-size: 10px; letter-spacing: .03em; color: var(--neutral-600); text-decoration: none; }
-.bnav.active { color: var(--accent); }
+.bnav.active { color: var(--brand-plum); }
 
 /* Suptilne animacije */
 @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
