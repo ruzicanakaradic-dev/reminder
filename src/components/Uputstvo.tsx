@@ -30,28 +30,29 @@ type Korak = {
   hero?: boolean; // intro/kraj — Trust znak umesto screenshot-a
 };
 
-// Jezik: jednostavno, za nekog ko prvi put koristi aplikaciju. Ženski rod
-// (korisnice su uglavnom poslastičarke), isti ton kao ostatak aplikacije.
+// Jezik: jednostavno, za nekog ko prvi put koristi aplikaciju. Rodno
+// neutralno (koriste je i muškarci i žene) i neutralno po delatnosti
+// (ne samo kolači). Obraćanje na „ti”, kao ostatak aplikacije.
 const KORACI: Korak[] = [
   {
     hero: true,
-    naslov: "Dobrodošla u Trust",
+    naslov: "Dobrodošli u Trust",
     tekst:
-      "Tvoj mali pomoćnik za porudžbine kolača. Za jedan minut ću ti pokazati celu aplikaciju — korak po korak. Možeš da preskočiš kad god, a uputstvo se uvek vraća iz Podešavanja.",
+      "Tvoj pomoćnik za sve porudžbine. Za jedan minut ću ti pokazati celu aplikaciju — korak po korak. Možeš da preskočiš kad god, a uputstvo se uvek vraća iz Podešavanja.",
   },
   {
     slika: "danas",
     ikona: Home,
     naslov: "Početna strana — „Danas”",
     tekst:
-      "Čim se uloguješ, ovde vidiš sve najvažnije na prvi pogled: šta se isporučuje danas, šta je u radu, koliko porudžbina imaš ove nedelje i koliko si zaradila ovaj mesec.",
+      "Čim se uloguješ, ovde vidiš sve najvažnije na prvi pogled: šta se isporučuje danas, šta je u radu, koliko porudžbina imaš ove nedelje i kolika ti je zarada ovaj mesec.",
   },
   {
     slika: "nova",
     ikona: PlusCircle,
     naslov: "Dodaj porudžbinu",
     tekst:
-      "Kad ti neko naruči kolač, ovde uneseš ko je naručio, šta, za koji dan i po kojoj ceni. Polja sa zvezdicom (*) su obavezna — sve ostalo je po želji. Dugme „+” ti je uvek pri ruci.",
+      "Kad dobiješ porudžbinu, ovde uneseš ime kupca, šta naručuje, za koji dan i po kojoj ceni. Polja sa zvezdicom (*) su obavezna — sve ostalo je po želji. Dugme „+” ti je uvek pri ruci.",
   },
   {
     slika: "porudzbine",
@@ -90,7 +91,7 @@ const KORACI: Korak[] = [
   },
   {
     hero: true,
-    naslov: "Spremna si! 🎉",
+    naslov: "Sve je spremno! 🎉",
     tekst:
       "To je sve što treba za početak. Dodaj svoju prvu porudžbinu i kreni. Uputstvo možeš ponovo da otvoriš bilo kada — u Podešavanjima, dugme „Pogledaj uputstvo”.",
   },
