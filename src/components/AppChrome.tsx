@@ -86,7 +86,6 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
   const samostalna =
     pathname.startsWith("/prijava") ||
     pathname === "/registracija" ||
-    pathname === "/proba-shadcn" ||
     pathname === "/nalog-neaktivan" ||
     pathname.startsWith("/admin");
   if (samostalna) return <>{children}</>;

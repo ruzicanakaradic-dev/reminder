@@ -56,6 +56,6 @@ export const config = {
   // izuzmi i /admin — admin ima svoj superuser gate (pbAdminSession),
   // ne koristi korisnički rdk_session kolačić.
   matcher: [
-    "/((?!prijava|registracija|admin|proba-shadcn|api|_next/static|_next/image|favicon.ico|icon.png|logo.png|sw.js|manifest.webmanifest|icons|apple-touch-icon.png|offline).*)",
+    "/((?!prijava|registracija|admin|api|_next/static|_next/image|favicon.ico|icon.png|logo.png|sw.js|manifest.webmanifest|icons|apple-touch-icon.png|offline).*)",
   ],
 };
