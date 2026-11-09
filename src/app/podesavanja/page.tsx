@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, LogOut, Loader2, BellRing, Check, Lock, Volume2, AlertTriangle } from "lucide-react";
+import { Bell, LogOut, Loader2, BellRing, Check, Lock, Volume2, AlertTriangle, GraduationCap, PlayCircle } from "lucide-react";
 import { PageHeader } from "@/components/ui";
+import { UPUTSTVO_EVENT } from "@/components/Uputstvo";
 import { TransportSettings } from "@/components/TransportSettings";
 import { MojBrend } from "@/components/MojBrend";
 import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
@@ -248,6 +249,21 @@ export default function PodesavanjaPage() {
             „Zaključani ekran" i „Zvukove".
           </li>
         </ul>
+      </div>
+
+      <div className="card p-5 flex items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-ink font-semibold">
+            <GraduationCap size={18} className="text-[var(--brand)]" /> Uputstvo
+          </div>
+          <p className="text-sm text-muted mt-1">Kratak vodič kroz aplikaciju, korak po korak.</p>
+        </div>
+        <button
+          onClick={() => window.dispatchEvent(new Event(UPUTSTVO_EVENT))}
+          className="btn btn-secondary text-sm shrink-0"
+        >
+          <PlayCircle size={16} /> Pogledaj
+        </button>
       </div>
 
       <button onClick={logout} className="btn btn-ghost text-[var(--brand)] w-full">

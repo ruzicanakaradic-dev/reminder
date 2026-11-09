@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { CalendarDays, Home, Users, BarChart3, ClipboardList, Plus, Settings } from "lucide-react";
 import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { PushSetup } from "@/components/PushSetup";
+import { Uputstvo } from "@/components/Uputstvo";
 import { BrandProvider, useBrend } from "@/components/BrandStyle";
 import { TrialBanner } from "@/components/TrialBanner";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -160,6 +161,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
 
       <ReminderWatcher />
       <PushSetup />
+      <Uputstvo />
     </div>
     </BrandProvider>
   );
