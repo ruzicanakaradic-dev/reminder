@@ -54,6 +54,28 @@ function BrendZnak() {
   );
 }
 
+// Kompaktni znak brenda KORISNICE za mobilni topbar: njen logo (ili obojeni
+// inicijal) — zamenjuje Trust „T" ikonu kad korisnica ima svoj brend (nivo 2).
+function BrendMark() {
+  const brend = useBrend();
+  const inicijal = (brend.naziv.trim()[0] ?? "B").toUpperCase();
+  return brend.logoUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={brend.logoUrl}
+      alt={brend.naziv || "Logo"}
+      className="min-[861px]:hidden w-9 h-9 rounded-[10px] object-cover"
+    />
+  ) : (
+    <span
+      className="min-[861px]:hidden w-9 h-9 rounded-[10px] flex items-center justify-center text-white font-bold"
+      style={{ background: "var(--brand)", fontSize: 15 }}
+    >
+      {inicijal}
+    </span>
+  );
+}
+
 export function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   // Samostalne rute bez autentifikovanog chrome-a (sidebar, brend, trial, push):
@@ -99,11 +121,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Topbar */}
         <header className="sticky top-0 z-30 flex items-center gap-3 border-b-2 border-[var(--divider)] bg-[var(--bg)] px-4 min-[861px]:px-6 h-16">
-          <img
-            src="/icons/icon-192.png"
-            alt="RDK"
-            className="min-[861px]:hidden w-9 h-9 rounded-[10px] object-cover"
-          />
+          <BrendMark />
           <h4 className="flex-1 text-[22px] m-0 truncate">{titleFor(pathname)}</h4>
           <ThemeToggle />
           <Link

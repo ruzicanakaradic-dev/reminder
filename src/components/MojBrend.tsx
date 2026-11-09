@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Check, AlertTriangle, Save, Palette, Upload, Trash2 } from "lucide-react";
+import { Loader2, Check, AlertTriangle, Save, Palette, Upload, Trash2, RotateCcw } from "lucide-react";
 import {
   getSettingsAction,
   saveSettingsAction,
@@ -10,22 +10,13 @@ import {
   removeBrendLogoAction,
 } from "@/app/actions";
 import { razumljivaPoruka } from "@/lib/greske";
+import { applyBrandColor } from "@/components/BrandStyle";
 
 // Brend KORISNICE (nivo 2): njen naziv, boja i logo. Nezavisno od Trust
 // identiteta. Primenjuje se na njen radni prostor (top bar, akcenti, porudžbine).
 
 const PALETA = ["#7a3785", "#be123c", "#c2410c", "#15803d", "#0369a1", "#1e1b4b"];
 const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
-
-// Primeni boju korisnice na radni prostor odmah (boja + shadcn --primary/--ring).
-function primeniBoju(boja: string) {
-  const root = document.documentElement;
-  if (HEX.test(boja)) {
-    ["--brand", "--primary", "--ring"].forEach((p) => root.style.setProperty(p, boja));
-  } else {
-    ["--brand", "--primary", "--ring"].forEach((p) => root.style.removeProperty(p));
-  }
-}
 
 export function MojBrend() {
   const [naziv, setNaziv] = useState("");
@@ -51,10 +42,24 @@ export function MojBrend() {
 
   const bojaZaPrikaz = HEX.test(boja) ? boja : "#7a3785";
   const inicijal = (naziv.trim()[0] ?? "B").toUpperCase();
+  // Prilagođena boja = važeći hex koji NIJE među presetovima.
+  const jeCustom = HEX.test(boja) && !PALETA.includes(boja.toLowerCase());
 
   function say(text: string, t: "ok" | "warn" = "ok") {
     setTone(t);
     setMsg(text);
+  }
+
+  // Izbor boje: ODMAH primeni na radni prostor (živi pregled, kontrast-sigurno)
+  // i zapamti; „Sačuvaj brend" tek trajno upisuje u bazu.
+  function izaberiBoju(c: string) {
+    setBoja(c);
+    applyBrandColor(c);
+  }
+  // Reset na podrazumevanu (Trust) boju.
+  function resetBoju() {
+    setBoja("");
+    applyBrandColor(null);
   }
 
   async function sacuvaj() {
@@ -64,7 +69,7 @@ export function MojBrend() {
       const res = await saveSettingsAction({ naziv_biznisa: naziv, brend_boja: boja });
       if (res.ok) {
         say("✓ Sačuvano. Tvoj brend se primenjuje u aplikaciji.");
-        primeniBoju(boja);
+        applyBrandColor(boja);
       } else {
         say(`Nije sačuvano. ${res.greska}`, "warn");
       }
@@ -202,32 +207,50 @@ export function MojBrend() {
                 <button
                   key={c}
                   type="button"
-                  onClick={() => setBoja(c)}
+                  onClick={() => izaberiBoju(c)}
                   aria-label={`Boja ${c}`}
                   className="rounded-[10px] transition-transform"
                   style={{
                     width: 38,
                     height: 38,
                     background: c,
-                    boxShadow: boja.toLowerCase() === c ? `0 0 0 2px #fff, 0 0 0 4px ${c}` : "none",
+                    boxShadow: boja.toLowerCase() === c ? `0 0 0 2px var(--surface), 0 0 0 4px ${c}` : "none",
                   }}
                 />
               ))}
+              {/* Prilagođena boja: kad je izabrana, polje se oboji njome i markira
+                  kao izabrano; inače prikazuje „+". Klik otvara biranje boje. */}
               <label
-                className="rounded-[10px] border border-dashed border-[var(--divider)] flex items-center justify-center cursor-pointer text-muted"
-                style={{ width: 38, height: 38 }}
+                className="rounded-[10px] flex items-center justify-center cursor-pointer text-muted"
+                style={{
+                  width: 38,
+                  height: 38,
+                  background: jeCustom ? boja : "transparent",
+                  border: jeCustom ? "none" : "1px dashed var(--divider)",
+                  color: jeCustom ? "#fff" : "var(--neutral-600)",
+                  boxShadow: jeCustom ? `0 0 0 2px var(--surface), 0 0 0 4px ${boja}` : "none",
+                }}
                 title="Prilagođena boja"
               >
                 <input
                   type="color"
                   value={bojaZaPrikaz}
-                  onChange={(e) => setBoja(e.target.value)}
+                  onChange={(e) => izaberiBoju(e.target.value)}
                   className="sr-only"
                 />
-                +
+                {jeCustom ? null : "+"}
               </label>
             </div>
             <p className="text-xs text-muted">Dugmad, akcenti i oznake u tvojoj aplikaciji koriste ovu boju.</p>
+            {HEX.test(boja) && (
+              <button
+                type="button"
+                onClick={resetBoju}
+                className="btn btn-ghost text-sm !px-2"
+              >
+                <RotateCcw size={15} /> Vrati podrazumevanu boju
+              </button>
+            )}
           </div>
 
           <button onClick={sacuvaj} disabled={busy} className="btn btn-primary text-sm">

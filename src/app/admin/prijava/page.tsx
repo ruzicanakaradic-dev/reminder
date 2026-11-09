@@ -57,7 +57,7 @@ export default function AdminPrijavaPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="input has-icon-left"
+                className="input with-icon-left"
                 placeholder="admin@rdkolaci.com"
                 autoComplete="username"
                 required
@@ -73,7 +73,7 @@ export default function AdminPrijavaPage() {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input has-icon-left"
+                className="input with-icon-left with-icon-right"
                 autoComplete="current-password"
                 required
               />
