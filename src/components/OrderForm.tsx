@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Save, ImagePlus, X, Plus, Trash2, Truck, AlertTriangle } from "lucide-react";
 import { saveOrderAction } from "@/app/actions";
 import { STATUS_LABEL, STATUS_ORDER, type Order, type Status } from "@/lib/types";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import type { TransportSettings } from "@/lib/transport";
 import { formatRSD, toISODate } from "@/lib/format";
 import { razumljivaPoruka } from "@/lib/greske";
@@ -63,6 +64,7 @@ export function OrderForm({
   // Ruta: autoput (sa putarinom) ili stari put (bez putarine). Po porudžbini —
   // korisnica bira; „stari put" nulira putarinu bez obzira na tabelu/auto-procenu.
   const [stariPut, setStariPut] = useState<boolean>(order?.stari_put ?? false);
+  const [status, setStatus] = useState<Status>(order?.status ?? "primljena");
 
   // Transport / dostava
   const [km, setKm] = useState(order?.transport_km?.toString() ?? "");
@@ -508,9 +510,21 @@ export function OrderForm({
         </div>
         <div>
           <label className="label">Status</label>
-          <select name="status" defaultValue={order?.status ?? "primljena"} className="select">
-            {STATUS_ORDER.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-          </select>
+          <input type="hidden" name="status" value={status} />
+          <Select
+            value={status}
+            items={Object.fromEntries(STATUS_ORDER.map((s) => [s, STATUS_LABEL[s]]))}
+            onValueChange={(v) => setStatus(v as Status)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_ORDER.map((s) => (
+                <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

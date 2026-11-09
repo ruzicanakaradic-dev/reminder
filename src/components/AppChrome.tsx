@@ -7,6 +7,7 @@ import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { PushSetup } from "@/components/PushSetup";
 import { BrandProvider, useBrend } from "@/components/BrandStyle";
 import { TrialBanner } from "@/components/TrialBanner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV = [
   { href: "/", label: "Danas", icon: Home },
@@ -104,6 +105,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
             className="min-[861px]:hidden w-9 h-9 rounded-[10px] object-cover"
           />
           <h4 className="flex-1 text-[22px] m-0 truncate">{titleFor(pathname)}</h4>
+          <ThemeToggle />
           <Link
             href="/podesavanja"
             className="min-[861px]:hidden btn btn-secondary btn-icon"

@@ -13,17 +13,19 @@ import { trosak, ukupnaCena, zarada } from "@/lib/costs";
 
 type View = "mesec" | "nedelja" | "dan";
 
+// Boje statusa idu preko CSS varijabli da prate temu (svetlo/tamno). Dot =
+// --st-*-dot (isto kao badge), tint čipa = --cal-*-bg/fg (mekši od badge-a).
 const STATUS_COLOR: Record<Status, string> = {
-  primljena: "#9a8fa0",
-  u_radu: "#7a3785",
-  zavrseno: "#977128",
-  isporuceno: "#34233b",
+  primljena: "var(--st-primljena-dot)",
+  u_radu: "var(--st-u_radu-dot)",
+  zavrseno: "var(--st-zavrseno-dot)",
+  isporuceno: "var(--st-isporuceno-dot)",
 };
 const STATUS_TINT: Record<Status, { bg: string; fg: string }> = {
-  primljena: { bg: "#efe8ec", fg: "#5b4d62" },
-  u_radu: { bg: "#e8d8ec", fg: "#3f1c48" },
-  zavrseno: { bg: "#f7efd8", fg: "#574117" },
-  isporuceno: { bg: "#e6e0e8", fg: "#34233b" },
+  primljena: { bg: "var(--cal-primljena-bg)", fg: "var(--cal-primljena-fg)" },
+  u_radu: { bg: "var(--cal-u_radu-bg)", fg: "var(--cal-u_radu-fg)" },
+  zavrseno: { bg: "var(--cal-zavrseno-bg)", fg: "var(--cal-zavrseno-fg)" },
+  isporuceno: { bg: "var(--cal-isporuceno-bg)", fg: "var(--cal-isporuceno-fg)" },
 };
 
 export function CalendarView({ orders }: { orders: Order[] }) {
