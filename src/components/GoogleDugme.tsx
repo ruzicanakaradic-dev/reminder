@@ -1,9 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import PocketBase from "pocketbase";
-import { Loader2 } from "lucide-react";
 
 // Zvanični Google „G" logo (multicolor).
 function GoogleIkona() {
@@ -17,25 +14,19 @@ function GoogleIkona() {
   );
 }
 
-// Prijava/registracija preko Google naloga (SSO).
-// Popup flow: PocketBase SDK otvori Google popup i koristi svoj
-// /api/oauth2-redirect endpoint (isti koji je registrovan u Google-u), pa
-// radi sa svakog domena — i preview i produkcija. Posle uspeha PB token
-// šaljemo našoj /api/oauth2 ruti koja ga pretvara u httpOnly kolačić.
+// Prijava/registracija preko Google naloga (SSO) — server-side redirect flow.
+// Dugme je običan link na /api/oauth2/start (bez popup-a i realtime-a): ruta
+// redirektuje na Google, Google se vraća na /api/oauth2/callback koji postavlja
+// sesiju. Prikazuje se samo ako je SSO uključen (ima POCKETBASE_URL).
 export function GoogleDugme({ next = "/" }: { next?: string }) {
-  const router = useRouter();
-  const [pbUrl, setPbUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [enabled, setEnabled] = useState(false);
 
-  // Adresa PB servera nije tajna (browser ionako priča sa njom) — čitamo je
-  // sa /api/oauth2 da ne moramo NEXT_PUBLIC env (koji se ranije kvario u prod).
   useEffect(() => {
     let živ = true;
     fetch("/api/oauth2")
       .then((r) => r.json())
       .then((d) => {
-        if (živ && d?.enabled && typeof d?.pbUrl === "string") setPbUrl(d.pbUrl);
+        if (živ && d?.enabled) setEnabled(true);
       })
       .catch(() => {});
     return () => {
@@ -43,54 +34,15 @@ export function GoogleDugme({ next = "/" }: { next?: string }) {
     };
   }, []);
 
-  async function onClick() {
-    if (!pbUrl || loading) return;
-    setError(null);
-    setLoading(true);
-    try {
-      const pb = new PocketBase(pbUrl);
-      const authData = await pb.collection("users").authWithOAuth2({ provider: "google" });
-      const res = await fetch("/api/oauth2", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: authData.token }),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d?.error || "Google prijava nije uspela.");
-      }
-      router.replace(next);
-      router.refresh();
-    } catch (e) {
-      // Korisnik zatvorio/otkazao popup → ne prikazuj grešku. Ostalo prikaži.
-      const msg = e instanceof Error ? e.message : "";
-      if (!/cancel|closed|popup|aborted/i.test(msg)) {
-        setError(msg || "Google prijava nije uspela. Pokušaj ponovo.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // SSO nije konfigurisan (nema PB URL) → ne prikazuj dugme uopšte.
-  if (!pbUrl) return null;
+  if (!enabled) return null;
 
   return (
-    <div className="space-y-2">
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={loading}
-        className="btn btn-secondary btn-block"
-      >
-        {loading ? <Loader2 size={18} className="animate-spin" /> : <GoogleIkona />}
-        Nastavi sa Google
-      </button>
-      {error && (
-        <div className="text-sm font-bold" style={{ color: "var(--brand-plum)" }}>
-          {error}
-        </div>
-      )}
-    </div>
+    <a
+      href={`/api/oauth2/start?next=${encodeURIComponent(next)}`}
+      className="btn btn-secondary btn-block"
+    >
+      <GoogleIkona />
+      Nastavi sa Google
+    </a>
   );
 }
