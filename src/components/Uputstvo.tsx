@@ -157,7 +157,7 @@ export function Uputstvo() {
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-5"
+      className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-5"
       style={{ background: "color-mix(in srgb, #141216 62%, transparent)" }}
       role="dialog"
       aria-modal="true"
