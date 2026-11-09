@@ -96,6 +96,16 @@ function PrijavaForm() {
             </div>
           </div>
 
+          <div className="text-right -mt-1">
+            <Link
+              href="/prijava/zaboravljena"
+              className="text-sm font-semibold"
+              style={{ color: "var(--brand-plum)" }}
+            >
+              Zaboravljena lozinka?
+            </Link>
+          </div>
+
           {error && <div className="text-sm font-bold" style={{ color: "var(--brand-plum)" }}>{error}</div>}
 
           <button type="submit" disabled={loading} className="btn btn-primary btn-block">

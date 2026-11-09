@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, Mail, Eye, EyeOff, ShieldCheck } from "lucide-react";
 
@@ -86,6 +87,16 @@ export default function AdminPrijavaPage() {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+          </div>
+
+          <div className="text-right -mt-1">
+            <Link
+              href="/prijava/zaboravljena?admin=1"
+              className="text-sm font-semibold"
+              style={{ color: "var(--brand-plum)" }}
+            >
+              Zaboravljena lozinka?
+            </Link>
           </div>
 
           {error && <div className="text-sm text-red-600 font-medium">{error}</div>}

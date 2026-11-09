@@ -83,7 +83,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
   // Ovde se NE sme zvati getBrendAction/getTrialStatusAction jer koriste pbUser()
   // koji redirektuje na /prijava — pa bi javne stranice odskakale na prijavu.
   const samostalna =
-    pathname === "/prijava" ||
+    pathname.startsWith("/prijava") ||
     pathname === "/registracija" ||
     pathname === "/proba-shadcn" ||
     pathname === "/nalog-neaktivan" ||
