@@ -5,12 +5,15 @@ import { AppChrome } from "@/components/AppChrome";
 import { cn } from "@/lib/utils";
 
 // Geist = telo/UI; Bricolage = Trust ime (brend font identiteta aplikacije).
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+// latin-ext je obavezan za srpska slova (č, ć, š, ž, đ) u telu/UI-ju.
+const geist = Geist({ subsets: ["latin", "latin-ext"], variable: "--font-sans" });
 
+// Brend font — samo reč „Trust" na logou (TrustLogo, težina 800). Zato
+// samo latin subset i samo težina 800 (600/700 se nigde ne koriste).
 const bricolage = Bricolage_Grotesque({
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"],
   variable: "--font-brand",
-  weight: ["600", "700", "800"],
+  weight: ["800"],
   display: "swap",
 });
 
