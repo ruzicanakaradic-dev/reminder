@@ -52,15 +52,15 @@
   --st-primljena-dot:#9a8fa0; --st-primljena-bg:#efe8ec; --st-primljena-fg:#5b4d62;
   /* Kalendarski tintovi (mekši od badge-ova; po temi). Svetla = kao do sada. */
   --cal-primljena-bg:#efe8ec;  --cal-primljena-fg:#5b4d62;
-  --cal-u_radu-bg:#e8d8ec;     --cal-u_radu-fg:#3f1c48;
+  --cal-u_radu-bg:color-mix(in srgb, var(--brand) 13%, #fff); --cal-u_radu-fg:color-mix(in srgb, var(--brand) 62%, #000);
   --cal-zavrseno-bg:#f7efd8;   --cal-zavrseno-fg:#574117;
   --cal-isporuceno-bg:#e6e0e8; --cal-isporuceno-fg:#34233b;
   /* Aktivni status-pil (StatusControl) — pun, bold. Svetla = kao do sada. */
   --stp-primljena-bg:#9a8fa0;  --stp-primljena-fg:#ffffff;
-  --stp-u_radu-bg:#7a3785;     --stp-u_radu-fg:#f7ecd4;
+  --stp-u_radu-bg:var(--brand); --stp-u_radu-fg:var(--brand-foreground);
   --stp-zavrseno-bg:#977128;   --stp-zavrseno-fg:#f7ecd4;
   --stp-isporuceno-bg:#34233b; --stp-isporuceno-fg:#f7ecd4;
-  --st-u_radu-dot:#7a3785;    --st-u_radu-bg:#e8d8ec;    --st-u_radu-fg:#3f1c48;
+  --st-u_radu-dot:var(--brand); --st-u_radu-bg:color-mix(in srgb, var(--brand) 13%, #fff); --st-u_radu-fg:color-mix(in srgb, var(--brand) 62%, #000);
   --st-zavrseno-dot:#977128;  --st-zavrseno-bg:#f7efd8;  --st-zavrseno-fg:#574117;
   --st-isporuceno-dot:#34233b;--st-isporuceno-bg:#34233b;--st-isporuceno-fg:#f7ecd4;--background:        oklch(1 0 0);--foreground:        oklch(0.145 0 0);--card:        oklch(1 0 0);--card-foreground:        oklch(0.145 0 0);--popover:        oklch(1 0 0);--popover-foreground:        oklch(0.145 0 0);--primary:        oklch(0.205 0 0);--primary-foreground:        oklch(0.985 0 0);--secondary:        oklch(0.97 0 0);--secondary-foreground:        oklch(0.205 0 0);--muted:        oklch(0.97 0 0);--muted-foreground:        oklch(0.556 0 0);--accent:        oklch(0.97 0 0);--accent-foreground:        oklch(0.205 0 0);--destructive:        oklch(0.577 0.245 27.325);--border:        oklch(0.922 0 0);--input:        oklch(0.922 0 0);--ring:        oklch(0.708 0 0);--chart-1:        oklch(0.87 0 0);--chart-2:        oklch(0.556 0 0);--chart-3:        oklch(0.439 0 0);--chart-4:        oklch(0.371 0 0);--chart-5:        oklch(0.269 0 0);--radius:        0.625rem;--sidebar:        oklch(0.985 0 0);--sidebar-foreground:        oklch(0.145 0 0);--sidebar-primary:        oklch(0.205 0 0);--sidebar-primary-foreground:        oklch(0.985 0 0);--sidebar-accent:        oklch(0.97 0 0);--sidebar-accent-foreground:        oklch(0.205 0 0);--sidebar-border:        oklch(0.922 0 0);--sidebar-ring:        oklch(0.708 0 0);
   /* Samo primarnu akciju bojimo brend plumom (sa belim tekstom za kontrast);
@@ -390,15 +390,15 @@ input.input[type="date"], input.input[type="time"] {
   --st-primljena-dot:#9a8fa0; --st-primljena-bg:#2a2630; --st-primljena-fg:#d3c9d6;
   /* Kalendarski tintovi za DARK (tamna podloga + svetli tekst) */
   --cal-primljena-bg:#2a2630;  --cal-primljena-fg:#d3c9d6;
-  --cal-u_radu-bg:#36284a;     --cal-u_radu-fg:#e7d3ef;
+  --cal-u_radu-bg:color-mix(in srgb, var(--brand) 24%, #1c1920); --cal-u_radu-fg:color-mix(in srgb, var(--brand) 60%, #fff);
   --cal-zavrseno-bg:#3a3320;   --cal-zavrseno-fg:#e8d9a8;
   --cal-isporuceno-bg:#463a50; --cal-isporuceno-fg:#f0e4d0;
   /* Aktivni status-pil za DARK — svetliji pun pil, čitljiv tekst */
   --stp-primljena-bg:#6d6374;  --stp-primljena-fg:#f3f1f5;
-  --stp-u_radu-bg:#8f4aa5;     --stp-u_radu-fg:#f7e9fb;
+  --stp-u_radu-bg:var(--brand); --stp-u_radu-fg:var(--brand-foreground);
   --stp-zavrseno-bg:#8c6a2b;   --stp-zavrseno-fg:#fbf3df;
   --stp-isporuceno-bg:#80667d; --stp-isporuceno-fg:#f7eef5;
-  --st-u_radu-dot:#b06bc4;    --st-u_radu-bg:#36284a;    --st-u_radu-fg:#e7d3ef;
+  --st-u_radu-dot:var(--brand); --st-u_radu-bg:color-mix(in srgb, var(--brand) 24%, #1c1920); --st-u_radu-fg:color-mix(in srgb, var(--brand) 60%, #fff);
   --st-zavrseno-dot:#c9a24a;  --st-zavrseno-bg:#3a3320;  --st-zavrseno-fg:#e8d9a8;
   --st-isporuceno-dot:#cbb3d6;--st-isporuceno-bg:#463a50;--st-isporuceno-fg:#f0e4d0;
 }
