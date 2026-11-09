@@ -42,7 +42,7 @@ export default async function KupciPage() {
           <Link key={c.id} href={`/kupci/${c.id}`} className="card p-4">
             <div className="flex items-start justify-between gap-2">
               <span className="text-[17px] font-extrabold">{c.ime}</span>
-              <span className="text-[12px] font-extrabold" style={{ color: "var(--accent)" }}>
+              <span className="text-[12px] font-extrabold" style={{ color: "var(--brand)" }}>
                 {customerCode(c.redni_broj)}
               </span>
             </div>
@@ -52,7 +52,7 @@ export default async function KupciPage() {
             </div>
             <div className="mt-3 pt-3 flex justify-between text-sm" style={{ borderTop: "2px solid var(--divider)" }}>
               <span className="text-muted">{a.broj} porudžbina</span>
-              <span className="font-extrabold" style={{ color: "var(--accent)" }}>{formatRSD(a.prihod)}</span>
+              <span className="font-extrabold" style={{ color: "var(--brand)" }}>{formatRSD(a.prihod)}</span>
             </div>
           </Link>
         );

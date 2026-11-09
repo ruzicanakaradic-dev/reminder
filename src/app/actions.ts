@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { saveOrder, updateStatus, deleteOrder, getSettings, updateSettings, updateCustomer } from "@/lib/data";
+import { saveOrder, updateStatus, deleteOrder, getSettings, getBrendKorisnice, updateSettings, updateCustomer, uploadBrendLogo, removeBrendLogo } from "@/lib/data";
+import { pbUserOrNull } from "@/lib/pb/server";
 import type { AppSettings, CustomerInput, OrderInput, OrderItemInput, Status } from "@/lib/types";
 import { KorisnickaGreska, razumljivaPoruka, type Rezultat } from "@/lib/greske";
 
@@ -69,6 +70,7 @@ export async function saveOrderAction(formData: FormData): Promise<Rezultat<{ id
       grad: str(formData.get("grad")) || null,
       dekoracija_cena: num(formData.get("dekoracija_cena")),
       licno_preuzimanje: bool(formData.get("licno_preuzimanje")),
+      stari_put: bool(formData.get("stari_put")),
       transport_km: num(formData.get("transport_km")),
       transport_putarina: num(formData.get("transport_putarina")),
       transport_cena: num(formData.get("transport_cena")),
@@ -129,6 +131,52 @@ export async function setStatusAction(id: string, status: Status): Promise<Rezul
 // ── Podešavanja troškova prevoza ────────────────────────────────────
 export async function getSettingsAction(): Promise<AppSettings> {
   return getSettings();
+}
+
+// Brend korisnice (nivo 2) — boja/naziv/logo za radni prostor.
+export async function getBrendAction() {
+  return getBrendKorisnice();
+}
+
+// Upload logoa korisnice (nivo 2). Prima FormData sa poljem "logo".
+export async function uploadBrendLogoAction(formData: FormData) {
+  return pokusaj("uploadBrendLogo", async () => {
+    const file = formData.get("logo");
+    if (!(file instanceof File) || file.size === 0) throw new KorisnickaGreska("Izaberi sliku.");
+    if (!file.type.startsWith("image/")) throw new KorisnickaGreska("Dozvoljene su samo slike.");
+    if (file.size > 2 * 1024 * 1024) throw new KorisnickaGreska("Slika mora biti manja od 2 MB.");
+    return uploadBrendLogo(file);
+  });
+}
+
+// Uklanjanje logoa korisnice.
+export async function removeBrendLogoAction() {
+  return pokusaj("removeBrendLogo", () => removeBrendLogo());
+}
+
+// Status probnog perioda za baner u aplikaciji (faza 4). Čita sopstveni red
+// (korisnica sme da vidi sebe). paid (Ružica) → bez banera.
+export async function getTrialStatusAction(): Promise<{
+  trial: boolean;
+  danaLeft: number;
+  istice_danas: boolean;
+}> {
+  const prazno = { trial: false, danaLeft: 0, istice_danas: false };
+  const ctx = await pbUserOrNull();
+  if (!ctx) return prazno;
+  try {
+    const u = await ctx.pb.collection("users").getOne(ctx.userId, { fields: "plan,trial_do" });
+    const rec = u as unknown as { plan?: string; trial_do?: string };
+    if (rec.plan === "paid" || !rec.trial_do) return prazno;
+    const danas = new Date();
+    danas.setHours(0, 0, 0, 0);
+    const kraj = new Date(`${rec.trial_do}T00:00:00`);
+    const diff = Math.floor((kraj.getTime() - danas.getTime()) / 86_400_000);
+    if (diff < 0) return { trial: true, danaLeft: 0, istice_danas: true };
+    return { trial: true, danaLeft: diff, istice_danas: diff === 0 };
+  } catch {
+    return prazno;
+  }
 }
 
 export async function saveSettingsAction(patch: Partial<AppSettings>): Promise<Rezultat<AppSettings>> {

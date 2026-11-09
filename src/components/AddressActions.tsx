@@ -40,7 +40,7 @@ export function AddressActions({
   return (
     <div className="space-y-2">
       <div className="flex items-start gap-1.5 font-semibold">
-        <MapPin size={15} className="mt-0.5 shrink-0" style={{ color: "var(--accent)" }} />
+        <MapPin size={15} className="mt-0.5 shrink-0" style={{ color: "var(--brand)" }} />
         <span>{pun}</span>
       </div>
       <div className="flex flex-wrap gap-2">

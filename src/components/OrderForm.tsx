@@ -4,11 +4,13 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save, ImagePlus, X, Plus, Trash2, Truck, AlertTriangle } from "lucide-react";
 import { saveOrderAction } from "@/app/actions";
-import { STATUS_LABEL, STATUS_ORDER, type AppSettings, type Order, type Status } from "@/lib/types";
+import { STATUS_LABEL, STATUS_ORDER, type Order, type Status } from "@/lib/types";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import type { TransportSettings } from "@/lib/transport";
 import { formatRSD, toISODate } from "@/lib/format";
 import { razumljivaPoruka } from "@/lib/greske";
-import { DEFAULT_SETTINGS, obracunajTransport, predlozenaKm, predlozenaPutarina } from "@/lib/transport";
-import { BESPLATNA_DOSTAVA_OD, besplatnaDostavaPoPravilu } from "@/lib/costs";
+import { DEFAULT_SETTINGS, jePolazisteIndjija, obracunajTransport, predlozenaKm, predlozenaPutarina } from "@/lib/transport";
+import { besplatnaDostavaPoPravilu } from "@/lib/costs";
 
 type CustomerLite = { ime: string; telefon: string | null; grad: string | null; adresa: string | null };
 
@@ -34,7 +36,7 @@ export function OrderForm({
   order?: Order;
   customers: CustomerLite[];
   products?: string[];
-  settings?: AppSettings;
+  settings?: TransportSettings;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -42,6 +44,11 @@ export function OrderForm({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const today = toISODate(new Date());
+  // Polazište korisnice (iz podešavanja) za prikaz u tekstovima dostave.
+  const polazisteOpis = settings.polaziste_adresa?.trim() || DEFAULT_SETTINGS.polaziste_adresa;
+  // Ružicina ugrađena tabela rastojanja važi samo za polazište Inđija; druge
+  // korisnice uvek idu na auto-rutu (/api/rastojanje) i auto-putarinu.
+  const polazisteIndjija = jePolazisteIndjija(settings.polaziste_lat, settings.polaziste_lon);
   const [ime, setIme] = useState(order?.kupac_ime ?? "");
   const [telefon, setTelefon] = useState(order?.kupac_telefon ?? "");
   const [grad, setGrad] = useState(order?.grad ?? "");
@@ -54,6 +61,11 @@ export function OrderForm({
   // Kod ličnog preuzimanja nema prevoza — ni troška, ni naplaćene dostave.
   const [licno, setLicno] = useState<boolean>(order?.licno_preuzimanje ?? false);
 
+  // Ruta: autoput (sa putarinom) ili stari put (bez putarine). Po porudžbini —
+  // korisnica bira; „stari put" nulira putarinu bez obzira na tabelu/auto-procenu.
+  const [stariPut, setStariPut] = useState<boolean>(order?.stari_put ?? false);
+  const [status, setStatus] = useState<Status>(order?.status ?? "primljena");
+
   // Transport / dostava
   const [km, setKm] = useState(order?.transport_km?.toString() ?? "");
   const [transportCena, setTransportCena] = useState(order?.transport_cena?.toString() ?? "");
@@ -63,7 +75,7 @@ export function OrderForm({
   // kilometražu), osim kad je besplatna bila po pravilu.
   const sacuvanaBesplatna = !!order && order.transport_cena === 0 && (order.transport_km ?? 0) > 0;
   const [besplatnaRucno, setBesplatnaRucno] = useState<boolean>(
-    () => sacuvanaBesplatna && !besplatnaDostavaPoPravilu(order?.total)
+    () => sacuvanaBesplatna && !besplatnaDostavaPoPravilu(order?.total, settings.besplatna_dostava_od)
   );
   // Postojeća porudžbina: poštuj sačuvane vrednosti (ne prepisuj automatski).
   // Izuzetak: sačuvana besplatna dostava nema cenu (0), pa se predlog računa
@@ -81,8 +93,9 @@ export function OrderForm({
   useEffect(() => {
     if (kmTouched.current) return;
 
-    // 1) Poznato mesto iz tabele — trenutno, bez interneta.
-    const pk = predlozenaKm(grad);
+    // 1) Poznato mesto iz tabele — trenutno, bez interneta. Samo za Inđiju;
+    //    druge korisnice preskaču tabelu i idu na auto-rutu niže.
+    const pk = polazisteIndjija ? predlozenaKm(grad) : null;
     if (pk != null) {
       setKm(String(pk));
       setAutoKm(null);
@@ -124,16 +137,18 @@ export function OrderForm({
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [grad, adresa]);
+  }, [grad, adresa, polazisteIndjija]);
 
   const racun = useMemo(() => {
     const kmVal = num(km);
     if (kmVal == null || kmVal <= 0) return null;
-    // Putarina: tabela ima prednost; za mesta van tabele — procena sa mape.
-    const tablicna = predlozenaPutarina(grad);
-    const putarina = tablicna > 0 ? tablicna : (autoPutarina ?? 0);
+    // Putarina: za Inđiju tabela ima prednost; druge korisnice (i mesta van
+    // tabele) — auto-putarina sa mape.
+    const tablicna = polazisteIndjija ? predlozenaPutarina(grad) : 0;
+    // Stari put → bez putarine, bez obzira na tabelu/auto-procenu.
+    const putarina = stariPut ? 0 : (tablicna > 0 ? tablicna : (autoPutarina ?? 0));
     return obracunajTransport(kmVal, putarina, settings);
-  }, [km, grad, settings, autoPutarina]);
+  }, [km, grad, settings, autoPutarina, polazisteIndjija, stariPut]);
 
   // Predloži cenu dostave dok je korisnik ručno ne promeni
   useEffect(() => {
@@ -162,7 +177,7 @@ export function OrderForm({
   // Ukupno za naplatu = proizvodi + dekoracija + dostava
   const dekoracijaIznos = Math.max(0, num(dekoracija) ?? 0);
   // Torte/kolači od 15.000 RSD → dostava je automatski besplatna (toper se ne računa)
-  const besplatnaAuto = !licno && besplatnaDostavaPoPravilu(proizvodiTotal);
+  const besplatnaAuto = !licno && besplatnaDostavaPoPravilu(proizvodiTotal, settings.besplatna_dostava_od);
   const besplatna = besplatnaAuto || besplatnaRucno;
   // Lično preuzimanje → nema dostave uopšte
   const dostavaIznos = licno || besplatna ? 0 : Math.max(0, num(transportCena) ?? 0);
@@ -302,7 +317,7 @@ export function OrderForm({
       {/* Način isporuke: dostava ili lično preuzimanje */}
       <div className="card p-4 space-y-3">
         <div className="flex items-center gap-1.5">
-          <Truck size={15} style={{ color: "var(--accent)" }} />
+          <Truck size={15} style={{ color: "var(--brand)" }} />
           <label className="label !mb-0" style={{ fontSize: 11 }}>Način isporuke</label>
         </div>
 
@@ -334,15 +349,46 @@ export function OrderForm({
         {licno && (
           <p className="text-[12px] leading-snug rounded-[10px] px-3 py-2.5"
             style={{ background: "var(--accent-100)", border: "1px solid var(--accent-300)", color: "var(--accent-800)" }}>
-            Kupac preuzima kod nas (Inđija, Jug Bogdana 17). Nema dostave — ni troška prevoza, ni naplate dostave.
+            Kupac preuzima kod nas ({polazisteOpis}). Nema dostave — ni troška prevoza, ni naplate dostave.
           </p>
         )}
 
         {!licno && (
         <>
         <p className="text-[11px] leading-snug text-muted">
-          Polazak: Inđija, Jug Bogdana 17 · povratna vožnja (tamo-nazad). Kilometražu možeš ručno da izmeniš.
+          Polazak: {polazisteOpis} · povratna vožnja (tamo-nazad). Kilometražu možeš ručno da izmeniš.
         </p>
+
+        {/* Ruta: autoput (sa putarinom) ili stari put (bez putarine) */}
+        <input type="hidden" name="stari_put" value={stariPut ? "1" : "0"} />
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setStariPut(false)}
+            className="rounded-[10px] px-3 py-2.5 text-[13px] font-bold transition-colors text-left"
+            style={{
+              background: !stariPut ? "var(--accent-100)" : "var(--surface)",
+              border: `1px solid ${!stariPut ? "var(--accent-300)" : "var(--divider)"}`,
+              color: !stariPut ? "var(--accent-800)" : "var(--ink)",
+            }}
+          >
+            Autoput
+            <span className="block font-normal text-[11px] leading-snug">sa putarinom</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setStariPut(true)}
+            className="rounded-[10px] px-3 py-2.5 text-[13px] font-bold transition-colors text-left"
+            style={{
+              background: stariPut ? "var(--accent-100)" : "var(--surface)",
+              border: `1px solid ${stariPut ? "var(--accent-300)" : "var(--divider)"}`,
+              color: stariPut ? "var(--accent-800)" : "var(--ink)",
+            }}
+          >
+            Stari put
+            <span className="block font-normal text-[11px] leading-snug">bez putarine</span>
+          </button>
+        </div>
 
         {/* Besplatna dostava — cena 0 RSD, polja zaključana. Od 15.000 RSD
             uključuje se sama i ne može da se isključi. */}
@@ -359,13 +405,13 @@ export function OrderForm({
             // Kad je uključen po pravilu, klik se samo ignoriše.
             aria-disabled={besplatnaAuto}
             onChange={(e) => { if (!besplatnaAuto) setBesplatnaRucno(e.target.checked); }}
-            className={`w-4 h-4 shrink-0 accent-[var(--accent)] ${besplatnaAuto ? "cursor-default" : ""}`}
+            className={`w-4 h-4 shrink-0 accent-[var(--brand)] ${besplatnaAuto ? "cursor-default" : ""}`}
           />
           <span className="text-[12px] font-bold" style={{ color: besplatna ? "var(--accent-800)" : "var(--ink)" }}>
             Besplatna dostava (0 RSD)
             {besplatnaAuto && (
               <span className="block font-normal text-[11px] leading-snug">
-                Automatski — torte/kolači su {formatRSD(BESPLATNA_DOSTAVA_OD)} ili više (bez topera).
+                Automatski — torte/kolači su {formatRSD(settings.besplatna_dostava_od)} ili više (bez topera).
               </span>
             )}
           </span>
@@ -401,7 +447,7 @@ export function OrderForm({
               </p>
             )}
             {!besplatna && autoKm?.stanje === "auto" && (
-              <p className="text-[11px] leading-snug mt-1" style={{ color: "var(--accent)" }}>
+              <p className="text-[11px] leading-snug mt-1" style={{ color: "var(--brand)" }}>
                 Automatski sa mape ({autoKm.tekst}). Možeš da izmeniš.
               </p>
             )}
@@ -423,9 +469,9 @@ export function OrderForm({
             />
             <p className="text-[11px] leading-snug text-muted mt-1">
               {besplatna
-                ? <>Dostava je besplatna{besplatnaAuto && <> (torte/kolači od {formatRSD(BESPLATNA_DOSTAVA_OD)})</>}. {racun && <>Preporučeno bi bilo <b>{formatRSD(racun.predlog)}</b>.</>}</>
+                ? <>Dostava je besplatna{besplatnaAuto && <> (torte/kolači od {formatRSD(settings.besplatna_dostava_od)})</>}. {racun && <>Preporučeno bi bilo <b>{formatRSD(racun.predlog)}</b>.</>}</>
                 : racun
-                  ? <>Preporučeno: <b style={{ color: "var(--accent)" }}>{formatRSD(racun.predlog)}</b> — možeš da izmeniš.</>
+                  ? <>Preporučeno: <b style={{ color: "var(--brand)" }}>{formatRSD(racun.predlog)}</b> — možeš da izmeniš.</>
                   : "Unesi km da bi dobila predlog."}
             </p>
           </div>
@@ -464,9 +510,21 @@ export function OrderForm({
         </div>
         <div>
           <label className="label">Status</label>
-          <select name="status" defaultValue={order?.status ?? "primljena"} className="select">
-            {STATUS_ORDER.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-          </select>
+          <input type="hidden" name="status" value={status} />
+          <Select
+            value={status}
+            items={Object.fromEntries(STATUS_ORDER.map((s) => [s, STATUS_LABEL[s]]))}
+            onValueChange={(v) => setStatus(v as Status)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_ORDER.map((s) => (
+                <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -595,7 +653,7 @@ export function OrderForm({
 
       {error && (
         <div role="alert" className="card p-3 text-sm flex items-start gap-2"
-          style={{ color: "var(--accent)", borderColor: "var(--accent)" }}>
+          style={{ color: "var(--brand)", borderColor: "var(--brand)" }}>
           <AlertTriangle size={16} className="mt-0.5 shrink-0" />
           <div><b>Nije sačuvano.</b> {error}</div>
         </div>

@@ -562,7 +562,16 @@
         "required": false
       },
       {
-        "id": "autodate0000041",
+        "id": "bool0000041",
+        "name": "stari_put",
+        "type": "bool",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "required": false
+      },
+      {
+        "id": "autodate0000042",
         "name": "created",
         "type": "autodate",
         "system": false,
@@ -573,7 +582,7 @@
         "onUpdate": false
       },
       {
-        "id": "autodate0000042",
+        "id": "autodate0000043",
         "name": "updated",
         "type": "autodate",
         "system": false,
@@ -618,7 +627,7 @@
         "autogeneratePattern": "[a-z0-9]{15}"
       },
       {
-        "id": "relation0000043",
+        "id": "relation0000044",
         "name": "user",
         "type": "relation",
         "system": false,
@@ -631,7 +640,7 @@
         "maxSelect": 1
       },
       {
-        "id": "relation0000044",
+        "id": "relation0000045",
         "name": "order",
         "type": "relation",
         "system": false,
@@ -644,7 +653,7 @@
         "maxSelect": 1
       },
       {
-        "id": "number0000045",
+        "id": "number0000046",
         "name": "redosled",
         "type": "number",
         "system": false,
@@ -656,7 +665,7 @@
         "onlyInt": true
       },
       {
-        "id": "text0000046",
+        "id": "text0000047",
         "name": "naziv",
         "type": "text",
         "system": false,
@@ -670,7 +679,7 @@
         "primaryKey": false
       },
       {
-        "id": "number0000047",
+        "id": "number0000048",
         "name": "tezina_kg",
         "type": "number",
         "system": false,
@@ -682,7 +691,7 @@
         "onlyInt": false
       },
       {
-        "id": "number0000048",
+        "id": "number0000049",
         "name": "cena_po_kg",
         "type": "number",
         "system": false,
@@ -694,7 +703,7 @@
         "onlyInt": false
       },
       {
-        "id": "number0000049",
+        "id": "number0000050",
         "name": "total",
         "type": "number",
         "system": false,
@@ -706,7 +715,7 @@
         "onlyInt": false
       },
       {
-        "id": "autodate0000050",
+        "id": "autodate0000051",
         "name": "created",
         "type": "autodate",
         "system": false,
@@ -717,7 +726,7 @@
         "onUpdate": false
       },
       {
-        "id": "autodate0000051",
+        "id": "autodate0000052",
         "name": "updated",
         "type": "autodate",
         "system": false,
@@ -759,7 +768,7 @@
         "autogeneratePattern": "[a-z0-9]{15}"
       },
       {
-        "id": "relation0000052",
+        "id": "relation0000053",
         "name": "user",
         "type": "relation",
         "system": false,
@@ -772,7 +781,7 @@
         "maxSelect": 1
       },
       {
-        "id": "text0000053",
+        "id": "text0000054",
         "name": "endpoint",
         "type": "text",
         "system": false,
@@ -786,7 +795,7 @@
         "primaryKey": false
       },
       {
-        "id": "text0000054",
+        "id": "text0000055",
         "name": "p256dh",
         "type": "text",
         "system": false,
@@ -800,7 +809,7 @@
         "primaryKey": false
       },
       {
-        "id": "text0000055",
+        "id": "text0000056",
         "name": "auth",
         "type": "text",
         "system": false,
@@ -814,7 +823,7 @@
         "primaryKey": false
       },
       {
-        "id": "autodate0000056",
+        "id": "autodate0000057",
         "name": "created",
         "type": "autodate",
         "system": false,
@@ -825,7 +834,7 @@
         "onUpdate": false
       },
       {
-        "id": "autodate0000057",
+        "id": "autodate0000058",
         "name": "updated",
         "type": "autodate",
         "system": false,
@@ -867,7 +876,7 @@
         "autogeneratePattern": "[a-z0-9]{15}"
       },
       {
-        "id": "relation0000058",
+        "id": "relation0000059",
         "name": "user",
         "type": "relation",
         "system": false,
@@ -880,7 +889,7 @@
         "maxSelect": 1
       },
       {
-        "id": "text0000059",
+        "id": "text0000060",
         "name": "naziv_biznisa",
         "type": "text",
         "system": false,
@@ -894,7 +903,39 @@
         "primaryKey": false
       },
       {
-        "id": "text0000060",
+        "id": "text0000061",
+        "name": "brend_boja",
+        "type": "text",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "required": false,
+        "min": 0,
+        "max": 0,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "file0000062",
+        "name": "brend_logo",
+        "type": "file",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "required": false,
+        "maxSelect": 1,
+        "maxSize": 5242880,
+        "mimeTypes": [
+          "image/webp",
+          "image/jpeg",
+          "image/png"
+        ],
+        "thumbs": [],
+        "protected": false
+      },
+      {
+        "id": "text0000063",
         "name": "polaziste_adresa",
         "type": "text",
         "system": false,
@@ -908,7 +949,7 @@
         "primaryKey": false
       },
       {
-        "id": "number0000061",
+        "id": "number0000064",
         "name": "polaziste_lat",
         "type": "number",
         "system": false,
@@ -920,7 +961,7 @@
         "onlyInt": false
       },
       {
-        "id": "number0000062",
+        "id": "number0000065",
         "name": "polaziste_lon",
         "type": "number",
         "system": false,
@@ -932,8 +973,22 @@
         "onlyInt": false
       },
       {
-        "id": "number0000063",
-        "name": "dizel_cena_rsd",
+        "id": "select0000066",
+        "name": "tip_goriva",
+        "type": "select",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "required": false,
+        "values": [
+          "dizel",
+          "benzin"
+        ],
+        "maxSelect": 1
+      },
+      {
+        "id": "number0000067",
+        "name": "gorivo_cena_rsd",
         "type": "number",
         "system": false,
         "hidden": false,
@@ -944,7 +999,7 @@
         "onlyInt": false
       },
       {
-        "id": "number0000064",
+        "id": "number0000068",
         "name": "potrosnja_l_100km",
         "type": "number",
         "system": false,
@@ -956,7 +1011,7 @@
         "onlyInt": false
       },
       {
-        "id": "number0000065",
+        "id": "number0000069",
         "name": "amortizacija_rsd_km",
         "type": "number",
         "system": false,
@@ -968,7 +1023,7 @@
         "onlyInt": false
       },
       {
-        "id": "number0000066",
+        "id": "number0000070",
         "name": "besplatna_dostava_od",
         "type": "number",
         "system": false,
@@ -980,7 +1035,7 @@
         "onlyInt": false
       },
       {
-        "id": "autodate0000067",
+        "id": "autodate0000071",
         "name": "created",
         "type": "autodate",
         "system": false,
@@ -991,7 +1046,7 @@
         "onUpdate": false
       },
       {
-        "id": "autodate0000068",
+        "id": "autodate0000072",
         "name": "updated",
         "type": "autodate",
         "system": false,

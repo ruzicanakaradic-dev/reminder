@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { CalendarDays, Home, Users, BarChart3, ClipboardList, Plus, Settings } from "lucide-react";
 import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { PushSetup } from "@/components/PushSetup";
+import { BrandProvider, useBrend } from "@/components/BrandStyle";
+import { TrialBanner } from "@/components/TrialBanner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV = [
   { href: "/", label: "Danas", icon: Home },
@@ -27,23 +30,55 @@ function titleFor(pathname: string): string {
   return "Ružini kolači";
 }
 
+// Brend KORISNICE u zaglavlju radnog prostora: njen logo (ili obojeni inicijal)
+// + naziv. Koristi boju iz --brand (nivo 2), ne Trust plum.
+function BrendZnak() {
+  const brend = useBrend();
+  const naziv = brend.naziv || "Moj brend";
+  const inicijal = (brend.naziv.trim()[0] ?? "B").toUpperCase();
+  return (
+    <>
+      {brend.logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={brend.logoUrl} alt={naziv} className="w-9 h-9 rounded-[10px] object-cover shrink-0" />
+      ) : (
+        <span
+          className="w-9 h-9 rounded-[10px] flex items-center justify-center text-white font-bold shrink-0"
+          style={{ background: "var(--brand)", fontSize: 15 }}
+        >
+          {inicijal}
+        </span>
+      )}
+      <span className="font-semibold text-ink truncate" style={{ fontSize: 15 }}>{naziv}</span>
+    </>
+  );
+}
+
 export function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  if (pathname === "/prijava") return <>{children}</>;
+  // Samostalne rute bez autentifikovanog chrome-a (sidebar, brend, trial, push):
+  // javne (prijava/registracija/proba) i admin (ima svoj superuser kontekst).
+  // Ovde se NE sme zvati getBrendAction/getTrialStatusAction jer koriste pbUser()
+  // koji redirektuje na /prijava — pa bi javne stranice odskakale na prijavu.
+  const samostalna =
+    pathname === "/prijava" ||
+    pathname === "/registracija" ||
+    pathname === "/proba-shadcn" ||
+    pathname === "/nalog-neaktivan" ||
+    pathname.startsWith("/admin");
+  if (samostalna) return <>{children}</>;
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
+    <BrandProvider>
     <div className="flex min-h-dvh">
       {/* ── Sidebar (desktop) ── */}
       <aside className="hidden min-[861px]:flex w-[230px] flex-none flex-col gap-2 border-r-2 border-[var(--divider)] p-4 sticky top-0 h-dvh overflow-auto">
-        <Link href="/" className="block pb-1.5">
-          <img src="/logo.png" alt="Ružini domaći kolači" className="w-full max-w-[180px] rounded-[16px]" />
+        <Link href="/" className="flex items-center gap-2.5 pb-1.5">
+          <BrendZnak />
         </Link>
-        <div className="kicker mb-2" style={{ color: "var(--accent)" }}>
-          Knjiga porudžbina
-        </div>
         {NAV.map(({ href, label, icon: Icon }) => (
           <Link key={href} href={href} className={`navitem ${isActive(href) ? "active" : ""}`}>
             <Icon size={20} />
@@ -70,6 +105,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
             className="min-[861px]:hidden w-9 h-9 rounded-[10px] object-cover"
           />
           <h4 className="flex-1 text-[22px] m-0 truncate">{titleFor(pathname)}</h4>
+          <ThemeToggle />
           <Link
             href="/podesavanja"
             className="min-[861px]:hidden btn btn-secondary btn-icon"
@@ -80,6 +116,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="flex-1 w-full max-w-[1120px] px-4 min-[861px]:px-6 py-5 pb-28 min-[861px]:pb-10">
+          <TrialBanner />
           {children}
         </main>
       </div>
@@ -106,5 +143,6 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
       <ReminderWatcher />
       <PushSetup />
     </div>
+    </BrandProvider>
   );
 }

@@ -110,11 +110,11 @@ function MonthStat({ label, value, strong, accent }: {
   label: string; value: number; strong?: boolean; accent?: boolean;
 }) {
   return (
-    <div className="rounded-[10px] py-2.5 px-1" style={{ background: "var(--bg)" }}>
+    <div className="rounded-[10px] py-2.5 px-0.5" style={{ background: "var(--bg)" }}>
       <div className="kicker" style={{ fontSize: 10 }}>{label}</div>
       <div
-        className={`mt-0.5 tabular-nums ${strong || accent ? "font-extrabold" : "font-bold"}`}
-        style={{ fontSize: 15, color: accent ? "var(--accent)" : "var(--ink)" }}
+        className={`mt-0.5 tabular-nums whitespace-nowrap ${strong || accent ? "font-extrabold" : "font-bold"}`}
+        style={{ fontSize: 14, color: accent ? "var(--brand)" : "var(--ink)" }}
       >
         {formatRSD(value)}
       </div>

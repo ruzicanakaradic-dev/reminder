@@ -77,6 +77,7 @@ export type Order = {
   dekoracija_cena: number | null; // cena dekoracije/topera (RSD) — ulazi u ukupnu cenu; kupac je plaća, pa nije ni trošak ni zarada
   // Lično preuzimanje: kupac preuzima kod nas, nema dostave ni troška prevoza
   licno_preuzimanje: boolean;
+  stari_put: boolean; // true = stari put (bez putarine); false = autoput (sa putarinom)
   // Transport / dostava (snapshot troška u trenutku čuvanja)
   transport_km: number | null; // povratna kilometraža
   transport_litara: number | null; // potrošeno goriva (l)
@@ -113,6 +114,7 @@ export type OrderInput = {
   grad?: string | null;
   dekoracija_cena?: number | null; // ručno upisana cena dekoracije/topera (RSD)
   licno_preuzimanje?: boolean; // kupac preuzima kod nas → bez dostave i troška prevoza
+  stari_put?: boolean; // true = stari put (bez putarine); false = autoput (sa putarinom)
   // Transport: ako je prazno, izvodi se iz grada (tabela rastojanja).
   transport_km?: number | null; // povratna kilometraža (ručni unos ili auto)
   transport_putarina?: number | null; // povratna putarina (procena sa mape kad grad nije u tabeli)
@@ -121,9 +123,53 @@ export type OrderInput = {
   items?: OrderItemInput[]; // više vrsta kolača u jednoj porudžbini
 };
 
-// Podešavanja troškova prevoza (tabela app_settings)
+// Tip goriva — utiče samo na labelu i koju cenu korisnica unosi; obračun je
+// identičan (cena/litar × potrošnja), gorivo je neutralno u formulama.
+export type TipGoriva = "dizel" | "benzin";
+
+// Podešavanja po korisnici (tabela app_settings, jedan red po poslastičarki).
+// Polja koja su ranije bila zakucana za Ružicu (polazište, prag besplatne
+// dostave) ovde su podesiva za svaku korisnicu.
 export type AppSettings = {
-  dizel_cena_rsd: number;
-  potrosnja_l_100km: number;
-  amortizacija_rsd_km: number;
+  // Polazište za kilometražu i auto-putarinu (ranije zakucano: Inđija).
+  polaziste_adresa: string; // npr. "Inđija, Jug Bogdana 17"
+  polaziste_lat: number; // 0 = nije geokodirano
+  polaziste_lon: number; // 0 = nije geokodirano
+  // Gorivo — tip je informativan, cena ulazi u obračun.
+  tip_goriva: TipGoriva;
+  gorivo_cena_rsd: number; // RSD / litar
+  potrosnja_l_100km: number; // l / 100km
+  amortizacija_rsd_km: number; // RSD / km (interni trošak, ne naplaćuje se)
+  // Prag besplatne dostave (RSD, gleda se na zbir torti/kolača); 0 = nema.
+  besplatna_dostava_od: number;
+  // Brend KORISNICE (nivo 2) — njen logo i boja, nezavisno od Trust identiteta.
+  naziv_biznisa: string;
+  brend_boja: string; // hex; prazno = podrazumevana (Trust plum)
+  brend_logo: string; // ime fajla u PB (prazno = koristi inicijal)
 };
+
+// Boja + naziv + logo URL brenda korisnice, za primenu u radnom prostoru.
+export type BrendKorisnice = {
+  naziv: string;
+  boja: string | null;
+  logoUrl: string | null;
+};
+
+// ── Admin konzola (SaaS upravljanje korisnicama) ───────────────────
+// Plan korisnice: free (trial) ili paid (plaćena pretplata).
+export type Plan = "free" | "paid";
+
+// Red u admin pregledu — jedna poslastičarka (nalog u `users`) sa statusom.
+export type AdminUser = {
+  id: string;
+  email: string;
+  ime_biznisa: string | null;
+  plan: Plan;
+  trial_do: string | null; // YYYY-MM-DD; null = bez trial roka
+  blokiran: boolean;
+  broj_porudzbina: number;
+  kreiran: string | null; // created (YYYY-MM-DD)
+};
+
+// Status naloga za prikaz/kontrolu pristupa.
+export type StanjeNaloga = "aktivan" | "trial" | "trial_istekao" | "blokiran";

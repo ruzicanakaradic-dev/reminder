@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
-import { POLAZISTE, procenaPutarinaSmer } from "@/lib/transport";
+import { POLAZISTE } from "@/lib/transport";
+import { autoPutarinaSmer } from "@/lib/putarina";
+import { getSettings } from "@/lib/data";
 
-// Automatsko računanje vozačke kilometraže od POLAZIŠTA (Inđija, Jug Bogdana 17)
-// do unete adrese isporuke — potpuno besplatno, bez API ključa:
+// Automatsko računanje vozačke kilometraže od POLAZIŠTA korisnice do unete
+// adrese isporuke — potpuno besplatno, bez API ključa:
 //   1) Nominatim (OpenStreetMap) geokodira adresu → koordinate
 //   2) OSRM (public server) računa vozačku rutu → rastojanje u metrima
+//   3) Auto-putarina iz tabele naplatnih stanica (putarina.ts)
+//
+// Polazište dolazi iz podešavanja korisnice (app_settings); ako nije
+// geokodirano, pada na Ružicin fallback (Inđija) da app ne pukne.
 //
 // Rezultat je POVRATNA kilometraža (jednosmerno × 2), zaokružena na ceo km,
 // spremna da uđe u obracunajTransport() u formi.
@@ -19,7 +25,7 @@ const UA = "rdk-reminder/1.0 (Ruzini domaci kolaci - dnevnik porudzbina)";
 // istim upitom pri sitnim izmenama forme.
 const cache = new Map<
   string,
-  { km: number; jednosmerno: number; putarina: number; naziv: string }
+  { km: number; jednosmerno: number; putarina: number; proveriPutarinu: boolean; naziv: string }
 >();
 
 type Coord = { lat: number; lon: number };
@@ -56,9 +62,20 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Nedostaje adresa." }, { status: 400 });
   }
 
-  // Sastavi upit: adresa + grad + Srbija (za precizniji pogodak).
+  // Polazište korisnice (iz podešavanja); fallback na Ružicin POLAZISTE.
+  let polaziste: Coord = { lat: POLAZISTE.lat, lon: POLAZISTE.lon };
+  try {
+    const st = await getSettings();
+    if (st.polaziste_lat && st.polaziste_lon) {
+      polaziste = { lat: st.polaziste_lat, lon: st.polaziste_lon };
+    }
+  } catch {
+    // Bez prijavljene korisnice (ili greška) → ostaje fallback polazište.
+  }
+
+  // Keš ključ uključuje polazište — različite korisnice imaju različit rezultat.
   const q = [adresa, grad, "Srbija"].filter(Boolean).join(", ");
-  const key = q.toLowerCase();
+  const key = `${polaziste.lat.toFixed(4)},${polaziste.lon.toFixed(4)}|${q.toLowerCase()}`;
   const cached = cache.get(key);
   if (cached) return NextResponse.json({ ...cached, cache: true });
 
@@ -70,15 +87,22 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Adresa nije pronađena." }, { status: 404 });
     }
 
-    const jednosmerno = await rutaKm(POLAZISTE, geo.coord);
+    const jednosmerno = await rutaKm(polaziste, geo.coord);
     if (jednosmerno == null) {
       return NextResponse.json({ error: "Ruta nije dostupna." }, { status: 502 });
     }
 
     const km = Math.round(jednosmerno) * 2; // povratno
-    // Procena putarine: jedan smer iz koordinata × 2 (povratno).
-    const putarina = procenaPutarinaSmer(geo.coord.lat, geo.coord.lon) * 2;
-    const out = { km, jednosmerno: Number(jednosmerno.toFixed(1)), putarina, naziv: geo.naziv };
+    // Auto-putarina iz tabele naplatnih stanica: jedan smer × 2 (povratno).
+    const p = autoPutarinaSmer(polaziste.lat, polaziste.lon, geo.coord.lat, geo.coord.lon);
+    const putarina = p.smer * 2;
+    const out = {
+      km,
+      jednosmerno: Number(jednosmerno.toFixed(1)),
+      putarina,
+      proveriPutarinu: p.proveri,
+      naziv: geo.naziv,
+    };
     cache.set(key, out);
     return NextResponse.json(out);
   } catch (e) {

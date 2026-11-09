@@ -1,8 +1,11 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Lock, Mail, Eye, EyeOff } from "lucide-react";
+import { TrustLogo } from "@/components/TrustLogo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 function PrijavaForm() {
   const router = useRouter();
@@ -40,15 +43,17 @@ function PrijavaForm() {
 
   return (
     <div className="min-h-dvh grid place-items-center px-5 py-10">
+      <div className="fixed top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-sm">
-        <div className="text-center mb-6">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Ružini domaći kolači" className="mx-auto w-44 rounded-[16px]" />
+        <div className="mb-6 flex justify-center">
+          <TrustLogo markSize={60} />
         </div>
 
         <form onSubmit={onSubmit} className="card p-6 space-y-4">
-          <div className="kicker text-center" style={{ color: "var(--accent)" }}>
-            Knjiga porudžbina
+          <div className="kicker text-center" style={{ color: "var(--brand-plum)" }}>
+            Prijava
           </div>
           <div>
             <label className="label">Email</label>
@@ -82,7 +87,7 @@ function PrijavaForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 grid place-items-center w-8 h-8 rounded-[8px] text-[var(--neutral-600)] hover:text-[var(--accent)]"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 grid place-items-center w-8 h-8 rounded-[8px] text-[var(--neutral-600)] hover:text-[var(--brand-plum)]"
                 aria-label={showPassword ? "Sakrij lozinku" : "Prikaži lozinku"}
                 tabIndex={-1}
               >
@@ -91,12 +96,19 @@ function PrijavaForm() {
             </div>
           </div>
 
-          {error && <div className="text-sm font-bold" style={{ color: "var(--accent)" }}>{error}</div>}
+          {error && <div className="text-sm font-bold" style={{ color: "var(--brand-plum)" }}>{error}</div>}
 
           <button type="submit" disabled={loading} className="btn btn-primary btn-block">
             {loading ? <Loader2 size={18} className="animate-spin" /> : null}
             Uđi
           </button>
+
+          <p className="text-sm text-center text-muted">
+            Nemaš nalog?{" "}
+            <Link href="/registracija" className="font-bold" style={{ color: "var(--brand-plum)" }}>
+              Napravi besplatno
+            </Link>
+          </p>
         </form>
       </div>
     </div>

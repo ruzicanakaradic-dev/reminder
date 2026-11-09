@@ -1,23 +1,36 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 /* ═══════════════════════════════════════════════════════════════
    RUŽINI DOMAĆI KOLAČI — dizajn sistem (Modernist: plum + zlatna na krem)
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  --bg:        #f7ecd4;   /* krem pozadina */
-  --surface:   #f1e3c7;   /* kartice, inputi */
-  --ink:       #34233b;   /* primarni tekst (plum-ink) */
-  --divider:   color-mix(in srgb, #34233b 24%, transparent);
-  --divider-1: color-mix(in srgb, #34233b 14%, transparent);
+  /* Čist shadcn: bele površine + neutralne ivice (krem uklonjen). Plum ostaje
+     samo kao akcenat/primarna akcija. --track je svetli sivi „žleb" za segmente. */
+  --bg:        #ffffff;   /* bela pozadina (app, inputi, aktivni segment) */
+  --surface:   #ffffff;   /* kartice */
+  --track:     #f4f4f5;   /* svetli žleb (segmentna kontrola, tihe površine) */
+  --ink:       #1c1a1e;   /* primarni tekst (skoro crn, tračak topline) */
+  --divider:   #e4e4e7;   /* neutralna ivica (shadcn border) */
+  --divider-1: #efeff1;   /* tanja neutralna ivica (redovi tabele) */
 
-  --accent:      #7a3785; /* plum — primarne akcije */
+  /* Trust brend plum (identitet aplikacije). Ranije se zvao --accent, ali to
+     ime sad pripada shadcn-u (svetla hover površina). Stare stranice koriste
+     --accent-100..800 kao tonove pluma dok se ne migriraju na shadcn. */
+  --brand-plum:  #7a3785;
   --accent-100:  #f4edf6;
   --accent-200:  #e8d8ec;
   --accent-300:  #d3b6db;
   --accent-600:  #6f2f7a;
   --accent-700:  #58245f;
   --accent-800:  #3f1c48;
+
+  /* Brend font (Trust ime) — Bricolage; telo = Geist (--font-sans). */
+  --font-brand: var(--font-brand), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 
   --gold:        #b28a34; /* zlatna — sekundarni akcenat */
   --gold-100:    #f7efd8;
@@ -37,29 +50,92 @@
 
   /* statusi: dot / bg / fg */
   --st-primljena-dot:#9a8fa0; --st-primljena-bg:#efe8ec; --st-primljena-fg:#5b4d62;
+  /* Kalendarski tintovi (mekši od badge-ova; po temi). Svetla = kao do sada. */
+  --cal-primljena-bg:#efe8ec;  --cal-primljena-fg:#5b4d62;
+  --cal-u_radu-bg:#e8d8ec;     --cal-u_radu-fg:#3f1c48;
+  --cal-zavrseno-bg:#f7efd8;   --cal-zavrseno-fg:#574117;
+  --cal-isporuceno-bg:#e6e0e8; --cal-isporuceno-fg:#34233b;
+  /* Aktivni status-pil (StatusControl) — pun, bold. Svetla = kao do sada. */
+  --stp-primljena-bg:#9a8fa0;  --stp-primljena-fg:#ffffff;
+  --stp-u_radu-bg:#7a3785;     --stp-u_radu-fg:#f7ecd4;
+  --stp-zavrseno-bg:#977128;   --stp-zavrseno-fg:#f7ecd4;
+  --stp-isporuceno-bg:#34233b; --stp-isporuceno-fg:#f7ecd4;
   --st-u_radu-dot:#7a3785;    --st-u_radu-bg:#e8d8ec;    --st-u_radu-fg:#3f1c48;
   --st-zavrseno-dot:#977128;  --st-zavrseno-bg:#f7efd8;  --st-zavrseno-fg:#574117;
-  --st-isporuceno-dot:#34233b;--st-isporuceno-bg:#34233b;--st-isporuceno-fg:#f7ecd4;
-
-  --background: var(--bg);
-  --foreground: var(--ink);
+  --st-isporuceno-dot:#34233b;--st-isporuceno-bg:#34233b;--st-isporuceno-fg:#f7ecd4;--background:        oklch(1 0 0);--foreground:        oklch(0.145 0 0);--card:        oklch(1 0 0);--card-foreground:        oklch(0.145 0 0);--popover:        oklch(1 0 0);--popover-foreground:        oklch(0.145 0 0);--primary:        oklch(0.205 0 0);--primary-foreground:        oklch(0.985 0 0);--secondary:        oklch(0.97 0 0);--secondary-foreground:        oklch(0.205 0 0);--muted:        oklch(0.97 0 0);--muted-foreground:        oklch(0.556 0 0);--accent:        oklch(0.97 0 0);--accent-foreground:        oklch(0.205 0 0);--destructive:        oklch(0.577 0.245 27.325);--border:        oklch(0.922 0 0);--input:        oklch(0.922 0 0);--ring:        oklch(0.708 0 0);--chart-1:        oklch(0.87 0 0);--chart-2:        oklch(0.556 0 0);--chart-3:        oklch(0.439 0 0);--chart-4:        oklch(0.371 0 0);--chart-5:        oklch(0.269 0 0);--radius:        0.625rem;--sidebar:        oklch(0.985 0 0);--sidebar-foreground:        oklch(0.145 0 0);--sidebar-primary:        oklch(0.205 0 0);--sidebar-primary-foreground:        oklch(0.985 0 0);--sidebar-accent:        oklch(0.97 0 0);--sidebar-accent-foreground:        oklch(0.205 0 0);--sidebar-border:        oklch(0.922 0 0);--sidebar-ring:        oklch(0.708 0 0);
+  /* Samo primarnu akciju bojimo brend plumom (sa belim tekstom za kontrast);
+     sve ostalo ostaje ČIST shadcn (bela pozadina, neutralni tokeni). Krem se
+     NE nameće — boje po klijentu (faza 4) dolaze kao zaseban sloj, ne gaženjem
+     shadcn osnove. */
+  --primary: var(--brand-plum);         /* Trust plum — primarna akcija (app) */
+  --primary-foreground: oklch(0.985 0 0); /* skoro belo — dobar kontrast na plumu */
+  --ring: var(--brand-plum);
+  /* Boja brenda KORISNICE (nivo 2). Default = Trust plum dok korisnica ne
+     postavi svoju; BrandStyle je runtime menja na njenom radnom prostoru. */
+  --brand: var(--brand-plum);
+  /* Tekst na brend podlozi (dugme/tag). Default belo; BrandStyle ga u runtime-u
+     prebaci na crno kad je korisnicina boja svetla, radi čitljivosti. */
+  --brand-foreground: #ffffff;
 }
 
 @theme inline {
-  --color-background: var(--bg);
-  --color-foreground: var(--ink);
+  /* shadcn utility (bg-background, text-foreground, bg-muted…) → ČISTI shadcn
+     tokeni (bela/neutralna). Brend boje ostaju dostupne kroz zasebne utility
+     (bg-bg, text-ink, bg-surface…) koje postojeće .card/.btn klase i stare
+     stranice koriste — pa Ružicin krem izgled ostaje netaknut, a shadcn je čist. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  /* `text-muted` na 25 starih stranica = sivi tekst (--neutral-600); ostaje
+     dok se te stranice ne migriraju u fazi 3. shadcn koristi
+     `text-muted-foreground` / `bg-secondary`, pa se ne sudara s ovim. */
+  --color-muted: var(--neutral-600);
+  /* Brend tokeni — zadržani za postojeće stranice (ne diraju shadcn): */
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-ink: var(--ink);
-  --color-accent: var(--accent);
+  --color-brand: var(--brand-plum);   /* Trust plum (app identitet) */
+  --color-brand-user: var(--brand);   /* boja korisnice (nivo 2) → bg-brand-user, text-brand-user */
   --color-accent-100: var(--accent-100);
   --color-accent-200: var(--accent-200);
   --color-gold: var(--gold);
   --color-gold-100: var(--gold-100);
-  --color-muted: var(--neutral-600);
   --color-divider: var(--divider);
-  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-sans:        var(--font-sans);
+  --font-heading:        var(--font-sans);
+  --color-sidebar-ring:        var(--sidebar-ring);
+  --color-sidebar-border:        var(--sidebar-border);
+  --color-sidebar-accent-foreground:        var(--sidebar-accent-foreground);
+  --color-sidebar-accent:        var(--sidebar-accent);
+  --color-sidebar-primary-foreground:        var(--sidebar-primary-foreground);
+  --color-sidebar-primary:        var(--sidebar-primary);
+  --color-sidebar-foreground:        var(--sidebar-foreground);
+  --color-sidebar:        var(--sidebar);
+  --color-chart-5:        var(--chart-5);
+  --color-chart-4:        var(--chart-4);
+  --color-chart-3:        var(--chart-3);
+  --color-chart-2:        var(--chart-2);
+  --color-chart-1:        var(--chart-1);
+  --color-ring:        var(--ring);
+  --color-input:        var(--input);
+  --color-border:        var(--border);
+  --color-destructive:        var(--destructive);
+  --color-accent-foreground:        var(--accent-foreground);
+  --color-muted-foreground:        var(--muted-foreground);
+  --color-secondary-foreground:        var(--secondary-foreground);
+  --color-secondary:        var(--secondary);
+  --color-primary-foreground:        var(--primary-foreground);
+  --color-primary:        var(--primary);
+  --color-popover-foreground:        var(--popover-foreground);
+  --color-popover:        var(--popover);
+  --color-card-foreground:        var(--card-foreground);
+  --color-card:        var(--card);
+  --radius-sm:        calc(var(--radius) * 0.6);
+  --radius-md:        calc(var(--radius) * 0.8);
+  --radius-lg:        var(--radius);
+  --radius-xl:        calc(var(--radius) * 1.4);
+  --radius-2xl:        calc(var(--radius) * 1.8);
+  --radius-3xl:        calc(var(--radius) * 2.2);
+  --radius-4xl:        calc(var(--radius) * 2.6);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -68,9 +144,11 @@ html, body { margin: 0; }
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  /* Čist shadcn osnova (bela), ne krem. Boja korisnice (brend_boja) dolazi kao
+     zaseban sloj na njenom radnom prostoru, ne na body. */
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   font-size: 15px;
@@ -78,7 +156,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, .display {
-  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-weight: 800;
   letter-spacing: -0.015em;
   line-height: 1.12;
@@ -102,7 +180,7 @@ h1, h2, h3, h4, h5, .display {
   flex-direction: column;
   border: 2px solid var(--divider);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 16px 12px; /* jednak razmak levo/desno; uži horizontalno da iznos ima vazduha */
   background: transparent;
   min-width: 0; /* dozvoli ćeliji da se skupi u gridu (bez isticanja vrednosti) */
 }
@@ -113,28 +191,27 @@ h1, h2, h3, h4, h5, .display {
 }
 .kpi-value {
   font-weight: 800;
-  font-size: clamp(20px, 5.6vw, 34px); /* fluidno da duže cifre (npr. "12.000 RSD") ne izlaze iz boksa */
+  font-size: 20px; /* iznosi se ističu; FitText smanji samo ako baš mora (bez lomljenja) */
   line-height: 1.12;
   margin-top: auto; /* vrednost prijanja uz dno — sve kartice u redu deluju ujednačeno */
   padding-top: 2px;
-  overflow-wrap: break-word; /* prelom po razmaku (12.000 / RSD), reč se lomi tek ako baš mora */
+  white-space: nowrap; /* nikad u dva reda */
 }
-/* Kompaktna varijanta (npr. Troškovi prevoza) — manja vrednost, kao „Po mesecu" karte */
+/* Kompaktna varijanta (npr. Troškovi prevoza) — isti font, samo tešnji padding */
 .kpi.kpi-sm { padding: 14px; }
 .kpi.kpi-sm .kpi-label { min-height: 2.4em; }
-.kpi.kpi-sm .kpi-value { font-size: clamp(16px, 4.2vw, 20px); }
 
 /* ── Dugmad ────────────────────────────────────────────────── */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-  border-radius: var(--radius-md); font-family: var(--font-archivo); font-weight: 800;
+  border-radius: var(--radius-md); font-family: var(--font-sans); font-weight: 800;
   line-height: 1; padding: .68rem 1rem; font-size: 14px; cursor: pointer;
   border: 1px solid transparent; transition: background .15s, box-shadow .15s, transform .1s;
 }
 .btn:active { transform: translateY(1px); }
 .btn-block { width: 100%; }
 
-.btn-primary { background: var(--accent); color: var(--bg); }
+.btn-primary { background: var(--brand); color: var(--brand-foreground); }
 .btn-primary:hover { background: var(--accent-600); }
 .btn-primary:active { background: var(--accent-700); }
 
@@ -150,11 +227,11 @@ h1, h2, h3, h4, h5, .display {
 .input, .textarea, .select {
   width: 100%; background: var(--bg); border: 1px solid var(--divider);
   border-radius: var(--radius-md); padding: .6rem .7rem; color: var(--ink);
-  font-family: var(--font-archivo); font-size: 15px; outline: none;
+  font-family: var(--font-sans); font-size: 15px; outline: none;
   transition: border .15s, box-shadow .15s;
 }
 .input:focus, .textarea:focus, .select:focus {
-  border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-200);
+  border-color: var(--brand); box-shadow: 0 0 0 2px var(--accent-200);
 }
 .label { display: block; font-size: 12px; font-weight: 800; color: var(--neutral-700); margin-bottom: .3rem;
   letter-spacing: .01em; }
@@ -193,20 +270,20 @@ input.input[type="date"], input.input[type="time"] {
 .tag { display: inline-flex; align-items: center; gap: .4rem; padding: .38rem .7rem;
   border-radius: var(--radius-sm); font-size: 12px; font-weight: 800; cursor: pointer;
   border: 1px solid var(--divider); background: var(--surface); color: var(--ink); }
-.tag-active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.tag-active { background: var(--brand); color: var(--brand-foreground); border-color: var(--brand); }
 
 /* ── Segmented control ─────────────────────────────────────── */
-.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--divider);
+.seg { display: inline-flex; background: var(--track); border: 1px solid var(--divider);
   border-radius: var(--radius-md); padding: 3px; gap: 3px; }
-.seg-opt { border: 0; background: transparent; color: var(--neutral-700); font-family: var(--font-archivo);
+.seg-opt { border: 0; background: transparent; color: var(--neutral-700); font-family: var(--font-sans);
   font-weight: 800; font-size: 13px; padding: .45rem .85rem; border-radius: var(--radius-sm); cursor: pointer; }
-.seg-opt.active { background: var(--bg); color: var(--accent); box-shadow: var(--sh-sm); }
+.seg-opt.active { background: var(--bg); color: var(--brand); box-shadow: var(--sh-sm); }
 
 /* ── Tabela ────────────────────────────────────────────────── */
 .table { width: 100%; border-collapse: collapse; }
 .table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
   color: var(--neutral-600); font-weight: 800; padding: 10px 12px; border-bottom: 2px solid var(--divider);
-  background: var(--surface); white-space: nowrap; }
+  background: var(--track); white-space: nowrap; }
 .table td { padding: 11px 12px; border-bottom: 1px solid var(--divider-1); font-size: 14px; }
 .table tbody tr { cursor: pointer; }
 .table tbody tr:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
@@ -215,16 +292,16 @@ input.input[type="date"], input.input[type="time"] {
 /* ── App shell: sidebar + topbar + bottom nav ──────────────── */
 .navitem { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px;
   background: none; border: 0; border-left: 3px solid transparent; cursor: pointer;
-  font-family: var(--font-archivo); font-weight: 800; font-size: 14px; color: var(--ink);
+  font-family: var(--font-sans); font-weight: 800; font-size: 14px; color: var(--ink);
   text-align: left; border-radius: var(--radius-md); text-decoration: none; }
 .navitem:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
-.navitem.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-100); }
+.navitem.active { color: var(--brand); border-left-color: var(--brand); background: var(--accent-100); }
 .navitem svg { width: 20px; height: 20px; flex: none; }
 
 .bnav { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 0;
-  background: none; border: 0; cursor: pointer; font-family: var(--font-archivo); font-weight: 800;
+  background: none; border: 0; cursor: pointer; font-family: var(--font-sans); font-weight: 800;
   font-size: 10px; letter-spacing: .03em; color: var(--neutral-600); text-decoration: none; }
-.bnav.active { color: var(--accent); }
+.bnav.active { color: var(--brand); }
 
 /* Suptilne animacije */
 @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -247,4 +324,102 @@ input.input[type="date"], input.input[type="time"] {
   );
   background-size: 200% 100%;
   animation: rk-shimmer 1.4s ease-in-out infinite;
+}
+
+.dark {
+  --background:        oklch(0.145 0 0);
+  --foreground:        oklch(0.985 0 0);
+  --card:        oklch(0.205 0 0);
+  --card-foreground:        oklch(0.985 0 0);
+  --popover:        oklch(0.205 0 0);
+  --popover-foreground:        oklch(0.985 0 0);
+  --primary:        oklch(0.922 0 0);
+  --primary-foreground:        oklch(0.205 0 0);
+  --secondary:        oklch(0.269 0 0);
+  --secondary-foreground:        oklch(0.985 0 0);
+  --muted:        oklch(0.269 0 0);
+  --muted-foreground:        oklch(0.708 0 0);
+  --accent:        oklch(0.269 0 0);
+  --accent-foreground:        oklch(0.985 0 0);
+  --destructive:        oklch(0.704 0.191 22.216);
+  --border:        oklch(1 0 0 / 10%);
+  --input:        oklch(1 0 0 / 15%);
+  --ring:        oklch(0.556 0 0);
+  --chart-1:        oklch(0.87 0 0);
+  --chart-2:        oklch(0.556 0 0);
+  --chart-3:        oklch(0.439 0 0);
+  --chart-4:        oklch(0.371 0 0);
+  --chart-5:        oklch(0.269 0 0);
+  --sidebar:        oklch(0.205 0 0);
+  --sidebar-foreground:        oklch(0.985 0 0);
+  --sidebar-primary:        oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground:        oklch(0.985 0 0);
+  --sidebar-accent:        oklch(0.269 0 0);
+  --sidebar-accent-foreground:        oklch(0.985 0 0);
+  --sidebar-border:        oklch(1 0 0 / 10%);
+  --sidebar-ring:        oklch(0.556 0 0);
+
+  /* ── Brend/custom tokeni za DARK (stare .card/.btn/.input/.kpi klase) ── */
+  --bg:        #121014;   /* app pozadina (tamna, tračak topline) */
+  --surface:   #1c1920;   /* kartice */
+  --track:     #272430;   /* žleb segmentne kontrole */
+  --ink:       #f3f1f5;   /* primarni tekst */
+  --divider:   #332f3a;   /* ivica */
+  --divider-1: #28242e;   /* tanja ivica (redovi) */
+  --neutral-600: #a79daa; /* muted tekst (svetliji na tamnom) */
+  --neutral-700: #bcb3bf;
+  /* plum tintovi (čip pozadine) — tamni; tekst na njima je svetli plum */
+  --accent-100: #241b2d;
+  --accent-200: #342545;
+  --accent-300: #48345d;
+  --accent-600: #be84d9;  /* hover primarnog dugmeta — svetliji od baze na tamnom */
+  --accent-700: #9f5bbb;  /* pritisnuto — tamnije od baze */
+  --accent-800: #e7d3ef;  /* tekst na tamnom plum čipu — svetli plum */
+  /* zlatna za dark */
+  --gold-100:  #3a3320;
+  --gold-600:  #d9b86a;
+  --gold-800:  #e8d9a8;
+  /* Plum na TAMNOJ pozadini: #7a3785 ima kontrast ~2.2 (nečitljiv), pa se u
+     dark-u diže na svetliji plum (~5.0 na kartici). Kaskadira na SVE akcente
+     jer --brand/--primary/--ring svi padaju na --brand-plum kad korisnica
+     nema svoju boju. Trust identitet i dalje "plum", samo čitljiviji na crnom. */
+  --brand-plum: #b06fcf;
+  --primary: var(--brand-plum);
+  --ring: var(--brand-plum);
+  /* status čipovi za dark (tamna pozadina + svetli tekst) */
+  --st-primljena-dot:#9a8fa0; --st-primljena-bg:#2a2630; --st-primljena-fg:#d3c9d6;
+  /* Kalendarski tintovi za DARK (tamna podloga + svetli tekst) */
+  --cal-primljena-bg:#2a2630;  --cal-primljena-fg:#d3c9d6;
+  --cal-u_radu-bg:#36284a;     --cal-u_radu-fg:#e7d3ef;
+  --cal-zavrseno-bg:#3a3320;   --cal-zavrseno-fg:#e8d9a8;
+  --cal-isporuceno-bg:#463a50; --cal-isporuceno-fg:#f0e4d0;
+  /* Aktivni status-pil za DARK — svetliji pun pil, čitljiv tekst */
+  --stp-primljena-bg:#6d6374;  --stp-primljena-fg:#f3f1f5;
+  --stp-u_radu-bg:#8f4aa5;     --stp-u_radu-fg:#f7e9fb;
+  --stp-zavrseno-bg:#8c6a2b;   --stp-zavrseno-fg:#fbf3df;
+  --stp-isporuceno-bg:#80667d; --stp-isporuceno-fg:#f7eef5;
+  --st-u_radu-dot:#b06bc4;    --st-u_radu-bg:#36284a;    --st-u_radu-fg:#e7d3ef;
+  --st-zavrseno-dot:#c9a24a;  --st-zavrseno-bg:#3a3320;  --st-zavrseno-fg:#e8d9a8;
+  --st-isporuceno-dot:#cbb3d6;--st-isporuceno-bg:#463a50;--st-isporuceno-fg:#f0e4d0;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+/* Brend primarna akcija (plum) MORA da pobedi shadcn --primary (crn) u svetlom
+   režimu. Zavisno od redosleda Tailwind v4 kompilacije, :root override iznad ume
+   da izgubi od shadcn CLI bloka, pa je ovde viša specifičnost na kraju fajla.
+   Scope-ovano na svetli režim — .dark blok ostaje netaknut. */
+:root:not(.dark) {
+  --primary: var(--brand-plum);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: var(--brand-plum);
 }

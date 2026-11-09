@@ -189,7 +189,7 @@ export default async function StatistikaPage({
       </div>
 
       <MonthFinanceList title="Po mesecu — promet, trošak i zarada" rows={mesecniFin} />
-      <BarList title={`Promet po mesecu (poslednjih ${chartN})`} rows={mesecni} color="var(--accent)" money />
+      <BarList title={`Promet po mesecu (poslednjih ${chartN})`} rows={mesecni} color="var(--brand)" money />
       <BarList title="Najbolji kupci" rows={kupci} color="var(--ink)" money />
       <BarList title="Po gradu / mestu" rows={gradovi} color="var(--neutral-600)" money />
       <BarList title="Najprodavaniji proizvod" rows={proizvodi} color="var(--gold)" suffix=" kom" />
@@ -205,7 +205,7 @@ function MonthFinanceList({ title, rows }: { title: string; rows: MonthFin[] }) 
         {rows.map((r) => (
           <div
             key={r.label}
-            className="rounded-[14px] p-3.5"
+            className="rounded-[14px] p-3"
             style={{
               background: r.tekuci ? "var(--accent-100)" : "var(--surface)",
               border: `1px solid ${r.tekuci ? "var(--accent-300)" : "var(--divider)"}`,
@@ -233,11 +233,11 @@ function FinCell({ label, value, strong, accent }: {
   label: string; value: number; strong?: boolean; accent?: boolean;
 }) {
   return (
-    <div className="rounded-[10px] py-2 px-1" style={{ background: "var(--bg)" }}>
+    <div className="rounded-[10px] py-2 px-0.5" style={{ background: "var(--bg)" }}>
       <div className="kicker" style={{ fontSize: 10 }}>{label}</div>
       <div
-        className={`mt-0.5 tabular-nums ${strong || accent ? "font-extrabold" : "font-bold"}`}
-        style={{ fontSize: 14, color: accent ? "var(--accent)" : "var(--ink)" }}
+        className={`mt-0.5 tabular-nums whitespace-nowrap ${strong || accent ? "font-extrabold" : "font-bold"}`}
+        style={{ fontSize: 14, color: accent ? "var(--brand)" : "var(--ink)" }}
       >
         {formatRSD(value)}
       </div>

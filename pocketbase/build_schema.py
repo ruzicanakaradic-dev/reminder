@@ -171,6 +171,7 @@ orders = collection(C_ORDERS, "orders", [
     number("transport_cena"),
     number("dekoracija_cena"),
     boolean("licno_preuzimanje"),
+    boolean("stari_put"),  # true = stari put (bez putarine); false/prazno = autoput (sa putarinom)
 ], [
     "CREATE UNIQUE INDEX `idx_orders_user_rb` ON `orders` (`user`, `redni_broj`)",
     "CREATE INDEX `idx_orders_user_isporuka` ON `orders` (`user`, `datum_isporuke`)",
@@ -208,10 +209,18 @@ push_subscriptions = collection(C_PUSH, "push_subscriptions", [
 app_settings = collection(C_SETTINGS, "app_settings", [
     owner(),
     text("naziv_biznisa"),
+    # ── Brend korisnice (nivo 2) ─────────────────────────────────────
+    # NEZAVISNO od Trust identiteta aplikacije (nivo 1) i od transport
+    # podešavanja. Svaka poslastičarka stavlja svoj logo i bira svoju boju;
+    # pojavljuju se u NJENOM radnom prostoru (top bar, akcenti, porudžbine).
+    text("brend_boja"),   # hex, npr. "#7a3785"; prazno = podrazumevana
+    file_field("brend_logo"),  # logo korisnice (PNG/WebP/JPEG)
+    # ── Transport (nivo: generalna podešavanja) ──────────────────────
     text("polaziste_adresa"),  # npr. "Inđija, Jug Bogdana 17"
     number("polaziste_lat"),
     number("polaziste_lon"),
-    number("dizel_cena_rsd", min_val=0),
+    select("tip_goriva", ["dizel", "benzin"]),  # informativno; obračun je isti
+    number("gorivo_cena_rsd", min_val=0),  # RSD/l (ranije dizel_cena_rsd)
     number("potrosnja_l_100km", min_val=0),
     number("amortizacija_rsd_km", min_val=0),
     number("besplatna_dostava_od", min_val=0),  # RSD; 0 = nema besplatne dostave
