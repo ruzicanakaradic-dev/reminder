@@ -105,6 +105,30 @@ function pickForeground(brand: string): string {
   return contrast("#ffffff", brand) >= contrast(dark, brand) ? "#ffffff" : dark;
 }
 
+// Primeni brend boju KORISNICE (kontrast-sigurno) na radni prostor, odmah.
+// null/prazno/nevalidno → očisti inline i vrati se na Trust plum (default).
+// Deljeno: koristi ga i BrandProvider (iz baze) i MojBrend (živi pregled).
+export function applyBrandColor(color: string | null | undefined) {
+  const root = document.documentElement;
+  const props = ["--brand", "--primary", "--ring", "--brand-foreground", "--primary-foreground", "--accent-600", "--accent-700"];
+  const val = normalizeHex(color ?? null);
+  if (!val) {
+    props.forEach((p) => root.style.removeProperty(p));
+    return;
+  }
+  const dark = root.classList.contains("dark");
+  const bg = dark ? "#241b2d" : "#ffffff";
+  const brand = ensureContrast(val, bg, 4.5, dark ? 1 : -1);
+  const fg = pickForeground(brand);
+  root.style.setProperty("--brand", brand);
+  root.style.setProperty("--primary", brand);
+  root.style.setProperty("--ring", brand);
+  root.style.setProperty("--brand-foreground", fg);
+  root.style.setProperty("--primary-foreground", fg);
+  root.style.setProperty("--accent-600", adjustL(brand, dark ? 0.08 : -0.08));
+  root.style.setProperty("--accent-700", adjustL(brand, dark ? -0.06 : -0.16));
+}
+
 export function BrandProvider({ children }: { children: React.ReactNode }) {
   const [brend, setBrend] = useState<BrendKorisnice>({ naziv: "", boja: null, logoUrl: null });
 
@@ -121,44 +145,18 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const val = normalizeHex(brend.boja);
     const root = document.documentElement;
-    // shadcn (Button/Input focus…) i stare .btn klase nose istu brend boju.
-    const props = ["--brand", "--primary", "--ring", "--brand-foreground", "--primary-foreground", "--accent-600", "--accent-700"];
-    const clear = () => props.forEach((p) => root.style.removeProperty(p));
-
-    // Bez korisnicine boje → očisti inline i pusti CSS (Trust plum, uklj. dark #b06fcf).
-    if (!val) {
-      clear();
-      return clear;
-    }
-
-    const apply = () => {
-      const dark = root.classList.contains("dark");
-      // Najsvetlija podloga koju akcenat-TEKST dodiruje (najgori kontrast):
-      // dark = plum čip (nav), svetlo = bela kartica.
-      const bg = dark ? "#241b2d" : "#ffffff";
-      const brand = ensureContrast(val, bg, 4.5, dark ? 1 : -1);
-      const fg = pickForeground(brand);
-      root.style.setProperty("--brand", brand);
-      root.style.setProperty("--primary", brand);
-      root.style.setProperty("--ring", brand);
-      root.style.setProperty("--brand-foreground", fg);
-      root.style.setProperty("--primary-foreground", fg);
-      // Hover/active primarnog dugmeta — izvedeni iz brenda, da ne "upadne" plum.
-      root.style.setProperty("--accent-600", adjustL(brand, dark ? 0.08 : -0.08));
-      root.style.setProperty("--accent-700", adjustL(brand, dark ? -0.06 : -0.16));
-    };
-
+    const apply = () => applyBrandColor(brend.boja);
     apply();
-    // Reaguj na prebacivanje teme (ThemeToggle menja .dark na <html>).
+    // Reaguj na prebacivanje teme (ThemeToggle menja .dark na <html>) —
+    // boja se ponovo prilagodi kontrastu nove teme.
     const obs = new MutationObserver((muts) => {
       if (muts.some((m) => m.attributeName === "class")) apply();
     });
     obs.observe(root, { attributes: true, attributeFilter: ["class"] });
     return () => {
       obs.disconnect();
-      clear();
+      applyBrandColor(null);
     };
   }, [brend.boja]);
 

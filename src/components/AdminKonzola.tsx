@@ -123,7 +123,7 @@ export function AdminKonzola({ pocetne }: { pocetne: AdminUser[] }) {
         <div className="input-wrap flex-1 min-w-[200px]">
           <Search size={16} className="input-icon input-icon-left" />
           <input
-            className="input has-icon-left"
+            className="input with-icon-left"
             placeholder="Pretraži po email-u ili biznisu…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
