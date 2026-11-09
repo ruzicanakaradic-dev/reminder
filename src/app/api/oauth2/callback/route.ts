@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE, cookieOptions } from "@/lib/auth";
-import { pbAnon, pbAdmin, pocketbaseConfigured } from "@/lib/pb/server";
+import { pbAdmin, pocketbaseConfigured } from "@/lib/pb/server";
 import { TRIAL_DANA } from "@/lib/signup";
 
 export const dynamic = "force-dynamic";
@@ -44,9 +44,13 @@ export async function GET(req: Request) {
   if (!code || !state || !verifier || state !== cookieState) return neuspeh();
 
   try {
-    const pb = pbAnon();
+    // Razmenu koda radimo kao SUPERUSER (pbAdmin): nov Google korisnik zahteva
+    // kreiranje `users` zapisa, a Create pravilo je „Superusers only". Superuser
+    // zaobilazi pravilo (vraća i dalje TOKEN KORISNICE, ne superusera), pa javna
+    // direktna registracija preko API-ja ostaje blokirana — bez bezbednosnog ustupka.
+    const admin = await pbAdmin();
     const redirectUrl = `${base}/api/oauth2/callback`;
-    const authData = await pb
+    const authData = await admin
       .collection("users")
       .authWithOAuth2Code("google", code, verifier, redirectUrl);
 
@@ -59,13 +63,15 @@ export async function GET(req: Request) {
     };
 
     // Nov korisnik preko Google-a (bez plana) → free + trial, kao registracija.
+    // authWithOAuth2Code je gore prepisao authStore na token KORISNICE, pa za
+    // superuser izmenu uzimamo svež pbAdmin klijent.
     if (!rec.plan) {
       const d = new Date();
       d.setDate(d.getDate() + TRIAL_DANA);
       const trialDo = d.toISOString().slice(0, 10);
       const ime = (rec.ime_biznisa || rec.name || rec.email?.split("@")[0] || "Moj brend").trim();
-      const admin = await pbAdmin();
-      await admin.collection("users").update(rec.id, {
+      const admin2 = await pbAdmin();
+      await admin2.collection("users").update(rec.id, {
         plan: "free",
         trial_do: trialDo,
         blokiran: false,
