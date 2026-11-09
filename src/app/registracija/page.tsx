@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Lock, Mail, Eye, EyeOff, Store, Sparkles } from "lucide-react";
 import { TrustLogo } from "@/components/TrustLogo";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { GoogleDugme } from "@/components/GoogleDugme";
 
 export default function RegistracijaPage() {
   const router = useRouter();
@@ -126,6 +127,14 @@ export default function RegistracijaPage() {
             {loading ? <Loader2 size={18} className="animate-spin" /> : null}
             Počni besplatno
           </button>
+
+          <div className="flex items-center gap-3 py-0.5">
+            <div className="h-px flex-1 bg-[var(--divider)]" />
+            <span className="text-xs text-muted">ili</span>
+            <div className="h-px flex-1 bg-[var(--divider)]" />
+          </div>
+
+          <GoogleDugme next="/" />
 
           <p className="text-sm text-center text-muted">
             Već imaš nalog?{" "}

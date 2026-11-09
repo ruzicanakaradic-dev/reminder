@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { TrustLogo } from "@/components/TrustLogo";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { GoogleDugme } from "@/components/GoogleDugme";
 
 function PrijavaForm() {
   const router = useRouter();
@@ -112,6 +113,14 @@ function PrijavaForm() {
             {loading ? <Loader2 size={18} className="animate-spin" /> : null}
             Uđi
           </button>
+
+          <div className="flex items-center gap-3 py-0.5">
+            <div className="h-px flex-1 bg-[var(--divider)]" />
+            <span className="text-xs text-muted">ili</span>
+            <div className="h-px flex-1 bg-[var(--divider)]" />
+          </div>
+
+          <GoogleDugme next={next} />
 
           <p className="text-sm text-center text-muted">
             Nemaš nalog?{" "}
